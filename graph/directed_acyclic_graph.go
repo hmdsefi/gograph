@@ -3,8 +3,8 @@ package graph
 import "errors"
 
 var (
-	ErrDAGVertexNotFound = errors.New("vertex not found")
-	ErrDAGHasCycle       = errors.New("edge would create cycle")
+	ErrDAGCycle    = errors.New("edge would create cycle")
+	ErrDAGHasCycle = errors.New("the graph contains a cycle")
 )
 
 type DAGVertex struct {
@@ -25,9 +25,11 @@ func NewDAG() *DAG {
 }
 
 // AddVertexWithID adds a new vertex with the given id to the graph.
-func (d *DAG) AddVertexWithID(id int64) {
+func (d *DAG) AddVertexWithID(id int64) *DAGVertex {
 	v := &DAGVertex{ID: id}
 	d.Vertices = append(d.Vertices, v)
+
+	return v
 }
 
 func (d *DAG) AddVertex(v *DAGVertex) {
@@ -38,36 +40,63 @@ func (d *DAG) AddVertex(v *DAGVertex) {
 // the vertex with the 'to' id, after checking if the edge would create
 // a cycle.
 //
+// AddEdge guarantees that the graph remain DAG after adding new edge.
+//
 // It returns error if it finds a cycle between 'from' and 'to'.
 func (d *DAG) AddEdge(from, to *DAGVertex) error {
 	// Add the new edge
 	from.Neighbors = append(from.Neighbors, to)
 	to.inDegree++
 
-	// Perform a topological sort to check for cycles
-	var sortedVertices []*DAGVertex
-	queue := make([]*DAGVertex, 0)
+	// If topological sort returns an error, new edge created a cycle
+	_, err := d.TopologySort()
+	if err != nil {
+		// Remove the new edge
+		from.Neighbors = from.Neighbors[:len(from.Neighbors)-1]
+		to.inDegree--
 
-	// Add all vertices with inDegree 0 to the queue
+		return ErrDAGCycle
+	}
+
+	return nil
+}
+
+// TopologySort performs a topological sort of the graph using
+// Kahn's algorithm. If the sorted list of vertices does not contain
+// all vertices in the graph, it means there is a cycle in the graph.
+//
+// It returns error if it finds a cycle in the graph.
+func (d *DAG) TopologySort() ([]*DAGVertex, error) {
+	// Initialize a map to store the inDegree of each vertex
+	inDegrees := make(map[*DAGVertex]int)
 	for _, v := range d.Vertices {
-		if v.inDegree == 0 {
+		inDegrees[v] = v.inDegree
+	}
+
+	// Initialize a queue with vertices of inDegrees zero
+	queue := make([]*DAGVertex, 0)
+	for v, inDegree := range inDegrees {
+		if inDegree == 0 {
 			queue = append(queue, v)
 		}
 	}
 
-	// Traverse the graph using Kahn's algorithm
+	// Initialize the sorted list of vertices
+	sortedVertices := make([]*DAGVertex, 0)
+
+	// Loop through the vertices with inDegree zero
 	for len(queue) > 0 {
-		// Dequeue a vertex
-		v := queue[0]
+		// Get the next vertex with inDegree zero
+		curr := queue[0]
 		queue = queue[1:]
 
 		// Add the vertex to the sorted list
-		sortedVertices = append(sortedVertices, v)
+		sortedVertices = append(sortedVertices, curr)
 
-		// Decrement the inDegree of all neighbors of the dequeued vertex
-		for _, neighbor := range v.Neighbors {
-			neighbor.inDegree--
-			if neighbor.inDegree == 0 {
+		// Decrement the inDegree of each of the vertex's neighbors
+		for _, neighbor := range curr.Neighbors {
+			inDegrees[neighbor]--
+			if inDegrees[neighbor] == 0 {
 				queue = append(queue, neighbor)
 			}
 		}
@@ -75,40 +104,10 @@ func (d *DAG) AddEdge(from, to *DAGVertex) error {
 
 	// If the sorted list does not contain all vertices, there is a cycle
 	if len(sortedVertices) != len(d.Vertices) {
-		// Remove the new edge
-		from.Neighbors = from.Neighbors[:len(from.Neighbors)-1]
-		to.inDegree--
-
-		return errors.New("adding this edge would create a cycle in the graph")
+		return nil, ErrDAGHasCycle
 	}
 
-	return nil
-}
-
-func (d *DAG) hasCycle(current, parent *DAGVertex, visited map[*DAGVertex]bool) bool {
-	// Mark the current vertex as visited
-	visited[current] = true
-
-	// Check all neighbors of the current vertex
-	for _, neighbor := range current.Neighbors {
-		// If the neighbor is the parent vertex, continue to the next neighbor
-		if neighbor == parent {
-			continue
-		}
-
-		// If the neighbor has already been visited, there is a cycle
-		if visited[neighbor] {
-			return true
-		}
-
-		// Recursively check for cycles in the neighbor's subtree
-		if d.hasCycle(neighbor, current, visited) {
-			return true
-		}
-	}
-
-	// No cycle was found
-	return false
+	return sortedVertices, nil
 }
 
 // findVertex searches for the given id in the vertices. It returns
