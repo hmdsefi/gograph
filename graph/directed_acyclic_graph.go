@@ -3,21 +3,15 @@ package graph
 import "errors"
 
 var (
-	ErrDAGCycle    = errors.New("edge would create cycle")
+	ErrDAGCycle    = errors.New("edges would create cycle")
 	ErrDAGHasCycle = errors.New("the graph contains a cycle")
 )
-
-type DAGVertex struct {
-	ID        int64
-	Neighbors []*DAGVertex
-	inDegree  int
-}
 
 // DAG represents a directed graph that has no cycles. It is a graph
 // where there is no path that starts and ends at the same vertex.
 type DAG struct {
 	// Vertices represents nodes or points in the graph
-	Vertices []*DAGVertex
+	Vertices []*Vertex
 }
 
 func NewDAG() *DAG {
@@ -25,34 +19,34 @@ func NewDAG() *DAG {
 }
 
 // AddVertexWithID adds a new vertex with the given id to the graph.
-func (d *DAG) AddVertexWithID(id int64) *DAGVertex {
-	v := &DAGVertex{ID: id}
+func (d *DAG) AddVertexWithID(id int) *Vertex {
+	v := &Vertex{id: id}
 	d.Vertices = append(d.Vertices, v)
 
 	return v
 }
 
-func (d *DAG) AddVertex(v *DAGVertex) {
+func (d *DAG) AddVertex(v *Vertex) {
 	d.Vertices = append(d.Vertices, v)
 }
 
-// AddEdge adds a directed edge from the vertex with the 'from' id to
-// the vertex with the 'to' id, after checking if the edge would create
+// AddEdge adds a directed edges from the vertex with the 'from' id to
+// the vertex with the 'to' id, after checking if the edges would create
 // a cycle.
 //
-// AddEdge guarantees that the graph remain DAG after adding new edge.
+// AddEdge guarantees that the graph remain DAG after adding new edges.
 //
 // It returns error if it finds a cycle between 'from' and 'to'.
-func (d *DAG) AddEdge(from, to *DAGVertex) error {
-	// Add the new edge
-	from.Neighbors = append(from.Neighbors, to)
+func (d *DAG) AddEdge(from, to *Vertex) error {
+	// Add the new edges
+	from.neighbors = append(from.neighbors, to)
 	to.inDegree++
 
-	// If topological sort returns an error, new edge created a cycle
+	// If topological sort returns an error, new edges created a cycle
 	_, err := d.TopologySort()
 	if err != nil {
-		// Remove the new edge
-		from.Neighbors = from.Neighbors[:len(from.Neighbors)-1]
+		// Remove the new edges
+		from.neighbors = from.neighbors[:len(from.neighbors)-1]
 		to.inDegree--
 
 		return ErrDAGCycle
@@ -66,15 +60,15 @@ func (d *DAG) AddEdge(from, to *DAGVertex) error {
 // all vertices in the graph, it means there is a cycle in the graph.
 //
 // It returns error if it finds a cycle in the graph.
-func (d *DAG) TopologySort() ([]*DAGVertex, error) {
+func (d *DAG) TopologySort() ([]*Vertex, error) {
 	// Initialize a map to store the inDegree of each vertex
-	inDegrees := make(map[*DAGVertex]int)
+	inDegrees := make(map[*Vertex]int)
 	for _, v := range d.Vertices {
 		inDegrees[v] = v.inDegree
 	}
 
 	// Initialize a queue with vertices of inDegrees zero
-	queue := make([]*DAGVertex, 0)
+	queue := make([]*Vertex, 0)
 	for v, inDegree := range inDegrees {
 		if inDegree == 0 {
 			queue = append(queue, v)
@@ -82,7 +76,7 @@ func (d *DAG) TopologySort() ([]*DAGVertex, error) {
 	}
 
 	// Initialize the sorted list of vertices
-	sortedVertices := make([]*DAGVertex, 0)
+	sortedVertices := make([]*Vertex, 0)
 
 	// Loop through the vertices with inDegree zero
 	for len(queue) > 0 {
@@ -94,7 +88,7 @@ func (d *DAG) TopologySort() ([]*DAGVertex, error) {
 		sortedVertices = append(sortedVertices, curr)
 
 		// Decrement the inDegree of each of the vertex's neighbors
-		for _, neighbor := range curr.Neighbors {
+		for _, neighbor := range curr.neighbors {
 			inDegrees[neighbor]--
 			if inDegrees[neighbor] == 0 {
 				queue = append(queue, neighbor)
@@ -112,9 +106,9 @@ func (d *DAG) TopologySort() ([]*DAGVertex, error) {
 
 // findVertex searches for the given id in the vertices. It returns
 // a pointer to the vertex if it finds it. Otherwise, returns nil.
-func (d *DAG) findVertex(id int64) *DAGVertex {
+func (d *DAG) findVertex(id int) *Vertex {
 	for _, v := range d.Vertices {
-		if v.ID == id {
+		if v.id == id {
 			return v
 		}
 	}

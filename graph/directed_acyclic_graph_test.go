@@ -40,7 +40,7 @@ func TestDAG_AddEdge(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	// Try to add an edge from 3 to 1, which should result in an error
+	// Try to add an edges from 3 to 1, which should result in an error
 	err = dag.AddEdge(v3, v1)
 	if err == nil {
 		t.Error("Expected error, but got none")
