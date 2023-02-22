@@ -2,6 +2,11 @@ package graph
 
 type Graph interface {
 	AddEdge(from, to *Vertex) (*Edge, error)
+
+	baseGraph
+}
+
+type baseGraph interface {
 	GetAllEdges(from, to *Vertex) []*Edge
 	GetEdge(from, to *Vertex) *Edge
 	EdgesOf(v *Vertex) []*Edge
