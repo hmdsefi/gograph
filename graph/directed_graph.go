@@ -43,6 +43,10 @@ func (g *directedGraph) AddVertexWithID(id int) *Vertex {
 // vertex to the graph if the input vertex id is already exists
 // in the graph.
 func (g *directedGraph) AddVertex(v *Vertex) {
+	if v == nil {
+		return
+	}
+
 	g.addVertex(v)
 }
 
