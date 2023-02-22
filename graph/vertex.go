@@ -8,6 +8,10 @@ type Vertex struct {
 	outDegree int       // number of outgoing edges from this vertex
 }
 
+func NewVertex(id int) *Vertex {
+	return &Vertex{id: id}
+}
+
 // NeighborByID iterates over the neighbor slice and returns the
 // vertex which its id is equal to the input id.
 //

@@ -6,9 +6,9 @@ var (
 	ErrNilVertices = errors.New("vertices are nil")
 )
 
-// DirectedGraph represents a directed graph. It stores a slice of
+// directedGraph represents a directed graph. It stores a slice of
 // pointers to all vertices.
-type DirectedGraph struct {
+type directedGraph struct {
 	// vertices is a map of vertices of the graph. the key of the map
 	// is the vertex id.
 	vertices map[int]*Vertex
@@ -19,10 +19,21 @@ type DirectedGraph struct {
 	edges map[int]map[int]*Edge
 }
 
+func NewDirectedGraph() Graph {
+	return newDirectedGraph()
+}
+
+func newDirectedGraph() *directedGraph {
+	return &directedGraph{
+		vertices: make(map[int]*Vertex),
+		edges:    make(map[int]map[int]*Edge),
+	}
+}
+
 // AddVertexWithID adds a new vertex with the given id to the graph.
 // If there is a vertex with the same id in the graph, returns nil.
 // Otherwise, returns the created vertex.
-func (g *DirectedGraph) AddVertexWithID(id int) *Vertex {
+func (g *directedGraph) AddVertexWithID(id int) *Vertex {
 	v := g.addVertex(&Vertex{id: id})
 
 	return v
@@ -31,11 +42,11 @@ func (g *DirectedGraph) AddVertexWithID(id int) *Vertex {
 // AddVertex adds the input vertex to the graph. It doesn't add
 // vertex to the graph if the input vertex id is already exists
 // in the graph.
-func (g *DirectedGraph) AddVertex(v *Vertex) {
+func (g *directedGraph) AddVertex(v *Vertex) {
 	g.addVertex(v)
 }
 
-func (g *DirectedGraph) addVertex(v *Vertex) *Vertex {
+func (g *directedGraph) addVertex(v *Vertex) *Vertex {
 	if _, ok := g.vertices[v.id]; ok {
 		return nil
 	}
@@ -50,7 +61,7 @@ func (g *DirectedGraph) addVertex(v *Vertex) *Vertex {
 //
 // It creates the input vertices if they don't exist in the graph.
 // If any of the specified vertices is nil, returns nil.
-func (g *DirectedGraph) AddEdge(from, to *Vertex) (*Edge, error) {
+func (g *directedGraph) AddEdge(from, to *Vertex) (*Edge, error) {
 	if from == nil || to == nil {
 		return nil, ErrNilVertices
 	}
@@ -66,6 +77,9 @@ func (g *DirectedGraph) AddEdge(from, to *Vertex) (*Edge, error) {
 	edge := NewEdge(from, to)
 
 	from.neighbors = append(from.neighbors, to)
+	from.outDegree++
+	to.inDegree++
+
 	if _, ok := g.edges[from.id]; !ok {
 		g.edges[from.id] = map[int]*Edge{to.id: edge}
 	} else {
@@ -75,7 +89,7 @@ func (g *DirectedGraph) AddEdge(from, to *Vertex) (*Edge, error) {
 	return edge, nil
 }
 
-func (g *DirectedGraph) findVertex(id int) *Vertex {
+func (g *directedGraph) findVertex(id int) *Vertex {
 	return g.vertices[id]
 }
 
@@ -85,7 +99,7 @@ func (g *DirectedGraph) findVertex(id int) *Vertex {
 // If any of the specified vertices is nil, returns nil.
 // If any of the vertices does not exist, returns nil.
 // If both vertices exist but no edges found, returns an empty set.
-func (g *DirectedGraph) GetAllEdges(from, to *Vertex) []*Edge {
+func (g *directedGraph) GetAllEdges(from, to *Vertex) []*Edge {
 	if from == nil || to == nil {
 		return nil
 	}
@@ -116,7 +130,7 @@ func (g *DirectedGraph) GetAllEdges(from, to *Vertex) []*Edge {
 //
 // If any of the specified vertices is nil, returns nil.
 // If edge does not exist, returns nil.
-func (g *DirectedGraph) GetEdge(from, to *Vertex) *Edge {
+func (g *directedGraph) GetEdge(from, to *Vertex) *Edge {
 	if from == nil || to == nil {
 		return nil
 	}
@@ -141,7 +155,7 @@ func (g *DirectedGraph) GetEdge(from, to *Vertex) *Edge {
 //
 // If the input vertex is nil, returns nil.
 // If the input vertex does not exist, returns nil.
-func (g *DirectedGraph) EdgesOf(v *Vertex) []*Edge {
+func (g *directedGraph) EdgesOf(v *Vertex) []*Edge {
 	if v == nil {
 		return nil
 	}
@@ -152,12 +166,15 @@ func (g *DirectedGraph) EdgesOf(v *Vertex) []*Edge {
 
 	var edges []*Edge
 
+	// find all the edges that start from the input vertex
 	if destMap, ok := g.edges[v.id]; ok {
 		for destID := range destMap {
 			edges = append(edges, destMap[destID])
 		}
 	}
 
+	// find all the edges that the input vertex is the
+	// destination of the edge
 	for sourceID, destMap := range g.edges {
 		if sourceID == v.id {
 			continue
@@ -174,7 +191,7 @@ func (g *DirectedGraph) EdgesOf(v *Vertex) []*Edge {
 }
 
 // RemoveEdges removes input edges from the graph if they exist.
-func (g *DirectedGraph) RemoveEdges(edges ...*Edge) {
+func (g *directedGraph) RemoveEdges(edges ...*Edge) {
 	for i := range edges {
 		g.removeEdge(edges[i])
 	}
@@ -182,7 +199,7 @@ func (g *DirectedGraph) RemoveEdges(edges ...*Edge) {
 
 // removeEdge removes the edge from edges destination map, if size of
 // the internal map is zero, removes the source id from the edges.
-func (g *DirectedGraph) removeEdge(edge *Edge) {
+func (g *directedGraph) removeEdge(edge *Edge) {
 	if edge == nil {
 		return
 	}
@@ -197,17 +214,25 @@ func (g *DirectedGraph) removeEdge(edge *Edge) {
 
 	if destMap, ok := g.edges[edge.source.id]; ok {
 		delete(destMap, edge.dest.id)
+
+		// remove the neighbor vertex from the source neighbors slice.
+		g.removeNeighbor(edge.source.id, edge.dest.id)
+
+		// remove the source vertex id from the edge map, if it
+		// doesn't have any edges.
 		if len(destMap) == 0 {
-			g.removeNeighbor(edge.source.id, edge.dest.id)
 			delete(g.edges, edge.source.id)
 		}
 	}
 }
 
-func (g *DirectedGraph) removeNeighbor(sourceID, neighborID int) {
+func (g *directedGraph) removeNeighbor(sourceID, neighborID int) {
 	source := g.findVertex(sourceID)
 	for i := range source.neighbors {
 		if source.neighbors[i].id == neighborID {
+			source.neighbors[i].inDegree--
+			source.outDegree--
+
 			if i == 0 {
 				source.neighbors = source.neighbors[1:]
 			} else if i == len(source.neighbors)-1 {
@@ -216,8 +241,6 @@ func (g *DirectedGraph) removeNeighbor(sourceID, neighborID int) {
 				source.neighbors = append(source.neighbors[:i], source.neighbors[i+1:]...)
 			}
 
-			source.neighbors[i].inDegree--
-			source.outDegree--
 			break
 		}
 	}
@@ -226,14 +249,14 @@ func (g *DirectedGraph) removeNeighbor(sourceID, neighborID int) {
 // GetVertexByID returns the vertex with the input id.
 //
 // If vertex doesn't exist, returns nil.
-func (g *DirectedGraph) GetVertexByID(id int) *Vertex {
+func (g *directedGraph) GetVertexByID(id int) *Vertex {
 	return g.findVertex(id)
 }
 
 // GetAllVerticesByID returns a slice of vertices with the input id list.
 //
 // If vertex doesn't exist, doesn't add nil to the output list.
-func (g *DirectedGraph) GetAllVerticesByID(idList ...int) []*Vertex {
+func (g *directedGraph) GetAllVerticesByID(idList ...int) []*Vertex {
 	var vertices []*Vertex
 	for _, id := range idList {
 		v := g.GetVertexByID(id)
@@ -246,7 +269,7 @@ func (g *DirectedGraph) GetAllVerticesByID(idList ...int) []*Vertex {
 }
 
 // GetAllVertices returns a slice of all existing vertices in the graph.
-func (g *DirectedGraph) GetAllVertices() []*Vertex {
+func (g *directedGraph) GetAllVertices() []*Vertex {
 	var vertices []*Vertex
 	for _, vertex := range g.vertices {
 		vertices = append(vertices, vertex)
@@ -257,13 +280,13 @@ func (g *DirectedGraph) GetAllVertices() []*Vertex {
 
 // RemoveVertices removes all the specified vertices from this graph including
 // all its touching edges if present.
-func (g *DirectedGraph) RemoveVertices(vertices ...*Vertex) {
+func (g *directedGraph) RemoveVertices(vertices ...*Vertex) {
 	for i := range vertices {
 		g.removeVertex(vertices[i])
 	}
 }
 
-func (g *DirectedGraph) removeVertex(in *Vertex) {
+func (g *directedGraph) removeVertex(in *Vertex) {
 	if in == nil {
 		return
 	}
@@ -293,7 +316,7 @@ func (g *DirectedGraph) removeVertex(in *Vertex) {
 //
 // If any of the specified vertices does not exist in the graph, or if is nil,
 // returns 'false'.
-func (g *DirectedGraph) ContainsEdge(from, to *Vertex) bool {
+func (g *directedGraph) ContainsEdge(from, to *Vertex) bool {
 	if from == nil || to == nil {
 		return false
 	}
@@ -318,7 +341,7 @@ func (g *DirectedGraph) ContainsEdge(from, to *Vertex) bool {
 // ContainsVertex returns 'true' if this graph contains the specified vertex.
 //
 // If the specified vertex is nil, returns 'false'.
-func (g *DirectedGraph) ContainsVertex(v *Vertex) bool {
+func (g *directedGraph) ContainsVertex(v *Vertex) bool {
 	if v == nil {
 		return false
 	}

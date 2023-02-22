@@ -21,9 +21,9 @@ func TestDAG_AddEdge(t *testing.T) {
 	dag := NewDAG()
 
 	// Create three vertices with labels 1, 2, and 3
-	v1 := &DAGVertex{ID: 1}
-	v2 := &DAGVertex{ID: 2}
-	v3 := &DAGVertex{ID: 3}
+	v1 := &Vertex{id: 1}
+	v2 := &Vertex{id: 2}
+	v3 := &Vertex{id: 3}
 
 	// Add the vertices to the DAG
 	dag.AddVertex(v1)
@@ -96,7 +96,7 @@ func TestDAG_TopologySort(t *testing.T) {
 	}
 
 	// Check that the sorted order is correct
-	expectedOrder := []*DAGVertex{v4, v5, v2, v0, v3, v1}
+	expectedOrder := []*Vertex{v4, v5, v2, v0, v3, v1}
 	if !reflect.DeepEqual(sortedVertices, expectedOrder) {
 		t.Errorf("unexpected sort order. Got %v, expected %v", sortedVertices, expectedOrder)
 	}
