@@ -2,21 +2,21 @@ package graph
 
 // base represents a basic graph. It stores a slice of
 // pointers to all vertices.
-type base struct {
+type base[T comparable] struct {
 	// vertices is a map of vertices of the graph. the key of the map
-	// is the vertex id.
-	vertices map[int]*Vertex
+	// is the vertex label.
+	vertices map[T]*Vertex[T]
 
 	// edges represents the edge between two vertices. The key of the
-	// first map is the id of source vertex and the key of the inner
-	// map is the id of destination vertex.
-	edges map[int]map[int]*Edge
+	// first map is the label of source vertex and the key of the inner
+	// map is the label of destination vertex.
+	edges map[T]map[T]*Edge[T]
 }
 
-func newBaseGraph() *base {
-	return &base{
-		vertices: make(map[int]*Vertex),
-		edges:    make(map[int]map[int]*Edge),
+func newBaseGraph[T comparable]() *base[T] {
+	return &base[T]{
+		vertices: make(map[T]*Vertex[T]),
+		edges:    make(map[T]map[T]*Edge[T]),
 	}
 }
 
@@ -24,30 +24,30 @@ func newBaseGraph() *base {
 // the base struct. Note that it doesn't add the neighbor to the source vertex.
 //
 // It returns the created edge.
-func (g *base) addToEdgeMap(from, to *Vertex) *Edge {
+func (g *base[T]) addToEdgeMap(from, to *Vertex[T]) *Edge[T] {
 	edge := NewEdge(from, to)
-	if _, ok := g.edges[from.id]; !ok {
-		g.edges[from.id] = map[int]*Edge{to.id: edge}
+	if _, ok := g.edges[from.label]; !ok {
+		g.edges[from.label] = map[T]*Edge[T]{to.label: edge}
 	} else {
-		g.edges[from.id][to.id] = edge
+		g.edges[from.label][to.label] = edge
 	}
 
 	return edge
 }
 
-// AddVertexWithID adds a new vertex with the given id to the graph.
-// If there is a vertex with the same id in the graph, returns nil.
+// AddVertexByLabel adds a new vertex with the given label to the graph.
+// If there is a vertex with the same label in the graph, returns nil.
 // Otherwise, returns the created vertex.
-func (g *base) AddVertexWithID(id int) *Vertex {
-	v := g.addVertex(&Vertex{id: id})
+func (g *base[T]) AddVertexByLabel(label T) *Vertex[T] {
+	v := g.addVertex(&Vertex[T]{label: label})
 
 	return v
 }
 
 // AddVertex adds the input vertex to the graph. It doesn't add
-// vertex to the graph if the input vertex id is already exists
+// vertex to the graph if the input vertex label is already exists
 // in the graph.
-func (g *base) AddVertex(v *Vertex) {
+func (g *base[T]) AddVertex(v *Vertex[T]) {
 	if v == nil {
 		return
 	}
@@ -55,17 +55,17 @@ func (g *base) AddVertex(v *Vertex) {
 	g.addVertex(v)
 }
 
-func (g *base) addVertex(v *Vertex) *Vertex {
-	if _, ok := g.vertices[v.id]; ok {
+func (g *base[T]) addVertex(v *Vertex[T]) *Vertex[T] {
+	if _, ok := g.vertices[v.label]; ok {
 		return nil
 	}
 
-	g.vertices[v.id] = v
+	g.vertices[v.label] = v
 	return v
 }
 
-func (g *base) findVertex(id int) *Vertex {
-	return g.vertices[id]
+func (g *base[T]) findVertex(label T) *Vertex[T] {
+	return g.vertices[label]
 }
 
 // GetAllEdges returns a slice of all edges connecting source vertex to
@@ -74,21 +74,21 @@ func (g *base) findVertex(id int) *Vertex {
 // If any of the specified vertices is nil, returns nil.
 // If any of the vertices does not exist, returns nil.
 // If both vertices exist but no edges found, returns an empty set.
-func (g *base) GetAllEdges(from, to *Vertex) []*Edge {
+func (g *base[T]) GetAllEdges(from, to *Vertex[T]) []*Edge[T] {
 	if from == nil || to == nil {
 		return nil
 	}
 
-	if g.findVertex(from.id) == nil {
+	if g.findVertex(from.label) == nil {
 		return nil
 	}
 
-	if g.findVertex(to.id) == nil {
+	if g.findVertex(to.label) == nil {
 		return nil
 	}
 
-	var edges []*Edge
-	destMap, ok := g.edges[from.id]
+	var edges []*Edge[T]
+	destMap, ok := g.edges[from.label]
 	if !ok {
 		return edges
 	}
@@ -105,21 +105,21 @@ func (g *base) GetAllEdges(from, to *Vertex) []*Edge {
 //
 // If any of the specified vertices is nil, returns nil.
 // If edge does not exist, returns nil.
-func (g *base) GetEdge(from, to *Vertex) *Edge {
+func (g *base[T]) GetEdge(from, to *Vertex[T]) *Edge[T] {
 	if from == nil || to == nil {
 		return nil
 	}
 
-	if g.findVertex(from.id) == nil {
+	if g.findVertex(from.label) == nil {
 		return nil
 	}
 
-	if g.findVertex(to.id) == nil {
+	if g.findVertex(to.label) == nil {
 		return nil
 	}
 
-	if destMap, ok := g.edges[from.id]; ok {
-		return destMap[to.id]
+	if destMap, ok := g.edges[from.label]; ok {
+		return destMap[to.label]
 	}
 
 	return nil
@@ -130,19 +130,19 @@ func (g *base) GetEdge(from, to *Vertex) *Edge {
 //
 // If the input vertex is nil, returns nil.
 // If the input vertex does not exist, returns nil.
-func (g *base) EdgesOf(v *Vertex) []*Edge {
+func (g *base[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
 	if v == nil {
 		return nil
 	}
 
-	if g.findVertex(v.id) == nil {
+	if g.findVertex(v.label) == nil {
 		return nil
 	}
 
-	var edges []*Edge
+	var edges []*Edge[T]
 
 	// find all the edges that start from the input vertex
-	if destMap, ok := g.edges[v.id]; ok {
+	if destMap, ok := g.edges[v.label]; ok {
 		for destID := range destMap {
 			edges = append(edges, destMap[destID])
 		}
@@ -151,12 +151,12 @@ func (g *base) EdgesOf(v *Vertex) []*Edge {
 	// find all the edges that the input vertex is the
 	// destination of the edge
 	for sourceID, destMap := range g.edges {
-		if sourceID == v.id {
+		if sourceID == v.label {
 			continue
 		}
 
 		for destID := range destMap {
-			if destID == v.id {
+			if destID == v.label {
 				edges = append(edges, destMap[destID])
 			}
 		}
@@ -166,45 +166,45 @@ func (g *base) EdgesOf(v *Vertex) []*Edge {
 }
 
 // RemoveEdges removes input edges from the graph if they exist.
-func (g *base) RemoveEdges(edges ...*Edge) {
+func (g *base[T]) RemoveEdges(edges ...*Edge[T]) {
 	for i := range edges {
 		g.removeEdge(edges[i])
 	}
 }
 
 // removeEdge removes the edge from edges destination map, if size of
-// the internal map is zero, removes the source id from the edges.
-func (g *base) removeEdge(edge *Edge) {
+// the internal map is zero, removes the source label from the edges.
+func (g *base[T]) removeEdge(edge *Edge[T]) {
 	if edge == nil {
 		return
 	}
 
-	if g.findVertex(edge.source.id) == nil {
+	if g.findVertex(edge.source.label) == nil {
 		return
 	}
 
-	if g.findVertex(edge.dest.id) == nil {
+	if g.findVertex(edge.dest.label) == nil {
 		return
 	}
 
-	if destMap, ok := g.edges[edge.source.id]; ok {
-		delete(destMap, edge.dest.id)
+	if destMap, ok := g.edges[edge.source.label]; ok {
+		delete(destMap, edge.dest.label)
 
 		// remove the neighbor vertex from the source neighbors slice.
-		g.removeNeighbor(edge.source.id, edge.dest.id)
+		g.removeNeighbor(edge.source.label, edge.dest.label)
 
-		// remove the source vertex id from the edge map, if it
+		// remove the source vertex label from the edge map, if it
 		// doesn't have any edges.
 		if len(destMap) == 0 {
-			delete(g.edges, edge.source.id)
+			delete(g.edges, edge.source.label)
 		}
 	}
 }
 
-func (g *base) removeNeighbor(sourceID, neighborID int) {
+func (g *base[T]) removeNeighbor(sourceID, neighborLbl T) {
 	source := g.findVertex(sourceID)
 	for i := range source.neighbors {
-		if source.neighbors[i].id == neighborID {
+		if source.neighbors[i].label == neighborLbl {
 			source.neighbors[i].inDegree--
 			source.outDegree--
 
@@ -221,20 +221,20 @@ func (g *base) removeNeighbor(sourceID, neighborID int) {
 	}
 }
 
-// GetVertexByID returns the vertex with the input id.
+// GetVertexByID returns the vertex with the input label.
 //
 // If vertex doesn't exist, returns nil.
-func (g *base) GetVertexByID(id int) *Vertex {
-	return g.findVertex(id)
+func (g *base[T]) GetVertexByID(label T) *Vertex[T] {
+	return g.findVertex(label)
 }
 
-// GetAllVerticesByID returns a slice of vertices with the input id list.
+// GetAllVerticesByID returns a slice of vertices with the input label list.
 //
 // If vertex doesn't exist, doesn't add nil to the output list.
-func (g *base) GetAllVerticesByID(idList ...int) []*Vertex {
-	var vertices []*Vertex
-	for _, id := range idList {
-		v := g.GetVertexByID(id)
+func (g *base[T]) GetAllVerticesByID(idList ...T) []*Vertex[T] {
+	var vertices []*Vertex[T]
+	for _, label := range idList {
+		v := g.GetVertexByID(label)
 		if v != nil {
 			vertices = append(vertices, v)
 		}
@@ -244,8 +244,8 @@ func (g *base) GetAllVerticesByID(idList ...int) []*Vertex {
 }
 
 // GetAllVertices returns a slice of all existing vertices in the graph.
-func (g *base) GetAllVertices() []*Vertex {
-	var vertices []*Vertex
+func (g *base[T]) GetAllVertices() []*Vertex[T] {
+	var vertices []*Vertex[T]
 	for _, vertex := range g.vertices {
 		vertices = append(vertices, vertex)
 	}
@@ -255,18 +255,18 @@ func (g *base) GetAllVertices() []*Vertex {
 
 // RemoveVertices removes all the specified vertices from this graph including
 // all its touching edges if present.
-func (g *base) RemoveVertices(vertices ...*Vertex) {
+func (g *base[T]) RemoveVertices(vertices ...*Vertex[T]) {
 	for i := range vertices {
 		g.removeVertex(vertices[i])
 	}
 }
 
-func (g *base) removeVertex(in *Vertex) {
+func (g *base[T]) removeVertex(in *Vertex[T]) {
 	if in == nil {
 		return
 	}
 
-	v := g.findVertex(in.id)
+	v := g.findVertex(in.label)
 	if v == nil {
 		return
 	}
@@ -276,14 +276,14 @@ func (g *base) removeVertex(in *Vertex) {
 	}
 
 	for sourceID := range g.edges {
-		if edge, ok := g.edges[sourceID][v.id]; ok {
+		if edge, ok := g.edges[sourceID][v.label]; ok {
 			g.removeEdge(edge)
-			delete(g.edges[sourceID], v.id)
+			delete(g.edges[sourceID], v.label)
 		}
 	}
 
-	delete(g.edges, v.id)
-	delete(g.vertices, v.id)
+	delete(g.edges, v.label)
+	delete(g.vertices, v.label)
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge
@@ -291,21 +291,21 @@ func (g *base) removeVertex(in *Vertex) {
 //
 // If any of the specified vertices does not exist in the graph, or if is nil,
 // returns 'false'.
-func (g *base) ContainsEdge(from, to *Vertex) bool {
+func (g *base[T]) ContainsEdge(from, to *Vertex[T]) bool {
 	if from == nil || to == nil {
 		return false
 	}
 
-	if g.findVertex(from.id) == nil {
+	if g.findVertex(from.label) == nil {
 		return false
 	}
 
-	if g.findVertex(to.id) == nil {
+	if g.findVertex(to.label) == nil {
 		return false
 	}
 
-	if destMap, ok := g.edges[from.id]; ok {
-		if _, ok = destMap[to.id]; ok {
+	if destMap, ok := g.edges[from.label]; ok {
+		if _, ok = destMap[to.label]; ok {
 			return true
 		}
 	}
@@ -316,10 +316,10 @@ func (g *base) ContainsEdge(from, to *Vertex) bool {
 // ContainsVertex returns 'true' if this graph contains the specified vertex.
 //
 // If the specified vertex is nil, returns 'false'.
-func (g *base) ContainsVertex(v *Vertex) bool {
+func (g *base[T]) ContainsVertex(v *Vertex[T]) bool {
 	if v == nil {
 		return false
 	}
 
-	return g.findVertex(v.id) != nil
+	return g.findVertex(v.label) != nil
 }

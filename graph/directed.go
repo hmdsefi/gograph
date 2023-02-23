@@ -1,44 +1,44 @@
 package graph
 
-import "errors"
-
-var (
-	ErrNilVertices = errors.New("vertices are nil")
-)
-
 // directedGraph represents a directed graph. It stores a slice of
 // pointers to all vertices.
-type directedGraph struct {
-	*base
+type directedGraph[T comparable] struct {
+	*base[T]
 }
 
-func NewDirectedGraph() Graph {
-	return newDirectedGraph()
+func NewDirectedGraph[T comparable]() Graph[T] {
+	return newDirectedGraph[T]()
 }
 
-func newDirectedGraph() *directedGraph {
-	return &directedGraph{
-		base: newBaseGraph(),
+func newDirectedGraph[T comparable]() *directedGraph[T] {
+	return &directedGraph[T]{
+		base: newBaseGraph[T](),
 	}
 }
 
-// AddEdge adds a directed edges from the vertex with the 'from' id to
-// the vertex with the 'to' id by appending the 'to' vertex to the
+// AddEdge adds a directed edges from the vertex with the 'from' label to
+// the vertex with the 'to' label by appending the 'to' vertex to the
 // 'neighbors' slice of the 'from' vertex.
 //
 // It creates the input vertices if they don't exist in the graph.
 // If any of the specified vertices is nil, returns nil.
-func (g *directedGraph) AddEdge(from, to *Vertex) (*Edge, error) {
+// If edge already exist, returns error.
+func (g *directedGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 	if from == nil || to == nil {
 		return nil, ErrNilVertices
 	}
 
-	if g.findVertex(from.id) == nil {
+	if g.findVertex(from.label) == nil {
 		g.AddVertex(from)
 	}
 
-	if g.findVertex(to.id) == nil {
+	if g.findVertex(to.label) == nil {
 		g.AddVertex(to)
+	}
+
+	// prevent edge-multiplicity
+	if g.ContainsEdge(from, to) {
+		return nil, ErrEdgeAlreadyExists
 	}
 
 	from.neighbors = append(from.neighbors, to)

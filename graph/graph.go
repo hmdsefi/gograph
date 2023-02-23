@@ -1,24 +1,33 @@
 package graph
 
-type Graph interface {
-	AddEdge(from, to *Vertex) (*Edge, error)
+import "errors"
 
-	baseGraph
+var (
+	ErrNilVertices       = errors.New("vertices are nil")
+	ErrEdgeAlreadyExists = errors.New("edge already exists")
+	ErrDAGCycle          = errors.New("edges would create cycle")
+	ErrDAGHasCycle       = errors.New("the graph contains a cycle")
+)
+
+type Graph[T comparable] interface {
+	AddEdge(from, to *Vertex[T]) (*Edge[T], error)
+
+	baseGraph[T]
 }
 
-type baseGraph interface {
-	GetAllEdges(from, to *Vertex) []*Edge
-	GetEdge(from, to *Vertex) *Edge
-	EdgesOf(v *Vertex) []*Edge
-	RemoveEdges(edges ...*Edge)
+type baseGraph[T comparable] interface {
+	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
+	GetEdge(from, to *Vertex[T]) *Edge[T]
+	EdgesOf(v *Vertex[T]) []*Edge[T]
+	RemoveEdges(edges ...*Edge[T])
 
-	AddVertexWithID(id int) *Vertex
-	AddVertex(v *Vertex)
-	GetVertexByID(id int) *Vertex
-	GetAllVerticesByID(id ...int) []*Vertex
-	GetAllVertices() []*Vertex
-	RemoveVertices(vertices ...*Vertex)
+	AddVertexByLabel(label T) *Vertex[T]
+	AddVertex(v *Vertex[T])
+	GetVertexByID(label T) *Vertex[T]
+	GetAllVerticesByID(label ...T) []*Vertex[T]
+	GetAllVertices() []*Vertex[T]
+	RemoveVertices(vertices ...*Vertex[T])
 
-	ContainsEdge(from, to *Vertex) bool
-	ContainsVertex(v *Vertex) bool
+	ContainsEdge(from, to *Vertex[T]) bool
+	ContainsVertex(v *Vertex[T]) bool
 }
