@@ -40,7 +40,6 @@ func (g *dag[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 
 	// Add the new edges
 	from.neighbors = append(from.neighbors, to)
-	from.outDegree++
 	to.inDegree++
 
 	// If topological sort returns an error, new edges created a cycle
@@ -49,7 +48,6 @@ func (g *dag[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 		// Remove the new edges
 		from.neighbors = from.neighbors[:len(from.neighbors)-1]
 		to.inDegree--
-		from.outDegree--
 
 		return nil, ErrDAGCycle
 	}

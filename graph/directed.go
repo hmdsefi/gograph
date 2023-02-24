@@ -42,7 +42,6 @@ func (g *directedGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 	}
 
 	from.neighbors = append(from.neighbors, to)
-	from.outDegree++
 	to.inDegree++
 
 	return g.addToEdgeMap(from, to), nil

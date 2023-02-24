@@ -96,18 +96,16 @@ func TestDirectedGraph_RemoveEdges(t *testing.T) {
 
 	g.RemoveEdges(NewEdge(v4, v5))
 
-	assert.Equal(t, 0, v4.outDegree)
 	assert.Equal(t, 0, v5.inDegree)
+	assert.Len(t, v4.neighbors, 0)
 	assert.Len(t, v4.neighbors, 0)
 
 	_, existsV4 := g.edges[v4.label]
 	assert.False(t, existsV4)
 
 	g.RemoveEdges(NewEdge(v1, v2), NewEdge(v3, v4))
-	assert.Equal(t, 1, v1.outDegree)
 	assert.Equal(t, v3, v1.neighbors[0])
 	assert.Equal(t, 0, v2.inDegree)
-	assert.Equal(t, 0, v3.outDegree)
 	assert.Equal(t, 1, v4.inDegree)
 	assert.Len(t, v1.neighbors, 1)
 	assert.Len(t, v3.neighbors, 0)
@@ -146,7 +144,6 @@ func TestDirectedGraph_RemoveVertices(t *testing.T) {
 	require.NoError(t, err)
 
 	g.RemoveVertices(v2)
-	assert.Equal(t, 1, v1.outDegree)
 	assert.Equal(t, v3, v1.neighbors[0])
 	assert.Equal(t, 1, v4.inDegree)
 	assert.Len(t, v1.neighbors, 1)
@@ -161,7 +158,7 @@ func TestDirectedGraph_RemoveVertices(t *testing.T) {
 
 	g.RemoveVertices(v1, v5)
 	assert.Equal(t, 0, v3.inDegree)
-	assert.Equal(t, 0, v4.outDegree)
+	assert.Len(t, v4.neighbors, 0)
 
 	_, existsV1 = g.edges[v1.label]
 	assert.False(t, existsV1)

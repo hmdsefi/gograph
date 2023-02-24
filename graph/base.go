@@ -206,7 +206,6 @@ func (g *base[T]) removeNeighbor(sourceID, neighborLbl T) {
 	for i := range source.neighbors {
 		if source.neighbors[i].label == neighborLbl {
 			source.neighbors[i].inDegree--
-			source.outDegree--
 
 			if i == 0 {
 				source.neighbors = source.neighbors[1:]
