@@ -5,7 +5,6 @@ type Vertex[T comparable] struct {
 	label     T            // uniquely identifies each vertex
 	neighbors []*Vertex[T] //stores pointers to its neighbors
 	inDegree  int          // number of incoming edges to this vertex
-	outDegree int          // number of outgoing edges from this vertex
 }
 
 func NewVertex[T comparable](label T) *Vertex[T] {
@@ -41,4 +40,22 @@ func (v *Vertex[T]) InDegree() int {
 // OutDegree returns the number of outgoing edges to the current vertex.
 func (v *Vertex[T]) OutDegree() int {
 	return v.inDegree
+}
+
+// Neighbors returns a copy of neighbor slice. If the caller changed the
+// result slice, it won't impact the graph or the vertex.
+func (v *Vertex[T]) Neighbors() []*Vertex[T] {
+	var neighbors []*Vertex[T]
+	for i := range v.neighbors {
+		clone := &Vertex[T]{}
+		*clone = *v.neighbors[i]
+		neighbors = append(neighbors, clone)
+	}
+
+	return neighbors
+}
+
+// Label returns vertex label.
+func (v *Vertex[T]) Label() T {
+	return v.label
 }

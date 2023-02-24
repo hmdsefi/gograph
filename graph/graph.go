@@ -12,10 +12,10 @@ var (
 type Graph[T comparable] interface {
 	AddEdge(from, to *Vertex[T]) (*Edge[T], error)
 
-	baseGraph[T]
+	BaseGraph[T]
 }
 
-type baseGraph[T comparable] interface {
+type BaseGraph[T comparable] interface {
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 	GetEdge(from, to *Vertex[T]) *Edge[T]
 	EdgesOf(v *Vertex[T]) []*Edge[T]
