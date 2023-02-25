@@ -9,7 +9,7 @@ import (
 
 func TestBreadthFirstIterator(t *testing.T) {
 	// Create a new graph
-	g := graph.NewDirectedGraph[string]()
+	g := graph.New[string](graph.Directed())
 
 	// the example graph
 	//	A -> B -> C

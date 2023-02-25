@@ -8,7 +8,7 @@ import (
 )
 
 func TestAddVertex(t *testing.T) {
-	g := newDirectedGraph[string]()
+	g := newBaseGraph[string](newProperties(Directed()))
 	g.AddVertex(nil)
 	g.AddVertex(NewVertex("morocco"))
 	g.AddVertexByLabel("london")
@@ -18,7 +18,7 @@ func TestAddVertex(t *testing.T) {
 }
 
 func TestFindVertex(t *testing.T) {
-	g := newDirectedGraph[string]()
+	g := newBaseGraph[string](newProperties(Directed()))
 	v1 := g.AddVertexByLabel("morocco")
 	v2 := g.AddVertexByLabel("paris")
 	_, err := g.AddEdge(v1, v2)
@@ -29,8 +29,73 @@ func TestFindVertex(t *testing.T) {
 	assert.Nil(t, v)
 }
 
-func TestDirectedGraph_EdgesOf(t *testing.T) {
-	g := NewDirectedGraph[int]()
+func TestBaseGraph_AddEdgeDirected(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
+	_, err := g.AddEdge(NewVertex(0), nil)
+	assert.Error(t, err)
+
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	_, err = g.AddEdge(v1, v2)
+	assert.NoError(t, err)
+	assert.Len(t, g.vertices[v1.label].neighbors, 1)
+	assert.Len(t, g.vertices[v2.label].neighbors, 0)
+	assert.Len(t, g.edges, 1)
+
+	destMapV1, existsV1 := g.edges[v1.label]
+	assert.True(t, existsV1)
+	assert.Len(t, destMapV1, 1)
+	assert.Equal(t, v1, destMapV1[v2.label].source)
+	assert.Equal(t, v2, destMapV1[v2.label].dest)
+
+	// create the vertices if they don't exist
+	edge, err := g.AddEdge(NewVertex(3), NewVertex(4))
+	assert.NoError(t, err)
+	assert.Len(t, g.vertices[edge.source.label].neighbors, 1)
+	assert.Len(t, g.vertices[edge.dest.label].neighbors, 0)
+	assert.Len(t, g.edges, 2)
+
+	destMapV3, existsV3 := g.edges[edge.source.label]
+	assert.True(t, existsV3)
+	assert.Len(t, destMapV3, 1)
+	assert.Equal(t, edge.source, destMapV3[edge.dest.label].source)
+	assert.Equal(t, edge.dest, destMapV3[edge.dest.label].dest)
+}
+
+func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
+	// Create a new dag
+	g := newBaseGraph[int](newProperties(Acyclic()))
+
+	// Create three vertices with labels 1, 2, and 3
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	v3 := g.AddVertexByLabel(3)
+
+	// Add the vertices to the dag
+	g.AddVertex(v1)
+	g.AddVertex(v2)
+	g.AddVertex(v3)
+
+	// Add edges from 1 to 2 and from 2 to 3
+	_, err := g.AddEdge(v1, v2)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	_, err = g.AddEdge(v2, v3)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// Try to add an edges from 3 to 1, which should result in an error
+	_, err = g.AddEdge(v3, v1)
+	if err == nil {
+		t.Error("Expected error, but got none")
+	}
+}
+
+func TestBaseGraph_EdgesOf(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
@@ -76,8 +141,8 @@ func TestDirectedGraph_EdgesOf(t *testing.T) {
 	assert.Nil(t, edges)
 }
 
-func TestDirectedGraph_RemoveEdges(t *testing.T) {
-	g := newDirectedGraph[int]()
+func TestBaseGraph_RemoveEdges(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
@@ -121,8 +186,8 @@ func TestDirectedGraph_RemoveEdges(t *testing.T) {
 	assert.False(t, existsV2)
 }
 
-func TestDirectedGraph_RemoveVertices(t *testing.T) {
-	g := newDirectedGraph[int]()
+func TestBaseGraph_RemoveVertices(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
 
 	g.RemoveVertices(nil)
 	g.RemoveVertices(NewVertex(0))
@@ -167,8 +232,8 @@ func TestDirectedGraph_RemoveVertices(t *testing.T) {
 	assert.False(t, existsV4)
 }
 
-func TestDirectedGraph_ContainsEdge(t *testing.T) {
-	g := newDirectedGraph[int]()
+func TestBaseGraph_ContainsEdge(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
 
 	assert.False(t, g.ContainsEdge(nil, nil))
 
@@ -200,8 +265,8 @@ func TestDirectedGraph_ContainsEdge(t *testing.T) {
 
 }
 
-func TestDirectedGraph_ContainsVertex(t *testing.T) {
-	g := newDirectedGraph[int]()
+func TestBaseGraph_ContainsVertex(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 
 	assert.False(t, g.ContainsVertex(nil))
