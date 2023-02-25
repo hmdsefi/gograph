@@ -18,7 +18,7 @@ func newDepthFirstIterator[T comparable](g graph.Graph[T], start T) *depthFirstI
 		graph:   g,
 		start:   start,
 		stack:   []T{start},
-		visited: make(map[T]bool),
+		visited: map[T]bool{start: true},
 	}
 }
 
@@ -32,14 +32,12 @@ func (d *depthFirstIterator[T]) Next() *graph.Vertex[T] {
 	d.stack = d.stack[:len(d.stack)-1]
 	currentNode := d.graph.GetVertexByID(label)
 
-	// mark the vertex as visited
-	d.visited[label] = true
-
 	// add unvisited neighbors to the queue
 	neighbors := currentNode.Neighbors()
 	for _, neighbor := range neighbors {
 		if !d.visited[neighbor.Label()] {
 			d.stack = append(d.stack, neighbor.Label())
+			d.visited[neighbor.Label()] = true
 		}
 	}
 
@@ -58,5 +56,5 @@ func (d *depthFirstIterator[T]) Iterate(f func(v *graph.Vertex[T]) error) error 
 
 func (d *depthFirstIterator[T]) Reset() {
 	d.stack = []T{d.start}
-	d.visited = make(map[T]bool)
+	d.visited = map[T]bool{d.start: true}
 }
