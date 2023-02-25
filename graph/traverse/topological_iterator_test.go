@@ -8,7 +8,7 @@ import (
 
 func TestTopologyOrderIterator(t *testing.T) {
 	// create the graph
-	g := graph.New[int]()
+	g := graph.New[int](graph.Acyclic())
 
 	// add vertices to the graph
 	vertices := make(map[int]*graph.Vertex[int])

@@ -15,6 +15,14 @@ type baseGraph[T comparable] struct {
 	properties GraphProperties
 }
 
+func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
+	return &baseGraph[T]{
+		vertices:   make(map[T]*Vertex[T]),
+		edges:      make(map[T]map[T]*Edge[T]),
+		properties: properties,
+	}
+}
+
 // addToEdgeMap creates a new edge struct and adds it to the edges map inside
 // the baseGraph struct. Note that it doesn't add the neighbor to the source vertex.
 //
@@ -58,12 +66,6 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 	from.neighbors = append(from.neighbors, to)
 	to.inDegree++
 
-	// add "from" to the "to" vertex neighbor slice, if graph is undirected.
-	if !g.properties.isDirected {
-		to.neighbors = append(to.neighbors, from)
-		from.inDegree++
-	}
-
 	// prevent cycle creation, if graph is acyclic
 	if g.properties.isAcyclic {
 		// If topological sort returns an error, new edges created a cycle
@@ -75,6 +77,14 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 
 			return nil, ErrDAGCycle
 		}
+	}
+
+	// add "from" to the "to" vertex neighbor slice, if graph is undirected.
+	if !g.properties.isDirected {
+		to.neighbors = append(to.neighbors, from)
+		from.inDegree++
+
+		g.addToEdgeMap(to, from)
 	}
 
 	return g.addToEdgeMap(from, to), nil

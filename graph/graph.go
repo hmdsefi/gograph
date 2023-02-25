@@ -28,19 +28,10 @@ type Graph[T comparable] interface {
 }
 
 func New[T comparable](options ...GraphOptionFunc) Graph[T] {
-	var properties GraphProperties
-	for _, option := range options {
-		option(&properties)
-	}
-
-	base := &baseGraph[T]{
-		vertices:   make(map[T]*Vertex[T]),
-		edges:      make(map[T]map[T]*Edge[T]),
-		properties: properties,
-	}
+	base := newBaseGraph[T](newProperties(options...))
 
 	switch {
-	case !properties.isDirected:
+	case !base.properties.isDirected:
 		return &undirected[T]{baseGraph: base}
 	default:
 		return base

@@ -8,7 +8,7 @@ import (
 )
 
 func TestAddVertex(t *testing.T) {
-	g := New[string]()
+	g := newBaseGraph[string](newProperties(Directed()))
 	g.AddVertex(nil)
 	g.AddVertex(NewVertex("morocco"))
 	g.AddVertexByLabel("london")
@@ -18,7 +18,7 @@ func TestAddVertex(t *testing.T) {
 }
 
 func TestFindVertex(t *testing.T) {
-	g := New[string]()
+	g := newBaseGraph[string](newProperties(Directed()))
 	v1 := g.AddVertexByLabel("morocco")
 	v2 := g.AddVertexByLabel("paris")
 	_, err := g.AddEdge(v1, v2)
@@ -30,7 +30,7 @@ func TestFindVertex(t *testing.T) {
 }
 
 func TestBaseGraph_AddEdgeDirected(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 	_, err := g.AddEdge(NewVertex(0), nil)
 	assert.Error(t, err)
 
@@ -62,9 +62,9 @@ func TestBaseGraph_AddEdgeDirected(t *testing.T) {
 	assert.Equal(t, edge.dest, destMapV3[edge.dest.label].dest)
 }
 
-func TestBaseGraph_AddEdge(t *testing.T) {
+func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
 	// Create a new dag
-	g := New[int](Acyclic())
+	g := newBaseGraph[int](newProperties(Acyclic()))
 
 	// Create three vertices with labels 1, 2, and 3
 	v1 := g.AddVertexByLabel(1)
@@ -95,7 +95,7 @@ func TestBaseGraph_AddEdge(t *testing.T) {
 }
 
 func TestBaseGraph_EdgesOf(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
@@ -142,7 +142,7 @@ func TestBaseGraph_EdgesOf(t *testing.T) {
 }
 
 func TestBaseGraph_RemoveEdges(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
@@ -187,7 +187,7 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 }
 
 func TestBaseGraph_RemoveVertices(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 
 	g.RemoveVertices(nil)
 	g.RemoveVertices(NewVertex(0))
@@ -233,7 +233,7 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 }
 
 func TestBaseGraph_ContainsEdge(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 
 	assert.False(t, g.ContainsEdge(nil, nil))
 
@@ -266,7 +266,7 @@ func TestBaseGraph_ContainsEdge(t *testing.T) {
 }
 
 func TestBaseGraph_ContainsVertex(t *testing.T) {
-	g := New[int]()
+	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 
 	assert.False(t, g.ContainsVertex(nil))
