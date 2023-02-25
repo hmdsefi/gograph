@@ -19,7 +19,7 @@ func newBreadthFirstIterator[T comparable](g graph.Graph[T], start T) *breadthFi
 		graph:   g,
 		start:   start,
 		queue:   []T{start},
-		visited: make(map[T]bool),
+		visited: map[T]bool{start: true},
 		head:    -1,
 	}
 }
@@ -29,12 +29,14 @@ func (d *breadthFirstIterator[T]) HasNext() bool {
 }
 
 func (d *breadthFirstIterator[T]) Next() *graph.Vertex[T] {
+	if !d.HasNext() {
+		return nil
+	}
+
 	d.head++
 
 	// get the next vertex from the queue
 	currentNode := d.graph.GetVertexByID(d.queue[d.head])
-
-	// mark the vertex as visited
 
 	// add unvisited neighbors to the queue
 	neighbors := currentNode.Neighbors()
@@ -61,5 +63,5 @@ func (d *breadthFirstIterator[T]) Iterate(f func(v *graph.Vertex[T]) error) erro
 func (d *breadthFirstIterator[T]) Reset() {
 	d.queue = []T{d.start}
 	d.head = -1
-	d.visited = make(map[T]bool)
+	d.visited = map[T]bool{d.start: true}
 }

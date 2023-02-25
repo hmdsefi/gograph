@@ -10,6 +10,8 @@ var (
 )
 
 type Graph[T comparable] interface {
+	GraphType
+
 	AddEdge(from, to *Vertex[T]) (*Edge[T], error)
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 	GetEdge(from, to *Vertex[T]) *Edge[T]
