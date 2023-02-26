@@ -27,8 +27,8 @@ func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
 // the baseGraph struct. Note that it doesn't add the neighbor to the source vertex.
 //
 // It returns the created edge.
-func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T]) *Edge[T] {
-	edge := NewEdge(from, to)
+func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
+	edge := NewEdge(from, to, options...)
 	if _, ok := g.edges[from.label]; !ok {
 		g.edges[from.label] = map[T]*Edge[T]{to.label: edge}
 	} else {
@@ -45,7 +45,7 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T]) *Edge[T] {
 // It creates the input vertices if they don't exist in the graph.
 // If any of the specified vertices is nil, returns nil.
 // If edge already exist, returns error.
-func (g *baseGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
+func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (*Edge[T], error) {
 	if from == nil || to == nil {
 		return nil, ErrNilVertices
 	}
@@ -84,17 +84,22 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T]) (*Edge[T], error) {
 		to.neighbors = append(to.neighbors, from)
 		from.inDegree++
 
-		g.addToEdgeMap(to, from)
+		g.addToEdgeMap(to, from, options...)
 	}
 
-	return g.addToEdgeMap(from, to), nil
+	return g.addToEdgeMap(from, to, options...), nil
 }
 
 // AddVertexByLabel adds a new vertex with the given label to the graph.
 // If there is a vertex with the same label in the graph, returns nil.
 // Otherwise, returns the created vertex.
-func (g *baseGraph[T]) AddVertexByLabel(label T) *Vertex[T] {
-	v := g.addVertex(&Vertex[T]{label: label})
+func (g *baseGraph[T]) AddVertexByLabel(label T, options ...VertexOptionFunc) *Vertex[T] {
+	var properties VertexProperties
+	for _, option := range options {
+		option(&properties)
+	}
+
+	v := g.addVertex(&Vertex[T]{label: label, properties: properties})
 
 	return v
 }

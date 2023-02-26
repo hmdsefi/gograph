@@ -35,3 +35,27 @@ func Weighted() GraphOptionFunc {
 		properties.isWeighted = true
 	}
 }
+
+type EdgeOptionFunc func(properties *EdgeProperties)
+
+type EdgeProperties struct {
+	weight float64
+}
+
+func WithVertexWeight(weight float64) EdgeOptionFunc {
+	return func(properties *EdgeProperties) {
+		properties.weight = weight
+	}
+}
+
+type VertexOptionFunc func(properties *VertexProperties)
+
+type VertexProperties struct {
+	weight float64
+}
+
+func WithEdgeWeight(weight float64) VertexOptionFunc {
+	return func(properties *VertexProperties) {
+		properties.weight = weight
+	}
+}
