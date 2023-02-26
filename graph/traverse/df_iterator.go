@@ -27,6 +27,10 @@ func (d *depthFirstIterator[T]) HasNext() bool {
 }
 
 func (d *depthFirstIterator[T]) Next() *graph.Vertex[T] {
+	if !d.HasNext() {
+		return nil
+	}
+
 	// get the next vertex from the queue
 	label := d.stack[len(d.stack)-1]
 	d.stack = d.stack[:len(d.stack)-1]

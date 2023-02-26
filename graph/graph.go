@@ -12,13 +12,13 @@ var (
 type Graph[T comparable] interface {
 	GraphType
 
-	AddEdge(from, to *Vertex[T]) (*Edge[T], error)
+	AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (*Edge[T], error)
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 	GetEdge(from, to *Vertex[T]) *Edge[T]
 	EdgesOf(v *Vertex[T]) []*Edge[T]
 	RemoveEdges(edges ...*Edge[T])
 
-	AddVertexByLabel(label T) *Vertex[T]
+	AddVertexByLabel(label T, options ...VertexOptionFunc) *Vertex[T]
 	AddVertex(v *Vertex[T])
 	GetVertexByID(label T) *Vertex[T]
 	GetAllVerticesByID(label ...T) []*Vertex[T]
@@ -42,22 +42,37 @@ func New[T comparable](options ...GraphOptionFunc) Graph[T] {
 
 // Edge represents an edges in a graph. It contains start and end points.
 type Edge[T comparable] struct {
-	source *Vertex[T] // start point of the edges
-	dest   *Vertex[T] // destination or end point of the edges
+	source     *Vertex[T] // start point of the edges
+	dest       *Vertex[T] // destination or end point of the edges
+	properties EdgeProperties
 }
 
-func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T]) *Edge[T] {
-	return &Edge[T]{source: source, dest: dest}
+func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
+	var properties EdgeProperties
+	for _, option := range options {
+		option(&properties)
+	}
+
+	return &Edge[T]{
+		source:     source,
+		dest:       dest,
+		properties: properties,
+	}
+}
+
+func (e *Edge[T]) Weight() float64 {
+	return e.properties.weight
 }
 
 // Vertex represents a node or point in a graph
 type Vertex[T comparable] struct {
-	label     T            // uniquely identifies each vertex
-	neighbors []*Vertex[T] //stores pointers to its neighbors
-	inDegree  int          // number of incoming edges to this vertex
+	label      T            // uniquely identifies each vertex
+	neighbors  []*Vertex[T] // stores pointers to its neighbors
+	inDegree   int          // number of incoming edges to this vertex
+	properties VertexProperties
 }
 
-func NewVertex[T comparable](label T) *Vertex[T] {
+func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
 	return &Vertex[T]{label: label}
 }
 
