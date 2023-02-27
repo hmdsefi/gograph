@@ -1,15 +1,14 @@
 package traverse
 
 import (
+	"github.com/hmdsefi/gograph"
 	"reflect"
 	"testing"
-
-	"github.com/hmdsefi/gograph/graph"
 )
 
-func TestBreadthFirstIterator(t *testing.T) {
+func TestDepthFirstIterator(t *testing.T) {
 	// Create a new graph
-	g := graph.New[string]()
+	g := gograph.New[string](gograph.Directed())
 
 	// the example graph
 	//	A -> B -> C
@@ -17,7 +16,7 @@ func TestBreadthFirstIterator(t *testing.T) {
 	//	v    v    v
 	//	D -> E -> F
 
-	vertices := map[string]*graph.Vertex[string]{
+	vertices := map[string]*gograph.Vertex[string]{
 		"A": g.AddVertexByLabel("A"),
 		"B": g.AddVertexByLabel("B"),
 		"C": g.AddVertexByLabel("C"),
@@ -36,8 +35,8 @@ func TestBreadthFirstIterator(t *testing.T) {
 	_, _ = g.AddEdge(vertices["E"], vertices["F"])
 
 	// Test depth first iteration
-	iter := newBreadthFirstIterator[string](g, "A")
-	expected := []string{"A", "B", "D", "C", "E", "F"}
+	iter := NewDepthFirstIterator[string](g, "A")
+	expected := []string{"A", "D", "E", "F", "B", "C"}
 
 	for i, label := range expected {
 		if !iter.HasNext() {
@@ -68,7 +67,7 @@ func TestBreadthFirstIterator(t *testing.T) {
 	// test Iterate method
 	iter.Reset()
 	var ordered []string
-	err := iter.Iterate(func(vertex *graph.Vertex[string]) error {
+	err := iter.Iterate(func(vertex *gograph.Vertex[string]) error {
 		ordered = append(ordered, vertex.Label())
 		return nil
 	})

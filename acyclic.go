@@ -1,4 +1,4 @@
-package graph
+package gograph
 
 // TopologySort performs a topological sort of the graph using
 // Kahn's algorithm. If the sorted list of vertices does not contain

@@ -1,19 +1,21 @@
 package traverse
 
-import "github.com/hmdsefi/gograph/graph"
+import (
+	"github.com/hmdsefi/gograph"
+)
 
 type depthFirstIterator[T comparable] struct {
-	graph   graph.Graph[T]
+	graph   gograph.Graph[T]
 	start   T
 	stack   []T
 	visited map[T]bool
 }
 
-func NewDepthFirstIterator[T comparable](g graph.Graph[T], start T) Iterator[T] {
+func NewDepthFirstIterator[T comparable](g gograph.Graph[T], start T) Iterator[T] {
 	return newDepthFirstIterator[T](g, start)
 }
 
-func newDepthFirstIterator[T comparable](g graph.Graph[T], start T) *depthFirstIterator[T] {
+func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirstIterator[T] {
 	return &depthFirstIterator[T]{
 		graph:   g,
 		start:   start,
@@ -26,7 +28,7 @@ func (d *depthFirstIterator[T]) HasNext() bool {
 	return len(d.stack) > 0
 }
 
-func (d *depthFirstIterator[T]) Next() *graph.Vertex[T] {
+func (d *depthFirstIterator[T]) Next() *gograph.Vertex[T] {
 	if !d.HasNext() {
 		return nil
 	}
@@ -48,7 +50,7 @@ func (d *depthFirstIterator[T]) Next() *graph.Vertex[T] {
 	return currentNode
 }
 
-func (d *depthFirstIterator[T]) Iterate(f func(v *graph.Vertex[T]) error) error {
+func (d *depthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {
 	for d.HasNext() {
 		if err := f(d.Next()); err != nil {
 			return err
