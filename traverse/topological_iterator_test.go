@@ -1,17 +1,17 @@
 package traverse
 
 import (
-	"github.com/hmdsefi/gograph/graph"
+	"github.com/hmdsefi/gograph"
 	"reflect"
 	"testing"
 )
 
 func TestTopologyOrderIterator(t *testing.T) {
 	// create the graph
-	g := graph.New[int](graph.Acyclic())
+	g := gograph.New[int](gograph.Acyclic())
 
 	// add vertices to the graph
-	vertices := make(map[int]*graph.Vertex[int])
+	vertices := make(map[int]*gograph.Vertex[int])
 	for i := 1; i <= 6; i++ {
 		vertices[i] = g.AddVertexByLabel(i)
 	}
@@ -62,7 +62,7 @@ func TestTopologyOrderIterator(t *testing.T) {
 	// test Iterate method
 	iterator.Reset()
 	var ordered []int
-	err = iterator.Iterate(func(vertex *graph.Vertex[int]) error {
+	err = iterator.Iterate(func(vertex *gograph.Vertex[int]) error {
 		ordered = append(ordered, vertex.Label())
 		return nil
 	})

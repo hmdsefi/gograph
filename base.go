@@ -1,7 +1,10 @@
-package graph
+package gograph
 
-// baseGraph represents a basic graph. It stores a slice of
-// pointers to all vertices.
+// baseGraph represents a basic implementation of Graph interface. It
+// supports multiple types of graph.
+//
+// This implementation is not safe for concurrent read/write from different
+// goroutines. If two goroutines try to modify the same graph it raises panic.
 type baseGraph[T comparable] struct {
 	// vertices is a map of vertices of the graph. the key of the map
 	// is the vertex label.
@@ -38,9 +41,12 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFu
 	return edge
 }
 
-// AddEdge adds a directed edges from the vertex with the 'from' label to
+// AddEdge adds and edge from the vertex with the 'from' label to
 // the vertex with the 'to' label by appending the 'to' vertex to the
-// 'neighbors' slice of the 'from' vertex.
+// 'neighbors' slice of the 'from' vertex, in directed graph.
+//
+// In undirected graph, it creates edges in both directions between
+// the specified vertices.
 //
 // It creates the input vertices if they don't exist in the graph.
 // If any of the specified vertices is nil, returns nil.
@@ -91,6 +97,9 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 }
 
 // AddVertexByLabel adds a new vertex with the given label to the graph.
+// Label of the vertex is a comparable type. This method also accepts the
+// vertex properties such as weight.
+//
 // If there is a vertex with the same label in the graph, returns nil.
 // Otherwise, returns the created vertex.
 func (g *baseGraph[T]) AddVertexByLabel(label T, options ...VertexOptionFunc) *Vertex[T] {
@@ -131,6 +140,8 @@ func (g *baseGraph[T]) findVertex(label T) *Vertex[T] {
 // GetAllEdges returns a slice of all edges connecting source vertex to
 // target vertex if such vertices exist in this graph.
 //
+// In directed graph, it returns a single edge.
+//
 // If any of the specified vertices is nil, returns nil.
 // If any of the vertices does not exist, returns nil.
 // If both vertices exist but no edges found, returns an empty set.
@@ -148,13 +159,19 @@ func (g *baseGraph[T]) GetAllEdges(from, to *Vertex[T]) []*Edge[T] {
 	}
 
 	var edges []*Edge[T]
-	destMap, ok := g.edges[from.label]
-	if !ok {
-		return edges
+
+	if destMap, ok := g.edges[from.label]; ok {
+		if edge, ok := destMap[to.label]; ok {
+			edges = append(edges, edge)
+		}
 	}
 
-	for destID := range destMap {
-		edges = append(edges, destMap[destID])
+	if !g.IsDirected() {
+		if destMap, ok := g.edges[to.label]; ok {
+			if edge, ok := destMap[from.label]; ok {
+				edges = append(edges, edge)
+			}
+		}
 	}
 
 	return edges
@@ -162,6 +179,9 @@ func (g *baseGraph[T]) GetAllEdges(from, to *Vertex[T]) []*Edge[T] {
 
 // GetEdge returns an edge connecting source vertex to target vertex
 // if such vertices and such edge exist in this graph.
+//
+// In undirected graph, returns only the edge from the "from" vertex to
+// the "to" vertex.
 //
 // If any of the specified vertices is nil, returns nil.
 // If edge does not exist, returns nil.
@@ -186,7 +206,7 @@ func (g *baseGraph[T]) GetEdge(from, to *Vertex[T]) *Edge[T] {
 }
 
 // EdgesOf returns a slice of all edges touching the specified vertex.
-// If no edges are touching the specified vertex returns an empty set.
+// If no edges are touching the specified vertex returns an empty slice.
 //
 // If the input vertex is nil, returns nil.
 // If the input vertex does not exist, returns nil.
@@ -225,10 +245,23 @@ func (g *baseGraph[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
 	return edges
 }
 
-// RemoveEdges removes input edges from the graph if they exist.
+// RemoveEdges removes input edges from the graph from the specified
+// slice of edges, if they exist.
 func (g *baseGraph[T]) RemoveEdges(edges ...*Edge[T]) {
 	for i := range edges {
-		g.removeEdge(edges[i])
+		g.removeAllEdges(edges[i])
+	}
+}
+
+// removeAllEdges removes edges in both directions between the
+// source and dest vertices in the specified edge, if the graph
+// is undirected. Otherwise, removes the edge from the source to
+// the dest only.
+func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
+	g.removeEdge(edge)
+
+	if !g.IsDirected() {
+		g.removeEdge(NewEdge(edge.dest, edge.source))
 	}
 }
 
@@ -287,7 +320,7 @@ func (g *baseGraph[T]) GetVertexByID(label T) *Vertex[T] {
 	return g.findVertex(label)
 }
 
-// GetAllVerticesByID returns a slice of vertices with the input label list.
+// GetAllVerticesByID returns a slice of vertices with the specified label list.
 //
 // If vertex doesn't exist, doesn't add nil to the output list.
 func (g *baseGraph[T]) GetAllVerticesByID(idList ...T) []*Vertex[T] {
@@ -330,13 +363,15 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 		return
 	}
 
-	for i := range v.neighbors {
-		v.neighbors[i].inDegree--
+	if g.IsDirected() {
+		for i := range v.neighbors {
+			v.neighbors[i].inDegree--
+		}
 	}
 
 	for sourceID := range g.edges {
 		if edge, ok := g.edges[sourceID][v.label]; ok {
-			g.removeEdge(edge)
+			g.removeAllEdges(edge)
 			delete(g.edges[sourceID], v.label)
 		}
 	}
