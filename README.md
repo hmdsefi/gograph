@@ -4,7 +4,7 @@
 <br/>
 <p>GoGraph is a golang generic graph library that provides mathematical graph-theory and algorithms. It can be used as an external library in production.</p> 
 <p>It is also a good material for learning graph-theory for the students or the people who want to get prepare for the interview.</p>
-<br/><br/><br/><br/>
+<br/><br/><br/>
 
 ## Table of Contents
 
