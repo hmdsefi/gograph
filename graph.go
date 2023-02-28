@@ -111,6 +111,7 @@ type Graph[T comparable] interface {
 	ContainsVertex(v *Vertex[T]) bool
 }
 
+// New creates a new instance of base graph that implemented the Graph interface.
 func New[T comparable](options ...GraphOptionFunc) Graph[T] {
 	return newBaseGraph[T](newProperties(options...))
 }
