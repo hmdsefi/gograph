@@ -1,5 +1,5 @@
 # gograph
-<img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%;float:right" title="gograph"/>
+<img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%" align="right" title="gograph"/>
 
 <p style="width:60%;padding-top:5%">GoGraph is a golang generic graph library that provides mathematical graph-theory and algorithms. It can be used as an external library in production. 
 
