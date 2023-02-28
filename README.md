@@ -6,8 +6,6 @@
 It is also a good material for learning graph-theory for the students or the people who want to get prepare for the interview.</p>
 
 
-<p style="width:60%;padding-top:10px"></p>
----
 ## Table of Contents
 
 * [Install](#Install)
