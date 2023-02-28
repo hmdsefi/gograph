@@ -1,14 +1,12 @@
 # gograph
-<div style="display:inline-block">
-<img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%;float:right" title="gograph" />
+<img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%;float:right" title="gograph"/>
 
 <p style="width:60%;padding-top:5%">GoGraph is a golang generic graph library that provides mathematical graph-theory and algorithms. It can be used as an external library in production. 
 
-It is also a good material for learning graph-theory for the students or the people whowant to get prepare for the interview.</p>
+It is also a good material for learning graph-theory for the students or the people who want to get prepare for the interview.</p>
 
 
-</div>
-
+<p style="width:60%;padding-top:10px"></p>
 ---
 ## Table of Contents
 
