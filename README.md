@@ -1,13 +1,14 @@
 ![build](https://github.com/hmdsefi/gograph/actions/workflows/build.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hmdsefi/gograph)](https://goreportcard.com/report/github.com/hmdsefi/gograph)
+[![codecov](https://codecov.io/gh/hmdsefi/gograph/branch/master/graph/badge.svg?token=BstHl9wXTN)](https://codecov.io/gh/hmdsefi/gograph)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 # gograph
 
 <img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%" align="right" title="gograph"/>
 <br/>
 <br/>
-<p>GoGraph is a golang generic graph library that provides mathematical graph-theory and algorithms. It can be used as an external library in production.</p> 
-<p>It is also a good material for learning graph-theory for the students or the people who want to get prepare for the interview.</p>
+<p>GoGraph is a Golang generic graph library that provides mathematical graph theory and algorithms. It can be used as an external library in production.</p> 
+<p>In addition, it is a helpful resource for those who want to prepare for interviews.</p>
 <br/><br/><br/>
 
 ## Table of Contents
