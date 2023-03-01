@@ -1,6 +1,5 @@
 ![build](https://github.com/hmdsefi/gograph/actions/workflows/build.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hmdsefi/gograph)](https://goreportcard.com/report/github.com/hmdsefi/gograph)
-[![codecov](https://codecov.io/gh/hmdsefi/gograph/branch/master/graph/badge.svg?token=BstHl9wXTN)](https://codecov.io/gh/hmdsefi/gograph)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 # gograph
 
