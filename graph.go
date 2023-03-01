@@ -152,11 +152,11 @@ func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
 	return &Vertex[T]{label: label}
 }
 
-// NeighborByID iterates over the neighbor slice and returns the
+// NeighborByLabel iterates over the neighbor slice and returns the
 // vertex which its label is equal to the input label.
 //
 // It returns nil if there is no neighbor with that label.
-func (v *Vertex[T]) NeighborByID(label T) *Vertex[T] {
+func (v *Vertex[T]) NeighborByLabel(label T) *Vertex[T] {
 	for i := range v.neighbors {
 		if v.neighbors[i].label == label {
 			return v.neighbors[i]
@@ -170,7 +170,7 @@ func (v *Vertex[T]) NeighborByID(label T) *Vertex[T] {
 // current node or not. It returns 'true' if it finds the input
 // in the neighbors. Otherwise, returns 'false'.
 func (v *Vertex[T]) HasNeighbor(vertex *Vertex[T]) bool {
-	return v.NeighborByID(vertex.label) != nil
+	return v.NeighborByLabel(vertex.label) != nil
 }
 
 // InDegree returns the number of incoming edges to the current vertex.
@@ -180,7 +180,7 @@ func (v *Vertex[T]) InDegree() int {
 
 // OutDegree returns the number of outgoing edges to the current vertex.
 func (v *Vertex[T]) OutDegree() int {
-	return v.inDegree
+	return len(v.neighbors)
 }
 
 // Neighbors returns a copy of neighbor slice. If the caller changed the
@@ -199,4 +199,9 @@ func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 // Label returns vertex label.
 func (v *Vertex[T]) Label() T {
 	return v.label
+}
+
+// Weight returns vertex label.
+func (v *Vertex[T]) Weight() float64 {
+	return v.properties.weight
 }

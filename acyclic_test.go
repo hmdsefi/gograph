@@ -8,6 +8,15 @@ import (
 func TestDAG_TopologySort(t *testing.T) {
 	// Create a dag with 6 vertices and 6 edges
 	g := New[int](Acyclic())
+
+	if !g.IsDirected() {
+		t.Error(testErrMsgNotTrue)
+	}
+
+	if !g.IsAcyclic() {
+		t.Error(testErrMsgNotTrue)
+	}
+
 	v0 := g.AddVertexByLabel(0)
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)

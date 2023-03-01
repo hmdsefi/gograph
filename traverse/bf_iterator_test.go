@@ -1,6 +1,7 @@
 package traverse
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestBreadthFirstIterator(t *testing.T) {
 	_, _ = g.AddEdge(vertices["E"], vertices["F"])
 
 	// Test depth first iteration
-	iter := newBreadthFirstIterator[string](g, "A")
+	iter := NewBreadthFirstIterator[string](g, "A")
 	expected := []string{"A", "B", "D", "C", "E", "F"}
 
 	for i, label := range expected {
@@ -54,13 +55,18 @@ func TestBreadthFirstIterator(t *testing.T) {
 		t.Error("Expected iter.HasNext() to be false, but it was true")
 	}
 
+	v := iter.Next()
+	if v != nil {
+		t.Errorf("Expected nil, but got %+v", v)
+	}
+
 	// test the Reset method
 	iter.Reset()
 	if !iter.HasNext() {
 		t.Error("Expected iter.HasNext() to be true, but it was false after reset")
 	}
 
-	v := iter.Next()
+	v = iter.Next()
 	if v.Label() != "A" {
 		t.Errorf("Expected iter.Next().Label() to be %s, but got %s", "A", v.Label())
 	}
@@ -79,5 +85,18 @@ func TestBreadthFirstIterator(t *testing.T) {
 	if !reflect.DeepEqual(expected, ordered) {
 		t.Errorf("Expect same vertex order, but got different one expected: %v, actual: %v",
 			expected, ordered)
+	}
+
+	iter.Reset()
+	expectedErr := errors.New("something went wrong")
+	err = iter.Iterate(func(vertex *gograph.Vertex[string]) error {
+		return expectedErr
+	})
+	if err == nil {
+		t.Error("Expect iter.Iterate(func) returns error, but got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
 	}
 }
