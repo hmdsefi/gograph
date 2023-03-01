@@ -1,9 +1,10 @@
 package traverse
 
 import (
-	"github.com/hmdsefi/gograph"
 	"reflect"
 	"testing"
+
+	"github.com/hmdsefi/gograph"
 )
 
 func TestBreadthFirstIterator(t *testing.T) {

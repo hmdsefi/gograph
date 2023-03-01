@@ -65,7 +65,7 @@ type Graph[T comparable] interface {
 
 	// RemoveEdges removes input edges from the graph from the specified
 	// slice of edges, if they exist. In undirected graph, removes edges
-	//in both directions.
+	// in both directions.
 	RemoveEdges(edges ...*Edge[T])
 
 	// AddVertexByLabel adds a new vertex with the given label to the graph.
