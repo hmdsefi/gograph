@@ -37,7 +37,7 @@ func TestBreadthFirstIterator(t *testing.T) {
 	_, _ = g.AddEdge(vertices["E"], vertices["F"])
 
 	// Test depth first iteration
-	iter := newBreadthFirstIterator[string](g, "A")
+	iter := NewBreadthFirstIterator[string](g, "A")
 	expected := []string{"A", "B", "D", "C", "E", "F"}
 
 	for i, label := range expected {

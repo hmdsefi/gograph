@@ -740,3 +740,78 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 		t.Error(testErrMsgNotTrue)
 	}
 }
+
+func TestBaseGraph_GetAllEdges(t *testing.T) {
+	g := newBaseGraph[int](newProperties())
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	v3 := g.AddVertexByLabel(3)
+	_, err := g.AddEdge(v1, v2)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+	_, err = g.AddEdge(v1, v3)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
+	_, err = g.AddEdge(v1, v3)
+	if err == nil {
+		t.Error(testErrMsgNoError)
+	}
+
+	edges := g.GetAllEdges(v1, v2)
+	if len(edges) != 2 {
+		t.Errorf(testErrMsgWrongLen, 2, len(edges))
+	}
+
+	edges = g.GetAllEdges(v2, v1)
+	if len(edges) != 2 {
+		t.Errorf(testErrMsgWrongLen, 2, len(edges))
+	}
+
+	edges = g.GetAllEdges(v2, v3)
+	if len(edges) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(edges))
+	}
+
+	edges = g.GetAllEdges(v2, nil)
+	if edges != nil {
+		t.Errorf("Expected nil, but got %+v", edges)
+	}
+
+	edges = g.GetAllEdges(v2, NewVertex(4))
+	if edges != nil {
+		t.Errorf("Expected nil, but got %+v", edges)
+	}
+}
+
+func TestBaseGraph_GetEdge(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	e, err := g.AddEdge(v1, v2)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
+	edge := g.GetEdge(v1, v2)
+	if !reflect.DeepEqual(e, edge) {
+		t.Errorf(testErrMsgNotEqual, e, edge)
+	}
+
+	edge = g.GetEdge(v2, v1)
+	if edge != nil {
+		t.Errorf("Expected nil, but got %+v", edge)
+	}
+
+	edge = g.GetEdge(v2, nil)
+	if edge != nil {
+		t.Errorf("Expected nil, but got %+v", edge)
+	}
+
+	edge = g.GetEdge(v2, NewVertex(4))
+	if edge != nil {
+		t.Errorf("Expected nil, but got %+v", edge)
+	}
+}

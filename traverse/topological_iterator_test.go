@@ -95,3 +95,21 @@ func TestTopologyOrderIterator(t *testing.T) {
 		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
 	}
 }
+
+func TestTopologyOrderIterator_NotAcyclic(t *testing.T) {
+	g1 := gograph.New[int](gograph.Directed())
+
+	_, _ = g1.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
+	_, _ = g1.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
+	_, _ = g1.AddEdge(gograph.NewVertex(3), gograph.NewVertex(1))
+
+	// create the topology order iterator
+	_, err := NewTopologicalIterator[int](g1)
+	if err == nil {
+		t.Error("Expect error, but got nil")
+	}
+
+	g2 := gograph.New[int](gograph.Directed())
+	_, _ = g2.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
+	_, _ = g2.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
+}
