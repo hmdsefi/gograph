@@ -1,10 +1,17 @@
 package gograph
 
 import (
+	"reflect"
 	"testing"
+)
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+const (
+	testErrMsgError    = "expected no error, but got %s"
+	testErrMsgNoError  = "expected error, but got no error"
+	testErrMsgWrongLen = "expected len %d, but got %d"
+	testErrMsgNotFalse = "expected false, but got true"
+	testErrMsgNotTrue  = "expected true, but got false"
+	testErrMsgNotEqual = "expected %+v, but got %+v"
 )
 
 func TestAddVertex(t *testing.T) {
@@ -14,7 +21,9 @@ func TestAddVertex(t *testing.T) {
 	g.AddVertexByLabel("london")
 	g.AddVertexByLabel("berlin")
 	g.AddVertexByLabel("paris")
-	assert.Len(t, g.vertices, 4)
+	if len(g.vertices) != 4 {
+		t.Errorf(testErrMsgWrongLen, 4, len(g.vertices))
+	}
 }
 
 func TestFindVertex(t *testing.T) {
@@ -22,44 +31,92 @@ func TestFindVertex(t *testing.T) {
 	v1 := g.AddVertexByLabel("morocco")
 	v2 := g.AddVertexByLabel("paris")
 	_, err := g.AddEdge(v1, v2)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	v := g.findVertex("morocco")
-	assert.Equal(t, v1.label, v.label)
+	if v1.label != v.Label() {
+		t.Errorf(testErrMsgNotEqual, v1.label, v.label)
+	}
+
 	v = g.findVertex("london")
-	assert.Nil(t, v)
+	if v != nil {
+		t.Errorf("expected nil vertex, but got %+v", v)
+	}
 }
 
 func TestBaseGraph_AddEdgeDirected(t *testing.T) {
 	g := newBaseGraph[int](newProperties(Directed()))
 	_, err := g.AddEdge(NewVertex(0), nil)
-	assert.Error(t, err)
+	if err == nil {
+		t.Error(testErrMsgNoError)
+	}
 
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	_, err = g.AddEdge(v1, v2)
-	assert.NoError(t, err)
-	assert.Len(t, g.vertices[v1.label].neighbors, 1)
-	assert.Len(t, g.vertices[v2.label].neighbors, 0)
-	assert.Len(t, g.edges, 1)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
+	if len(g.vertices[v1.label].neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(g.vertices[v1.label].neighbors))
+	}
+
+	if len(g.vertices[v2.label].neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(g.vertices[v2.label].neighbors))
+	}
+
+	if len(g.edges) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(g.edges))
+	}
 
 	destMapV1, existsV1 := g.edges[v1.label]
-	assert.True(t, existsV1)
-	assert.Len(t, destMapV1, 1)
-	assert.Equal(t, v1, destMapV1[v2.label].source)
-	assert.Equal(t, v2, destMapV1[v2.label].dest)
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
+
+	if !reflect.DeepEqual(v1, destMapV1[v2.label].source) {
+		t.Errorf(testErrMsgNotEqual, v1, destMapV1[v2.label].source)
+	}
+	if !reflect.DeepEqual(v2, destMapV1[v2.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v2, destMapV1[v2.label].dest)
+	}
 
 	// create the vertices if they don't exist
 	edge, err := g.AddEdge(NewVertex(3), NewVertex(4))
-	assert.NoError(t, err)
-	assert.Len(t, g.vertices[edge.source.label].neighbors, 1)
-	assert.Len(t, g.vertices[edge.dest.label].neighbors, 0)
-	assert.Len(t, g.edges, 2)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
+	if len(g.vertices[edge.source.label].neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(g.vertices[edge.source.label].neighbors))
+	}
+	if len(g.vertices[edge.dest.label].neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(g.vertices[edge.dest.label].neighbors))
+	}
+	if len(g.edges) != 2 {
+		t.Errorf(testErrMsgWrongLen, 2, len(g.edges))
+	}
 
 	destMapV3, existsV3 := g.edges[edge.source.label]
-	assert.True(t, existsV3)
-	assert.Len(t, destMapV3, 1)
-	assert.Equal(t, edge.source, destMapV3[edge.dest.label].source)
-	assert.Equal(t, edge.dest, destMapV3[edge.dest.label].dest)
+	if !existsV3 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if len(destMapV3) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV3))
+	}
+
+	if !reflect.DeepEqual(edge.source, destMapV3[edge.dest.label].source) {
+		t.Errorf(testErrMsgNotEqual, edge.source, destMapV3[edge.dest.label].source)
+	}
+	if !reflect.DeepEqual(edge.dest, destMapV3[edge.dest.label].dest) {
+		t.Errorf(testErrMsgNotEqual, edge.dest, destMapV3[edge.dest.label].dest)
+	}
 }
 
 func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
@@ -102,43 +159,87 @@ func TestBaseGraph_EdgesOf(t *testing.T) {
 	v4 := g.AddVertexByLabel(4)
 	v5 := g.AddVertexByLabel(5)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v4, v5)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
 	edgesV2 := g.EdgesOf(v2)
-	require.Len(t, edgesV2, 2)
-	assert.Equal(t, v2, edgesV2[0].source)
-	assert.Equal(t, v4, edgesV2[0].dest)
-	assert.Equal(t, v1, edgesV2[1].source)
-	assert.Equal(t, v2, edgesV2[1].dest)
+	if len(edgesV2) != 2 {
+		t.Errorf(testErrMsgWrongLen, 2, len(edgesV2))
+	}
+
+	if !reflect.DeepEqual(v2, edgesV2[0].source) {
+		t.Errorf(testErrMsgNotEqual, v2, edgesV2[0].source)
+	}
+	if !reflect.DeepEqual(v4, edgesV2[0].dest) {
+		t.Errorf(testErrMsgNotEqual, v4, edgesV2[0].dest)
+	}
+	if !reflect.DeepEqual(v1, edgesV2[1].source) {
+		t.Errorf(testErrMsgNotEqual, v1, edgesV2[1].source)
+	}
+	if !reflect.DeepEqual(v2, edgesV2[1].dest) {
+		t.Errorf(testErrMsgNotEqual, v2, edgesV2[1].dest)
+	}
 
 	edgesV4 := g.EdgesOf(v4)
-	require.Len(t, edgesV4, 3)
+	if len(edgesV4) != 3 {
+		t.Errorf(testErrMsgWrongLen, 3, len(edgesV4))
+	}
+
 	edgeMap := make(map[int]*Edge[int])
 	for i := range edgesV4 {
 		edgeMap[edgesV4[i].source.label] = edgesV4[i]
 	}
 
-	assert.Equal(t, v4, edgeMap[v4.label].source)
-	assert.Equal(t, v5, edgeMap[v4.label].dest)
-	assert.Equal(t, v2, edgeMap[v2.label].source)
-	assert.Equal(t, v4, edgeMap[v2.label].dest)
-	assert.Equal(t, v3, edgeMap[v3.label].source)
-	assert.Equal(t, v4, edgeMap[v3.label].dest)
+	if !reflect.DeepEqual(v4, edgeMap[v4.label].source) {
+		t.Errorf(testErrMsgNotEqual, v4, edgeMap[v4.label].source)
+	}
+	if !reflect.DeepEqual(v5, edgeMap[v4.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v5, edgeMap[v4.label].dest)
+	}
+	if !reflect.DeepEqual(v2, edgeMap[v2.label].source) {
+		t.Errorf(testErrMsgNotEqual, v2, edgeMap[v2.label].source)
+	}
+	if !reflect.DeepEqual(v4, edgeMap[v2.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v4, edgeMap[v2.label].dest)
+	}
+	if !reflect.DeepEqual(v3, edgeMap[v3.label].source) {
+		t.Errorf(testErrMsgNotEqual, v3, edgeMap[v3.label].source)
+	}
+	if !reflect.DeepEqual(v4, edgeMap[v3.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v4, edgeMap[v3.label].dest)
+	}
 
 	edges := g.EdgesOf(nil)
-	assert.Nil(t, edges)
+	if edges != nil {
+		t.Errorf("expected nil edges, but got %+v", edges)
+	}
 
 	v6 := NewVertex(6)
 	edges = g.EdgesOf(v6)
-	assert.Nil(t, edges)
+	if edges != nil {
+		t.Errorf("expected nil edges, but got %+v", edges)
+	}
 }
 
 func TestBaseGraph_RemoveEdges(t *testing.T) {
@@ -149,41 +250,78 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 	v4 := g.AddVertexByLabel(4)
 	v5 := g.AddVertexByLabel(5)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v4, v5)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
 	g.RemoveEdges(NewEdge(v4, v5))
 
-	assert.Equal(t, 0, v5.inDegree)
-	assert.Len(t, v4.neighbors, 0)
-	assert.Len(t, v4.neighbors, 0)
+	if 0 != v5.inDegree {
+		t.Errorf(testErrMsgNotEqual, 0, v5.inDegree)
+	}
+	if len(v4.neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(v4.neighbors))
+	}
 
 	_, existsV4 := g.edges[v4.label]
-	assert.False(t, existsV4)
+	if existsV4 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	g.RemoveEdges(NewEdge(v1, v2), NewEdge(v3, v4))
-	assert.Equal(t, v3, v1.neighbors[0])
-	assert.Equal(t, 0, v2.inDegree)
-	assert.Equal(t, 1, v4.inDegree)
-	assert.Len(t, v1.neighbors, 1)
-	assert.Len(t, v3.neighbors, 0)
+	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
+		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
+	}
+	if 0 != v2.inDegree {
+		t.Errorf(testErrMsgNotEqual, 0, v2.inDegree)
+	}
+	if 1 != v4.inDegree {
+		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
+	}
+	if len(v1.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
+	}
+	if len(v3.neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(v3.neighbors))
+	}
 
 	_, existsV3 := g.edges[v3.label]
-	assert.False(t, existsV3)
+	if existsV3 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMapV1, existsV1 := g.edges[v1.label]
-	assert.True(t, existsV1)
-	assert.Len(t, destMapV1, 1)
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
 
 	_, existsV2 := destMapV1[v2.label]
-	assert.False(t, existsV2)
+	if existsV2 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 }
 
 func TestBaseGraph_RemoveVertices(t *testing.T) {
@@ -198,70 +336,139 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	v4 := g.AddVertexByLabel(4)
 	v5 := g.AddVertexByLabel(5)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v4, v5)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
 	g.RemoveVertices(v2)
-	assert.Equal(t, v3, v1.neighbors[0])
-	assert.Equal(t, 1, v4.inDegree)
-	assert.Len(t, v1.neighbors, 1)
+	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
+		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
+	}
+	if 1 != v4.inDegree {
+		t.Errorf(testErrMsgNotEqual, 0, v4.inDegree)
+	}
+
+	if len(v1.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
+	}
 
 	_, existsV2 := g.edges[v2.label]
-	assert.False(t, existsV2)
+	if existsV2 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMapV1, existsV1 := g.edges[v1.label]
-	assert.True(t, existsV1)
-	assert.Equal(t, v3, destMapV1[v3.label].dest)
-	assert.Len(t, destMapV1, 1)
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if !reflect.DeepEqual(v3, destMapV1[v3.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v3, destMapV1[v3.label].dest)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
 
 	g.RemoveVertices(v1, v5)
-	assert.Equal(t, 0, v3.inDegree)
-	assert.Len(t, v4.neighbors, 0)
+	if 0 != v3.inDegree {
+		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
+	}
+	if len(v4.neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(v4.neighbors))
+	}
 
 	_, existsV1 = g.edges[v1.label]
-	assert.False(t, existsV1)
+	if existsV1 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	_, existsV4 := g.edges[v4.label]
-	assert.False(t, existsV4)
+	if existsV4 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 }
 
 func TestBaseGraph_ContainsEdge(t *testing.T) {
 	g := newBaseGraph[int](newProperties(Directed()))
 
-	assert.False(t, g.ContainsEdge(nil, nil))
+	if g.ContainsEdge(nil, nil) {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	v1 := g.AddVertexByLabel(1)
 
-	assert.False(t, g.ContainsEdge(NewVertex(0), v1))
-	assert.False(t, g.ContainsEdge(nil, v1))
+	if g.ContainsEdge(NewVertex(0), v1) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+
+	if g.ContainsEdge(nil, v1) {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
 	v4 := g.AddVertexByLabel(4)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
-	assert.True(t, g.ContainsEdge(v1, v2))
-	assert.True(t, g.ContainsEdge(v1, v3))
-	assert.True(t, g.ContainsEdge(v2, v4))
-	assert.True(t, g.ContainsEdge(v3, v4))
+	if !g.ContainsEdge(v1, v2) {
+		t.Error(testErrMsgNotTrue)
+	}
+	if !g.ContainsEdge(v1, v3) {
+		t.Error(testErrMsgNotTrue)
+	}
+	if !g.ContainsEdge(v2, v4) {
+		t.Error(testErrMsgNotTrue)
+	}
+	if !g.ContainsEdge(v3, v4) {
+		t.Error(testErrMsgNotTrue)
+	}
 
-	assert.False(t, g.ContainsEdge(v1, v4))
-	assert.False(t, g.ContainsEdge(v2, v3))
-	assert.False(t, g.ContainsEdge(v3, v1))
+	if g.ContainsEdge(v1, v4) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+	if g.ContainsEdge(v2, v3) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+	if g.ContainsEdge(v3, v1) {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 }
 
@@ -269,9 +476,16 @@ func TestBaseGraph_ContainsVertex(t *testing.T) {
 	g := newBaseGraph[int](newProperties(Directed()))
 	v1 := g.AddVertexByLabel(1)
 
-	assert.False(t, g.ContainsVertex(nil))
-	assert.False(t, g.ContainsVertex(NewVertex(0)))
-	assert.True(t, g.ContainsVertex(v1))
+	if g.ContainsVertex(nil) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+	if g.ContainsVertex(NewVertex(0)) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+
+	if !g.ContainsVertex(v1) {
+		t.Error(testErrMsgNotTrue)
+	}
 }
 
 func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
@@ -285,42 +499,85 @@ func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
 	v3 := g.AddVertexByLabel(3)
 	v4 := g.AddVertexByLabel(4)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
 	g.RemoveEdges(NewEdge(v2, v1))
-	assert.Equal(t, v3, v1.neighbors[0])
-	assert.Equal(t, 2, v4.inDegree)
-	assert.Len(t, v1.neighbors, 1)
-	assert.Len(t, v4.neighbors, 2)
+	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
+		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
+	}
+	if 2 != v4.inDegree {
+		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
+	}
+	if len(v1.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
+	}
+	if len(v4.neighbors) != 2 {
+		t.Errorf(testErrMsgWrongLen, 2, len(v4.neighbors))
+	}
 
 	destMap, existsV2 := g.edges[v2.label]
-	assert.True(t, existsV2)
+	if !existsV2 {
+		t.Error(testErrMsgNotTrue)
+	}
+
 	_, existsV4 := destMap[v3.label]
-	assert.False(t, existsV4)
+	if existsV4 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMapV1, existsV1 := g.edges[v1.label]
-	assert.True(t, existsV1)
-	assert.Equal(t, v3, destMapV1[v3.label].dest)
-	assert.Len(t, destMapV1, 1)
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if !reflect.DeepEqual(v3, destMapV1[v3.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v3, destMapV1[v3.label].dest)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
 
 	g.RemoveEdges(NewEdge(v1, v3), NewEdge(v4, v3))
-	assert.Equal(t, 0, v3.inDegree)
-	assert.Equal(t, 1, v4.inDegree)
-	assert.Len(t, v4.neighbors, 1)
+	if 0 != v3.inDegree {
+		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
+	}
+	if 1 != v4.inDegree {
+		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
+	}
+	if len(v4.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v4.neighbors))
+	}
 
 	_, existsV1 = g.edges[v1.label]
-	assert.False(t, existsV1)
+	if existsV1 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMap, existsV4 = g.edges[v4.label]
-	assert.True(t, existsV4)
+	if !existsV4 {
+		t.Error(testErrMsgNotTrue)
+	}
+
 	_, existsV3 := destMap[v3.label]
-	assert.False(t, existsV3)
+	if existsV3 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 }
 
 func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
@@ -335,38 +592,79 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	v4 := g.AddVertexByLabel(4)
 	v5 := g.AddVertexByLabel(5)
 	_, err := g.AddEdge(v1, v2)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v1, v3)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v2, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v3, v4)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
 	_, err = g.AddEdge(v4, v5)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
 
 	g.RemoveVertices(v2)
-	assert.Equal(t, v3, v1.neighbors[0])
-	assert.Equal(t, 2, v4.inDegree)
-	assert.Len(t, v1.neighbors, 1)
+	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
+		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
+	}
+	if 2 != v4.inDegree {
+		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
+	}
+
+	if len(v1.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
+	}
 
 	_, existsV2 := g.edges[v2.label]
-	assert.False(t, existsV2)
+	if existsV2 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMapV1, existsV1 := g.edges[v1.label]
-	assert.True(t, existsV1)
-	assert.Equal(t, v3, destMapV1[v3.label].dest)
-	assert.Len(t, destMapV1, 1)
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+
+	if !reflect.DeepEqual(v3, destMapV1[v3.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v3, destMapV1[v3.label].dest)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
 
 	g.RemoveVertices(v1, v5)
-	assert.Equal(t, 1, v3.inDegree)
-	assert.Len(t, v4.neighbors, 1)
+	if 1 != v3.inDegree {
+		t.Errorf(testErrMsgNotEqual, 1, v3.inDegree)
+	}
+	if len(v4.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v4.neighbors))
+	}
 
 	_, existsV1 = g.edges[v1.label]
-	assert.False(t, existsV1)
+	if existsV1 {
+		t.Error(t, testErrMsgNotFalse)
+	}
 
 	destMap, existsV4 := g.edges[v4.label]
-	assert.True(t, existsV4)
+	if !existsV4 {
+		t.Error(testErrMsgNotTrue)
+	}
+
 	_, existsV3 := destMap[v3.label]
-	assert.True(t, existsV3)
+	if !existsV3 {
+		t.Error(testErrMsgNotTrue)
+	}
 }
