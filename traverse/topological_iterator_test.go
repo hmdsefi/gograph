@@ -1,6 +1,7 @@
 package traverse
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -49,13 +50,18 @@ func TestTopologyOrderIterator(t *testing.T) {
 		t.Error("Expected iterator.HasNext() to be false, but it was true")
 	}
 
+	v := iterator.Next()
+	if v != nil {
+		t.Errorf("Expected nil, but got %+v", v)
+	}
+
 	// test the Reset method
 	iterator.Reset()
 	if !iterator.HasNext() {
 		t.Error("Expected iterator.HasNext() to be true, but it was false after reset")
 	}
 
-	v := iterator.Next()
+	v = iterator.Next()
 	if v.Label() != 1 {
 		t.Errorf("Expected iterator.Next().Label() to be %d, but got %d", 1, v.Label())
 	}
@@ -74,5 +80,18 @@ func TestTopologyOrderIterator(t *testing.T) {
 	if !reflect.DeepEqual(expectedOrder, ordered) {
 		t.Errorf("Expect same vertex order, but got different one expected: %v, actual: %v",
 			expectedOrder, ordered)
+	}
+
+	iterator.Reset()
+	expectedErr := errors.New("something went wrong")
+	err = iterator.Iterate(func(vertex *gograph.Vertex[int]) error {
+		return expectedErr
+	})
+	if err == nil {
+		t.Error("Expect iter.Iterate(func) returns error, but got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
 	}
 }

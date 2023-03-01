@@ -6,23 +6,30 @@ import (
 )
 
 const (
-	testErrMsgError    = "expected no error, but got %s"
-	testErrMsgNoError  = "expected error, but got no error"
-	testErrMsgWrongLen = "expected len %d, but got %d"
-	testErrMsgNotFalse = "expected false, but got true"
-	testErrMsgNotTrue  = "expected true, but got false"
-	testErrMsgNotEqual = "expected %+v, but got %+v"
+	testErrMsgError    = "Expected no error, but got %s"
+	testErrMsgNoError  = "Expected error, but got no error"
+	testErrMsgWrongLen = "Expected len %d, but got %d"
+	testErrMsgNotFalse = "Expected false, but got true"
+	testErrMsgNotTrue  = "Expected true, but got false"
+	testErrMsgNotEqual = "Expected %+v, but got %+v"
 )
 
 func TestAddVertex(t *testing.T) {
-	g := newBaseGraph[string](newProperties(Directed()))
+	g := newBaseGraph[string](newProperties(Directed(), Weighted()))
 	g.AddVertex(nil)
+
+	// default wait is zero for the vertices
 	g.AddVertex(NewVertex("morocco"))
 	g.AddVertexByLabel("london")
 	g.AddVertexByLabel("berlin")
 	g.AddVertexByLabel("paris")
 	if len(g.vertices) != 4 {
 		t.Errorf(testErrMsgWrongLen, 4, len(g.vertices))
+	}
+
+	v := g.AddVertexByLabel("madrid", WithVertexWeight(1))
+	if v.Weight() != 1 {
+		t.Errorf(testErrMsgNotEqual, 1, v.Weight())
 	}
 }
 
@@ -123,6 +130,14 @@ func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
 	// Create a new dag
 	g := newBaseGraph[int](newProperties(Acyclic()))
 
+	if !g.IsDirected() {
+		t.Error(testErrMsgNotTrue)
+	}
+
+	if !g.IsAcyclic() {
+		t.Error(testErrMsgNotTrue)
+	}
+
 	// Create three vertices with labels 1, 2, and 3
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
@@ -148,6 +163,60 @@ func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
 	_, err = g.AddEdge(v3, v1)
 	if err == nil {
 		t.Error("Expected error, but got none")
+	}
+}
+
+func TestBaseGraph_AddEdgeWeighted(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed(), Weighted()))
+	_, err := g.AddEdge(NewVertex(0), nil)
+	if err == nil {
+		t.Error(testErrMsgNoError)
+	}
+
+	if !g.IsDirected() {
+		t.Error(testErrMsgNotTrue)
+	}
+
+	if !g.IsWeighted() {
+		t.Error(testErrMsgNotTrue)
+	}
+
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	_, err = g.AddEdge(v1, v2, WithEdgeWeight(4))
+	if err != nil {
+		t.Errorf(testErrMsgError, err)
+	}
+
+	if len(g.vertices[v1.label].neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(g.vertices[v1.label].neighbors))
+	}
+
+	if len(g.vertices[v2.label].neighbors) != 0 {
+		t.Errorf(testErrMsgWrongLen, 0, len(g.vertices[v2.label].neighbors))
+	}
+
+	if len(g.edges) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(g.edges))
+	}
+
+	destMapV1, existsV1 := g.edges[v1.label]
+	if !existsV1 {
+		t.Error(testErrMsgNotTrue)
+	}
+	if len(destMapV1) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(destMapV1))
+	}
+
+	if !reflect.DeepEqual(v1, destMapV1[v2.label].source) {
+		t.Errorf(testErrMsgNotEqual, v1, destMapV1[v2.label].source)
+	}
+	if !reflect.DeepEqual(v2, destMapV1[v2.label].dest) {
+		t.Errorf(testErrMsgNotEqual, v2, destMapV1[v2.label].dest)
+	}
+
+	if destMapV1[v2.label].Weight() != 4 {
+		t.Errorf(testErrMsgNotEqual, 4, destMapV1[v2.label].Weight())
 	}
 }
 
@@ -276,8 +345,8 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 
 	g.RemoveEdges(NewEdge(v4, v5))
 
-	if v5.inDegree != 0 {
-		t.Errorf(testErrMsgNotEqual, 0, v5.inDegree)
+	if v5.InDegree() != 0 {
+		t.Errorf(testErrMsgNotEqual, 0, v5.InDegree())
 	}
 	if len(v4.neighbors) != 0 {
 		t.Errorf(testErrMsgWrongLen, 0, len(v4.neighbors))
@@ -292,11 +361,11 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if v2.inDegree != 0 {
-		t.Errorf(testErrMsgNotEqual, 0, v2.inDegree)
+	if v2.InDegree() != 0 {
+		t.Errorf(testErrMsgNotEqual, 0, v2.InDegree())
 	}
-	if v4.inDegree != 1 {
-		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
+	if v4.InDegree() != 1 {
+		t.Errorf(testErrMsgNotEqual, 1, v4.InDegree())
 	}
 	if len(v1.neighbors) != 1 {
 		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
@@ -364,8 +433,8 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if v4.inDegree != 1 {
-		t.Errorf(testErrMsgNotEqual, 0, v4.inDegree)
+	if v4.InDegree() != 1 {
+		t.Errorf(testErrMsgNotEqual, 0, v4.InDegree())
 	}
 
 	if len(v1.neighbors) != 1 {
@@ -389,8 +458,8 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	}
 
 	g.RemoveVertices(v1, v5)
-	if v3.inDegree != 0 {
-		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
+	if v3.InDegree() != 0 {
+		t.Errorf(testErrMsgNotEqual, 0, v3.InDegree())
 	}
 	if len(v4.neighbors) != 0 {
 		t.Errorf(testErrMsgWrongLen, 0, len(v4.neighbors))
@@ -409,6 +478,10 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 
 func TestBaseGraph_ContainsEdge(t *testing.T) {
 	g := newBaseGraph[int](newProperties(Directed()))
+
+	if !g.IsDirected() {
+		t.Error(testErrMsgNotTrue)
+	}
 
 	if g.ContainsEdge(nil, nil) {
 		t.Error(t, testErrMsgNotFalse)
@@ -521,8 +594,8 @@ func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if v4.inDegree != 2 {
-		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
+	if v4.InDegree() != 2 {
+		t.Errorf(testErrMsgNotEqual, 2, v4.InDegree())
 	}
 	if len(v1.neighbors) != 1 {
 		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
@@ -553,11 +626,11 @@ func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
 	}
 
 	g.RemoveEdges(NewEdge(v1, v3), NewEdge(v4, v3))
-	if v3.inDegree != 0 {
-		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
+	if v3.InDegree() != 0 {
+		t.Errorf(testErrMsgNotEqual, 0, v3.InDegree())
 	}
-	if v4.inDegree != 1 {
-		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
+	if v4.InDegree() != 1 {
+		t.Errorf(testErrMsgNotEqual, 1, v4.InDegree())
 	}
 	if len(v4.neighbors) != 1 {
 		t.Errorf(testErrMsgWrongLen, 1, len(v4.neighbors))
@@ -619,8 +692,8 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if v4.inDegree != 2 {
-		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
+	if v4.InDegree() != 2 {
+		t.Errorf(testErrMsgNotEqual, 2, v4.InDegree())
 	}
 
 	if len(v1.neighbors) != 1 {
@@ -645,8 +718,8 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	}
 
 	g.RemoveVertices(v1, v5)
-	if v3.inDegree != 1 {
-		t.Errorf(testErrMsgNotEqual, 1, v3.inDegree)
+	if v3.InDegree() != 1 {
+		t.Errorf(testErrMsgNotEqual, 1, v3.InDegree())
 	}
 	if len(v4.neighbors) != 1 {
 		t.Errorf(testErrMsgWrongLen, 1, len(v4.neighbors))
