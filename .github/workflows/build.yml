@@ -1,0 +1,55 @@
+name: build
+on: [push, pull_request]
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          version: v1.50.1
+
+  build:
+    name: Go build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          go-version: 1.19
+      - name: Build
+        run: |
+          git clone --depth=1 https://github.com/${GITHUB_REPOSITORY}
+          cd $(basename ${GITHUB_REPOSITORY})
+          go build -v -race
+
+  test:
+    name: Go test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          go-version: 1.19
+      - name: go get & test
+        run: |
+          go get -v -t -d ./...
+          go test -v ./...
+
+      - name: Generate coverage report
+        run: sh ./.github/scripts/coverage.sh
+        shell: bash
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
