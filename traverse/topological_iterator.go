@@ -45,7 +45,7 @@ func (t *topologicalIterator[T]) Next() *gograph.Vertex[T] {
 		return nil
 	}
 
-	t.head = t.head + 1
+	t.head++
 	return t.queue[t.head]
 }
 

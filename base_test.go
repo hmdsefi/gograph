@@ -276,7 +276,7 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 
 	g.RemoveEdges(NewEdge(v4, v5))
 
-	if 0 != v5.inDegree {
+	if v5.inDegree != 0 {
 		t.Errorf(testErrMsgNotEqual, 0, v5.inDegree)
 	}
 	if len(v4.neighbors) != 0 {
@@ -292,10 +292,10 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if 0 != v2.inDegree {
+	if v2.inDegree != 0 {
 		t.Errorf(testErrMsgNotEqual, 0, v2.inDegree)
 	}
-	if 1 != v4.inDegree {
+	if v4.inDegree != 1 {
 		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
 	}
 	if len(v1.neighbors) != 1 {
@@ -364,7 +364,7 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if 1 != v4.inDegree {
+	if v4.inDegree != 1 {
 		t.Errorf(testErrMsgNotEqual, 0, v4.inDegree)
 	}
 
@@ -389,7 +389,7 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	}
 
 	g.RemoveVertices(v1, v5)
-	if 0 != v3.inDegree {
+	if v3.inDegree != 0 {
 		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
 	}
 	if len(v4.neighbors) != 0 {
@@ -469,7 +469,6 @@ func TestBaseGraph_ContainsEdge(t *testing.T) {
 	if g.ContainsEdge(v3, v1) {
 		t.Error(t, testErrMsgNotFalse)
 	}
-
 }
 
 func TestBaseGraph_ContainsVertex(t *testing.T) {
@@ -522,7 +521,7 @@ func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if 2 != v4.inDegree {
+	if v4.inDegree != 2 {
 		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
 	}
 	if len(v1.neighbors) != 1 {
@@ -554,10 +553,10 @@ func TestBaseGraph_RemoveEdgesUndirected(t *testing.T) {
 	}
 
 	g.RemoveEdges(NewEdge(v1, v3), NewEdge(v4, v3))
-	if 0 != v3.inDegree {
+	if v3.inDegree != 0 {
 		t.Errorf(testErrMsgNotEqual, 0, v3.inDegree)
 	}
-	if 1 != v4.inDegree {
+	if v4.inDegree != 1 {
 		t.Errorf(testErrMsgNotEqual, 1, v4.inDegree)
 	}
 	if len(v4.neighbors) != 1 {
@@ -620,7 +619,7 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
-	if 2 != v4.inDegree {
+	if v4.inDegree != 2 {
 		t.Errorf(testErrMsgNotEqual, 2, v4.inDegree)
 	}
 
@@ -646,7 +645,7 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	}
 
 	g.RemoveVertices(v1, v5)
-	if 1 != v3.inDegree {
+	if v3.inDegree != 1 {
 		t.Errorf(testErrMsgNotEqual, 1, v3.inDegree)
 	}
 	if len(v4.neighbors) != 1 {
