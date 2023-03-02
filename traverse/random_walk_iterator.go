@@ -23,6 +23,8 @@ type randomWalkIterator[T comparable] struct {
 	currentStep int                // the step counter.
 }
 
+// NewRandomWalkIterator creates a new instance of randomWalkIterator
+// and returns it as the Iterator interface.
 func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start *gograph.Vertex[T], steps int) Iterator[T] {
 	return &randomWalkIterator[T]{
 		graph:   graph,
@@ -32,21 +34,27 @@ func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start *gograph.
 	}
 }
 
+// HasNext returns a boolean indicating whether there are more vertices
+// to be visited or not.
 func (r *randomWalkIterator[T]) HasNext() bool {
 	return r.current.OutDegree() > 0 && r.currentStep < r.steps
 }
 
+// Next returns the next vertex to be visited in the random walk traversal.
+// It chooses one of the neighbors randomly and returns it.
+//
+// If the HasNext is false, returns nil.
 func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 	if !r.HasNext() {
 		return nil
 	}
 
-	neighbors := r.current.Neighbors()
-	if len(neighbors) == 0 {
-		// there is no vertex to continue
-		r.currentStep = r.steps
+	if r.currentStep == 0 {
+		r.currentStep++
 		return r.current
 	}
+
+	neighbors := r.current.Neighbors()
 
 	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
 	r.current = neighbors[i.Int64()]
@@ -55,6 +63,9 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 	return r.current
 }
 
+// Iterate iterates through the vertices in random order and applies
+// the given function to each vertex. If the function returns an error,
+// the iteration stops and the error is returned.
 func (r *randomWalkIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {
 	for r.HasNext() {
 		if err := f(r.Next()); err != nil {
@@ -65,6 +76,7 @@ func (r *randomWalkIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 	return nil
 }
 
+// Reset resets the iterator by setting the initial state of the iterator.
 func (r *randomWalkIterator[T]) Reset() {
 	r.current = r.start
 	r.currentStep = 0
