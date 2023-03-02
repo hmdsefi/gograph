@@ -2,7 +2,6 @@ package traverse
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -68,18 +67,17 @@ func TestTopologyOrderIterator(t *testing.T) {
 
 	// test Iterate method
 	iterator.Reset()
-	var ordered []int
+	var j int
 	err = iterator.Iterate(func(vertex *gograph.Vertex[int]) error {
-		ordered = append(ordered, vertex.Label())
+		if vertex.Label() != expectedOrder[j] {
+			t.Errorf("Expected vertex.Label() to be %+v, but got %+v", expectedOrder[j], vertex.Label())
+		}
+
+		j++
 		return nil
 	})
 	if err != nil {
 		t.Errorf("Expect iterator.Iterate(func) returns no error, but got one %s", err)
-	}
-
-	if !reflect.DeepEqual(expectedOrder, ordered) {
-		t.Errorf("Expect same vertex order, but got different one expected: %v, actual: %v",
-			expectedOrder, ordered)
 	}
 
 	iterator.Reset()
