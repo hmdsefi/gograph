@@ -20,7 +20,7 @@ func TestRandomWalkIterator_HasNext(t *testing.T) {
 	g := initTestGraph()
 
 	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, g.GetVertexByID(1), 10)
+	it := NewRandomWalkIterator(g, 1, 10)
 
 	// Check that the HasNext method returns true before reaching the end of the walk
 	for i := 0; i < 10; i++ {
@@ -41,7 +41,7 @@ func TestRandomWalkIterator_Next(t *testing.T) {
 	g := initTestGraph()
 
 	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, g.GetVertexByID(1), 10)
+	it := NewRandomWalkIterator(g, 1, 10)
 
 	// Check that the Next method returns the expected vertices in the walk
 	expected := []int{1, 2, 1, 2, 1, 2, 1, 2, 1, 2}
@@ -64,7 +64,7 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 	g := initTestGraph()
 
 	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, g.GetVertexByID(1), 10)
+	it := NewRandomWalkIterator(g, 1, 10)
 
 	// Initialize a slice to hold the visited vertices
 	visited := make([]int, 0)

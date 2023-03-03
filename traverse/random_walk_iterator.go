@@ -17,7 +17,7 @@ import (
 // is met.
 type randomWalkIterator[T comparable] struct {
 	graph       gograph.Graph[T]   // the graph that being traversed.
-	start       *gograph.Vertex[T] // the starting point of the traversal.
+	start       T                  // the label of starting point of the traversal.
 	current     *gograph.Vertex[T] // the latest node that has been returned by the iterator.
 	steps       int                // the maximum number of steps to be taken during the traversal.
 	currentStep int                // the step counter.
@@ -25,11 +25,11 @@ type randomWalkIterator[T comparable] struct {
 
 // NewRandomWalkIterator creates a new instance of randomWalkIterator
 // and returns it as the Iterator interface.
-func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start *gograph.Vertex[T], steps int) Iterator[T] {
+func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps int) Iterator[T] {
 	return &randomWalkIterator[T]{
 		graph:   graph,
 		start:   start,
-		current: start,
+		current: graph.GetVertexByID(start),
 		steps:   steps,
 	}
 }
@@ -37,7 +37,9 @@ func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start *gograph.
 // HasNext returns a boolean indicating whether there are more vertices
 // to be visited or not.
 func (r *randomWalkIterator[T]) HasNext() bool {
-	return r.current.OutDegree() > 0 && r.currentStep < r.steps
+	return r.current != nil &&
+		r.current.OutDegree() > 0 &&
+		r.currentStep < r.steps
 }
 
 // Next returns the next vertex to be visited in the random walk traversal.
@@ -78,6 +80,6 @@ func (r *randomWalkIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 
 // Reset resets the iterator by setting the initial state of the iterator.
 func (r *randomWalkIterator[T]) Reset() {
-	r.current = r.start
+	r.current = r.graph.GetVertexByID(r.start)
 	r.currentStep = 0
 }

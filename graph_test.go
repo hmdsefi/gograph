@@ -48,3 +48,19 @@ func TestVertex(t *testing.T) {
 		t.Errorf(testErrMsgNotFalse)
 	}
 }
+
+func TestEdge_OtherVertex(t *testing.T) {
+	edge := NewEdge[int](NewVertex(1), NewVertex(2))
+
+	if edge.OtherVertex(3) != nil {
+		t.Errorf("Expect OtherVertex return nil, but get %+v", edge.OtherVertex(3))
+	}
+
+	if edge.OtherVertex(1).label != 2 {
+		t.Errorf("Expect OtherVertex return 2, but get %+v", edge.OtherVertex(1))
+	}
+
+	if edge.OtherVertex(2).label != 1 {
+		t.Errorf("Expect OtherVertex return 1, but get %+v", edge.OtherVertex(2))
+	}
+}
