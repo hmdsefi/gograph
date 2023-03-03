@@ -32,6 +32,15 @@ func (v *VertexPriorityQueue[T]) Pop() *VertexWithPriority[T] {
 	return out
 }
 
+// Peek is the number of elements in the underlying queue.
+func (v *VertexPriorityQueue[T]) Peek() *VertexWithPriority[T] {
+	if v.Len() > 0 {
+		return v.pq[0]
+	}
+
+	return nil
+}
+
 // Len is the number of elements in the underlying queue.
 func (v *VertexPriorityQueue[T]) Len() int {
 	return len(v.pq)

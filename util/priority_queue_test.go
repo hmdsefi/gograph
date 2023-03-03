@@ -52,6 +52,10 @@ func TestVertexPriorityQueue(t *testing.T) {
 	vpq.Push(NewVertexWithPriority(gograph.NewVertex("B"), 1))
 	vpq.Push(NewVertexWithPriority(gograph.NewVertex("C"), 3))
 
+	if vpq.Peek().vertex.Label() != "B" {
+		t.Errorf("Expected Peek returns B, but got %v", vpq.Peek().vertex.Label())
+	}
+
 	// check that the length of the priority queue is 5
 	if vpq.Len() != 3 {
 		t.Errorf("VertexPriorityQueue length = %d; want 5", len(vpq.pq))
@@ -73,5 +77,9 @@ func TestVertexPriorityQueue(t *testing.T) {
 	expectedPriorities := []float64{1, 2, 3}
 	if !reflect.DeepEqual(priorities, expectedPriorities) {
 		t.Errorf("VertexPriorityQueue Pop() order = %v; want %v", priorities, expectedPriorities)
+	}
+
+	if vpq.Peek() != nil {
+		t.Errorf("Expected Peek returns nil, but got %v", vpq.Peek())
 	}
 }
