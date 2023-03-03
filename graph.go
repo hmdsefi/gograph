@@ -3,10 +3,11 @@ package gograph
 import "errors"
 
 var (
-	ErrNilVertices       = errors.New("vertices are nil")
-	ErrEdgeAlreadyExists = errors.New("edge already exists")
-	ErrDAGCycle          = errors.New("edges would create cycle")
-	ErrDAGHasCycle       = errors.New("the graph contains a cycle")
+	ErrNilVertices        = errors.New("vertices are nil")
+	ErrVertexDoesNotExist = errors.New("vertex does not exist")
+	ErrEdgeAlreadyExists  = errors.New("edge already exists")
+	ErrDAGCycle           = errors.New("edges would create cycle")
+	ErrDAGHasCycle        = errors.New("the graph contains a cycle")
 )
 
 // Graph defines methods for managing a graph with vertices and edges. It is the
@@ -136,8 +137,24 @@ func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T], options ...EdgeOp
 	}
 }
 
+// Weight returns the weight of the edge.
 func (e *Edge[T]) Weight() float64 {
 	return e.properties.weight
+}
+
+// OtherVertex accepts the label of one the vertices of the edge
+// and returns the other one. If the input label doesn't match to
+// either of the vertices, returns nil.
+func (e *Edge[T]) OtherVertex(v T) *Vertex[T] {
+	if e.source.label == v {
+		return e.dest
+	}
+
+	if e.dest.label == v {
+		return e.source
+	}
+
+	return nil
 }
 
 // Vertex represents a node or point in a graph
