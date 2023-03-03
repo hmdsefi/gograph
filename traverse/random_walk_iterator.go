@@ -15,6 +15,14 @@ import (
 // step, the walker chooses a random neighbor of the current node and
 // moves to it, and the process is repeated until a stopping condition
 // is met.
+//
+// In an unweighted graph, each neighboring node has an equal chance of
+// being chosen as the next node to visit during the traversal. However,
+// in a weighted graph, the probability of choosing a particular neighbor
+// as the next node to visit is proportional to the weight of the edge
+// connecting the current node and the neighbor. This means that nodes
+// connected by heavier edges are more likely to be visited during the
+// traversal.
 type randomWalkIterator[T comparable] struct {
 	graph       gograph.Graph[T]   // the graph that being traversed.
 	start       T                  // the label of starting point of the traversal.
@@ -61,11 +69,20 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 		return r.current
 	}
 
+	r.currentStep++
 	neighbors := r.current.Neighbors()
 
-	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
+	if r.graph.IsWeighted() {
+		r.current = r.randomVertex(r.current)
+		return r.current
+	}
+
+	i, err := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
+	if err != nil {
+		i = big.NewInt(0)
+	}
+
 	r.current = neighbors[i.Int64()]
-	r.currentStep++
 
 	return r.current
 }
@@ -87,4 +104,36 @@ func (r *randomWalkIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 func (r *randomWalkIterator[T]) Reset() {
 	r.current = r.graph.GetVertexByID(r.start)
 	r.currentStep = 0
+}
+
+func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vertex[T] {
+	var totalWeight float64
+	var edges []*gograph.Edge[T]
+	neighbors := v.Neighbors()
+
+	// calculate the sum of edge weights
+	for _, neighbor := range neighbors {
+		if edge := r.graph.GetEdge(v, neighbor); edge != nil {
+			edges = append(edges, edge)
+			totalWeight += edge.Weight()
+		}
+	}
+
+	// generate a random number between 0 and the sum of edge weights
+	randNum, err := rand.Int(rand.Reader, big.NewInt(int64(totalWeight)))
+	if err != nil {
+		randNum = big.NewInt(0)
+	}
+
+	randWeight := float64(randNum.Int64())
+
+	// find the vertex that corresponds to the random weight
+	for _, edge := range edges {
+		randWeight -= edge.Weight()
+		if randWeight < 0 {
+			return edge.OtherVertex(v.Label())
+		}
+	}
+
+	return nil
 }

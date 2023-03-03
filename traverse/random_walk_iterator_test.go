@@ -123,3 +123,25 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
 	}
 }
+
+func TestRandomWalkIterator_RandomVertex(t *testing.T) {
+	g := gograph.New[int]()
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	v3 := g.AddVertexByLabel(3)
+	v4 := g.AddVertexByLabel(4)
+	v5 := g.AddVertexByLabel(5)
+
+	_, _ = g.AddEdge(v1, v2, gograph.WithEdgeWeight(2))
+	_, _ = g.AddEdge(v1, v3, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(v2, v3, gograph.WithEdgeWeight(1))
+	_, _ = g.AddEdge(v3, v4, gograph.WithEdgeWeight(3))
+	_, _ = g.AddEdge(v4, v5, gograph.WithEdgeWeight(2))
+
+	iter := randomWalkIterator[int]{graph: g}
+
+	randV := iter.randomVertex(v3)
+	if randV.Label() < 1 || randV.Label() > 4 {
+		t.Errorf("Random vertex %v is outside the range of valid vertices 2,3", randV.Label())
+	}
+}
