@@ -7,7 +7,7 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
-func initTestGraph() gograph.Graph[int] {
+func initRandomWalkIteratorTestGraph() gograph.Graph[int] {
 	g := gograph.New[int]()
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
@@ -17,7 +17,7 @@ func initTestGraph() gograph.Graph[int] {
 
 func TestRandomWalkIterator_HasNext(t *testing.T) {
 	// create a graph and a starting vertex for the iterator
-	g := initTestGraph()
+	g := initRandomWalkIteratorTestGraph()
 
 	// create an iterator with a vertex that doesn't exist
 	_, err := NewRandomWalkIterator(g, 123, 10)
@@ -47,7 +47,7 @@ func TestRandomWalkIterator_HasNext(t *testing.T) {
 
 func TestRandomWalkIterator_Next(t *testing.T) {
 	// create a graph and a starting vertex for the iterator
-	g := initTestGraph()
+	g := initRandomWalkIteratorTestGraph()
 
 	// create the random walk iterator
 	it, err := NewRandomWalkIterator(g, 1, 10)
@@ -72,7 +72,7 @@ func TestRandomWalkIterator_Next(t *testing.T) {
 
 func TestRandomWalkIterator_Iterate(t *testing.T) {
 	// create a graph and a starting vertex for the iterator
-	g := initTestGraph()
+	g := initRandomWalkIteratorTestGraph()
 
 	// create the random walk iterator
 	it, err := NewRandomWalkIterator(g, 1, 10)

@@ -48,7 +48,15 @@ func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Ite
 // HasNext returns a boolean indicating whether there are more vertices
 // to be visited or not.
 func (c *closestFirstIterator[T]) HasNext() bool {
-	return c.pq.Len() > 0
+	for c.pq.Len() > 0 {
+		if !c.visited[c.pq.Peek().Vertex().Label()] {
+			return true
+		}
+
+		c.pq.Pop()
+	}
+
+	return false
 }
 
 // Next returns the next vertex to be visited in the random walk traversal.
@@ -65,12 +73,12 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 	currNode := vp.Vertex()
 	c.visited[currNode.Label()] = true
 
-	edges := c.graph.EdgesOf(currNode)
-	for _, edge := range edges {
-		v := edge.OtherVertex(currNode.Label())
-		if !c.visited[v.Label()] {
+	neighbors := currNode.Neighbors()
+	for _, neighbor := range neighbors {
+		edge := c.graph.GetEdge(currNode, neighbor)
+		if !c.visited[neighbor.Label()] {
 			dist := c.currDist + edge.Weight()
-			c.pq.Push(util.NewVertexWithPriority(v, dist))
+			c.pq.Push(util.NewVertexWithPriority(neighbor, dist))
 		}
 	}
 
@@ -97,6 +105,6 @@ func (c *closestFirstIterator[T]) Reset() {
 	c.visited = make(map[T]bool)
 	c.currDist = 0
 
-	pq := util.NewVertexPriorityQueue[T]()
-	pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(c.start), 0))
+	c.pq = util.NewVertexPriorityQueue[T]()
+	c.pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(c.start), 0))
 }
