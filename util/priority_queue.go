@@ -35,7 +35,11 @@ func (pq VertexPriorityQueue[T]) Swap(i, j int) {
 
 // Push adds new item to the collection.
 func (pq *VertexPriorityQueue[T]) Push(x interface{}) {
-	item := x.(*VertexWithPriority[T])
+	item, ok := x.(*VertexWithPriority[T])
+	if !ok {
+		return
+	}
+
 	*pq = append(*pq, item)
 }
 

@@ -19,6 +19,9 @@ func TestVertexPriorityQueue(t *testing.T) {
 	heap.Push(&pq, NewVertexWithPriority(gograph.NewVertex("D"), 2))
 	heap.Push(&pq, NewVertexWithPriority(gograph.NewVertex("E"), 4))
 
+	// Push different type
+	heap.Push(&pq, 123)
+
 	// Check that the length of the priority queue is 5
 	if len(pq) != 5 {
 		t.Errorf("PriorityQueue length = %d; want 5", len(pq))
@@ -27,8 +30,12 @@ func TestVertexPriorityQueue(t *testing.T) {
 	// Pop items from the queue and check that they are in the correct order
 	items := make([]string, 0)
 	for pq.Len() > 0 {
-		item := heap.Pop(&pq).(*VertexWithPriority[string])
-		items = append(items, item.vertex.Label())
+		item := heap.Pop(&pq)
+		vp, ok := item.(*VertexWithPriority[string])
+		if !ok {
+			t.Errorf("Expected *VertexWithPriority[string] type, but got %+v", reflect.TypeOf(item))
+		}
+		items = append(items, vp.vertex.Label())
 	}
 	expected := []string{"B", "D", "A", "E", "C"}
 	if !reflect.DeepEqual(items, expected) {
