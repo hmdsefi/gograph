@@ -20,13 +20,13 @@ func TestRandomWalkIterator_HasNext(t *testing.T) {
 	g := initTestGraph()
 
 	// create an iterator with a vertex that doesn't exist
-	it, err := NewRandomWalkIterator(g, 123, 10)
+	_, err := NewRandomWalkIterator(g, 123, 10)
 	if err == nil {
 		t.Error("Expect NewRandomWalkIterator returns error, but got nil")
 	}
 
 	// create the random walk iterator
-	it, err = NewRandomWalkIterator(g, 1, 10)
+	it, err := NewRandomWalkIterator(g, 1, 10)
 	if err != nil {
 		t.Errorf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
 	}

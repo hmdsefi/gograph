@@ -37,13 +37,13 @@ func TestDepthFirstIterator(t *testing.T) {
 	_, _ = g.AddEdge(vertices["E"], vertices["F"])
 
 	// create an iterator with a vertex that doesn't exist
-	iter, err := NewDepthFirstIterator(g, "X")
+	_, err := NewDepthFirstIterator(g, "X")
 	if err == nil {
 		t.Error("Expect NewDepthFirstIterator returns error, but got nil")
 	}
 
 	// test depth first iteration
-	iter, err = NewDepthFirstIterator[string](g, "A")
+	iter, err := NewDepthFirstIterator[string](g, "A")
 	if err != nil {
 		t.Errorf("Expect NewDepthFirstIterator doesn't return error, but got %s", err)
 	}
