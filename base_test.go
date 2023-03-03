@@ -23,7 +23,7 @@ func TestAddVertex(t *testing.T) {
 	g.AddVertexByLabel("london")
 	g.AddVertexByLabel("berlin")
 	g.AddVertexByLabel("paris")
-	if len(g.vertices) != 4 {
+	if len(g.GetAllVertices()) != 4 {
 		t.Errorf(testErrMsgWrongLen, 4, len(g.vertices))
 	}
 
@@ -47,7 +47,7 @@ func TestFindVertex(t *testing.T) {
 		t.Errorf(testErrMsgNotEqual, v1.label, v.label)
 	}
 
-	v = g.findVertex("london")
+	v = g.GetVertexByID("london")
 	if v != nil {
 		t.Errorf("expected nil vertex, but got %+v", v)
 	}
@@ -343,6 +343,7 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 		t.Errorf(testErrMsgError, err)
 	}
 
+	g.RemoveEdges(nil, NewEdge[int](v1, nil), NewEdge[int](nil, v1))
 	g.RemoveEdges(NewEdge(v4, v5))
 
 	if v5.InDegree() != 0 {
@@ -494,6 +495,10 @@ func TestBaseGraph_ContainsEdge(t *testing.T) {
 	}
 
 	if g.ContainsEdge(nil, v1) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+
+	if g.ContainsEdge(v1, nil) {
 		t.Error(t, testErrMsgNotFalse)
 	}
 
@@ -780,6 +785,11 @@ func TestBaseGraph_GetAllEdges(t *testing.T) {
 		t.Errorf("Expected nil, but got %+v", edges)
 	}
 
+	edges = g.GetAllEdges(nil, v2)
+	if edges != nil {
+		t.Errorf("Expected nil, but got %+v", edges)
+	}
+
 	edges = g.GetAllEdges(v2, NewVertex(4))
 	if edges != nil {
 		t.Errorf("Expected nil, but got %+v", edges)
@@ -805,7 +815,12 @@ func TestBaseGraph_GetEdge(t *testing.T) {
 		t.Errorf("Expected nil, but got %+v", edge)
 	}
 
-	edge = g.GetEdge(v2, nil)
+	edge = g.GetEdge(v1, nil)
+	if edge != nil {
+		t.Errorf("Expected nil, but got %+v", edge)
+	}
+
+	edge = g.GetEdge(nil, v2)
 	if edge != nil {
 		t.Errorf("Expected nil, but got %+v", edge)
 	}

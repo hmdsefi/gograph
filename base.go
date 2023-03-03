@@ -258,6 +258,18 @@ func (g *baseGraph[T]) RemoveEdges(edges ...*Edge[T]) {
 // is undirected. Otherwise, removes the edge from the source to
 // the dest only.
 func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
+	if edge == nil {
+		return
+	}
+
+	if edge.source == nil || g.findVertex(edge.source.label) == nil {
+		return
+	}
+
+	if edge.dest == nil || g.findVertex(edge.dest.label) == nil {
+		return
+	}
+
 	g.removeEdge(edge)
 
 	if !g.IsDirected() {
@@ -268,18 +280,6 @@ func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
 // removeEdge removes the edge from edges destination map, if size of
 // the internal map is zero, removes the source label from the edges.
 func (g *baseGraph[T]) removeEdge(edge *Edge[T]) {
-	if edge == nil {
-		return
-	}
-
-	if g.findVertex(edge.source.label) == nil {
-		return
-	}
-
-	if g.findVertex(edge.dest.label) == nil {
-		return
-	}
-
 	if destMap, ok := g.edges[edge.source.label]; ok {
 		delete(destMap, edge.dest.label)
 
