@@ -25,13 +25,18 @@ type randomWalkIterator[T comparable] struct {
 
 // NewRandomWalkIterator creates a new instance of randomWalkIterator
 // and returns it as the Iterator interface.
-func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps int) Iterator[T] {
+func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps int) (Iterator[T], error) {
+	v := graph.GetVertexByID(start)
+	if v == nil {
+		return nil, gograph.ErrVertexDoesNotExist
+	}
+
 	return &randomWalkIterator[T]{
 		graph:   graph,
 		start:   start,
-		current: graph.GetVertexByID(start),
+		current: v,
 		steps:   steps,
-	}
+	}, nil
 }
 
 // HasNext returns a boolean indicating whether there are more vertices

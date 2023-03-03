@@ -15,8 +15,13 @@ type depthFirstIterator[T comparable] struct {
 
 // NewDepthFirstIterator creates a new instance of depthFirstIterator
 // and returns it as the Iterator interface.
-func NewDepthFirstIterator[T comparable](g gograph.Graph[T], start T) Iterator[T] {
-	return newDepthFirstIterator[T](g, start)
+func NewDepthFirstIterator[T comparable](g gograph.Graph[T], start T) (Iterator[T], error) {
+	v := g.GetVertexByID(start)
+	if v == nil {
+		return nil, gograph.ErrVertexDoesNotExist
+	}
+
+	return newDepthFirstIterator[T](g, start), nil
 }
 
 func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirstIterator[T] {

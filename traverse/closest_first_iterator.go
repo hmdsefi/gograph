@@ -14,7 +14,7 @@ import (
 // node to visit based on some evaluation function that estimates
 // how close a node is to the goal.
 //
-// The metric for closest her is the weight of the edge between two
+// The metric for closest here is the weight of the edge between two
 // connected vertices.
 type closestFirstIterator[T comparable] struct {
 	graph    gograph.Graph[T]             // the graph that being traversed.
