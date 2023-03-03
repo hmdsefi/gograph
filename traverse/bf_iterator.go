@@ -4,7 +4,7 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
-// breadthFirstIterator  is an implementation of the Iterator interface
+// breadthFirstIterator is an implementation of the Iterator interface
 // for traversing a graph using a breadth-first search (BFS) algorithm.
 type breadthFirstIterator[T comparable] struct {
 	graph   gograph.Graph[T] // the graph being traversed.
@@ -16,8 +16,13 @@ type breadthFirstIterator[T comparable] struct {
 
 // NewBreadthFirstIterator creates a new instance of breadthFirstIterator
 // and returns it as the Iterator interface.
-func NewBreadthFirstIterator[T comparable](g gograph.Graph[T], start T) Iterator[T] {
-	return newBreadthFirstIterator[T](g, start)
+func NewBreadthFirstIterator[T comparable](g gograph.Graph[T], start T) (Iterator[T], error) {
+	v := g.GetVertexByID(start)
+	if v == nil {
+		return nil, gograph.ErrVertexDoesNotExist
+	}
+
+	return newBreadthFirstIterator[T](g, start), nil
 }
 
 func newBreadthFirstIterator[T comparable](g gograph.Graph[T], start T) *breadthFirstIterator[T] {

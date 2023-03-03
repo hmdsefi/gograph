@@ -27,7 +27,7 @@ func TestDepthFirstIterator(t *testing.T) {
 		"F": g.AddVertexByLabel("F"),
 	}
 
-	// Add some edges
+	// add some edges
 	_, _ = g.AddEdge(vertices["A"], vertices["B"])
 	_, _ = g.AddEdge(vertices["A"], vertices["D"])
 	_, _ = g.AddEdge(vertices["B"], vertices["C"])
@@ -36,8 +36,18 @@ func TestDepthFirstIterator(t *testing.T) {
 	_, _ = g.AddEdge(vertices["D"], vertices["E"])
 	_, _ = g.AddEdge(vertices["E"], vertices["F"])
 
-	// Test depth first iteration
-	iter := NewDepthFirstIterator[string](g, "A")
+	// create an iterator with a vertex that doesn't exist
+	_, err := NewDepthFirstIterator(g, "X")
+	if err == nil {
+		t.Error("Expect NewDepthFirstIterator returns error, but got nil")
+	}
+
+	// test depth first iteration
+	iter, err := NewDepthFirstIterator[string](g, "A")
+	if err != nil {
+		t.Errorf("Expect NewDepthFirstIterator doesn't return error, but got %s", err)
+	}
+
 	expected := []string{"A", "D", "E", "F", "B", "C"}
 
 	for i, label := range expected {
@@ -74,7 +84,7 @@ func TestDepthFirstIterator(t *testing.T) {
 	// test Iterate method
 	iter.Reset()
 	var ordered []string
-	err := iter.Iterate(func(vertex *gograph.Vertex[string]) error {
+	err = iter.Iterate(func(vertex *gograph.Vertex[string]) error {
 		ordered = append(ordered, vertex.Label())
 		return nil
 	})

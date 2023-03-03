@@ -16,13 +16,22 @@ func initTestGraph() gograph.Graph[int] {
 }
 
 func TestRandomWalkIterator_HasNext(t *testing.T) {
-	// Create a graph and a starting vertex for the iterator
+	// create a graph and a starting vertex for the iterator
 	g := initTestGraph()
 
-	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, 1, 10)
+	// create an iterator with a vertex that doesn't exist
+	_, err := NewRandomWalkIterator(g, 123, 10)
+	if err == nil {
+		t.Error("Expect NewRandomWalkIterator returns error, but got nil")
+	}
 
-	// Check that the HasNext method returns true before reaching the end of the walk
+	// create the random walk iterator
+	it, err := NewRandomWalkIterator(g, 1, 10)
+	if err != nil {
+		t.Errorf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
+	}
+
+	// check that the HasNext method returns true before reaching the end of the walk
 	for i := 0; i < 10; i++ {
 		if !it.HasNext() {
 			t.Errorf("Expected HasNext to return true at step %d, but it returned false", i)
@@ -30,20 +39,22 @@ func TestRandomWalkIterator_HasNext(t *testing.T) {
 		it.Next()
 	}
 
-	// Check that the HasNext method returns false after reaching the end of the walk
+	// check that the HasNext method returns false after reaching the end of the walk
 	if it.HasNext() {
 		t.Errorf("Expected HasNext to return false at end of walk, but it returned true")
 	}
 }
 
 func TestRandomWalkIterator_Next(t *testing.T) {
-	// Create a graph and a starting vertex for the iterator
+	// create a graph and a starting vertex for the iterator
 	g := initTestGraph()
 
-	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, 1, 10)
-
-	// Check that the Next method returns the expected vertices in the walk
+	// create the random walk iterator
+	it, err := NewRandomWalkIterator(g, 1, 10)
+	if err != nil {
+		t.Errorf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
+	}
+	// check that the Next method returns the expected vertices in the walk
 	expected := []int{1, 2, 1, 2, 1, 2, 1, 2, 1, 2}
 	for i := 0; i < len(expected); i++ {
 		v := it.Next()
@@ -60,17 +71,20 @@ func TestRandomWalkIterator_Next(t *testing.T) {
 }
 
 func TestRandomWalkIterator_Iterate(t *testing.T) {
-	// Create a graph and a starting vertex for the iterator
+	// create a graph and a starting vertex for the iterator
 	g := initTestGraph()
 
-	// Create the random walk iterator
-	it := NewRandomWalkIterator(g, 1, 10)
+	// create the random walk iterator
+	it, err := NewRandomWalkIterator(g, 1, 10)
+	if err != nil {
+		t.Errorf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
+	}
 
 	// Initialize a slice to hold the visited vertices
 	visited := make([]int, 0)
 
 	// Iterate over the vertices in the walk and add their labels to the visited slice
-	err := it.Iterate(func(v *gograph.Vertex[int]) error {
+	err = it.Iterate(func(v *gograph.Vertex[int]) error {
 		visited = append(visited, v.Label())
 		return nil
 	})
@@ -78,7 +92,7 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 		t.Errorf("Unexpected error during Iterate method call: %v", err)
 	}
 
-	// Check that the visited slice contains the expected vertices in the walk
+	// check that the visited slice contains the expected vertices in the walk
 	expected := []int{1, 2, 1, 2, 1, 2, 1, 2, 1, 2}
 	for i := 0; i < len(expected); i++ {
 		if visited[i] != expected[i] {
