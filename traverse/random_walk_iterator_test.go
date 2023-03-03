@@ -1,6 +1,7 @@
 package traverse
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -94,5 +95,17 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 	if v.Label() != 1 {
 		t.Errorf("Expected Next to return vertex %d at step %d, but it returned vertex %d",
 			1, 1, v.Label())
+	}
+
+	expectedErr := errors.New("something went wrong")
+	err = it.Iterate(func(vertex *gograph.Vertex[int]) error {
+		return expectedErr
+	})
+	if err == nil {
+		t.Error("Expect iter.Iterate(func) returns error, but got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
 	}
 }
