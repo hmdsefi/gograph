@@ -148,4 +148,9 @@ func TestRandomWalkIterator_RandomVertex(t *testing.T) {
 	if randV.Label() < 1 || randV.Label() > 4 {
 		t.Errorf("Random vertex %v is outside the range of valid vertices 2,3", randV.Label())
 	}
+
+	randV = iter.Next()
+	if randV.Label() < 1 || randV.Label() > 4 {
+		t.Errorf("Random vertex %v is outside the range of valid vertices 2,3", randV.Label())
+	}
 }
