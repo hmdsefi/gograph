@@ -77,11 +77,7 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 		return r.current
 	}
 
-	i, err := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
-	if err != nil {
-		i = big.NewInt(0)
-	}
-
+	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
 	r.current = neighbors[i.Int64()]
 
 	return r.current
@@ -124,11 +120,7 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 	}
 
 	// generate a random number between 0 and the sum of edge weights
-	randNum, err := rand.Int(rand.Reader, big.NewInt(int64(totalWeight)))
-	if err != nil {
-		randNum = big.NewInt(0)
-	}
-
+	randNum, _ := rand.Int(rand.Reader, big.NewInt(int64(totalWeight)))
 	randWeight := float64(randNum.Int64())
 
 	// find the vertex that corresponds to the random weight
