@@ -125,7 +125,7 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 }
 
 func TestRandomWalkIterator_RandomVertex(t *testing.T) {
-	g := gograph.New[int]()
+	g := gograph.New[int](gograph.Weighted())
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
