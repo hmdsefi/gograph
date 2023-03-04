@@ -829,4 +829,8 @@ func TestBaseGraph_GetEdge(t *testing.T) {
 	if edge != nil {
 		t.Errorf("Expected nil, but got %+v", edge)
 	}
+
+	if v1.Degree() != 1 {
+		t.Errorf("Expected Degree() returns 1, but got %d", v1.Degree())
+	}
 }

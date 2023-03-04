@@ -200,6 +200,12 @@ func (v *Vertex[T]) OutDegree() int {
 	return len(v.neighbors)
 }
 
+// Degree returns the total degree of the vertex which is the sum of
+// in and out degrees.
+func (v *Vertex[T]) Degree() int {
+	return v.inDegree + v.OutDegree()
+}
+
 // Neighbors returns a copy of neighbor slice. If the caller changed the
 // result slice, it won't impact the graph or the vertex.
 func (v *Vertex[T]) Neighbors() []*Vertex[T] {

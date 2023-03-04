@@ -107,6 +107,10 @@ func (r *randomWalkIterator[T]) Reset() {
 }
 
 func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vertex[T] {
+	if v == nil {
+		return nil
+	}
+
 	var totalWeight float64
 	var edges []*gograph.Edge[T]
 	neighbors := v.Neighbors()

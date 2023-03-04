@@ -125,7 +125,7 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 }
 
 func TestRandomWalkIterator_RandomVertex(t *testing.T) {
-	g := gograph.New[int]()
+	g := gograph.New[int](gograph.Weighted())
 	v1 := g.AddVertexByLabel(1)
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
@@ -138,9 +138,13 @@ func TestRandomWalkIterator_RandomVertex(t *testing.T) {
 	_, _ = g.AddEdge(v3, v4, gograph.WithEdgeWeight(3))
 	_, _ = g.AddEdge(v4, v5, gograph.WithEdgeWeight(2))
 
-	iter := randomWalkIterator[int]{graph: g}
+	// create the random walk iterator
+	iter, err := NewRandomWalkIterator(g, 3, 10)
+	if err != nil {
+		t.Errorf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
+	}
 
-	randV := iter.randomVertex(v3)
+	randV := iter.Next()
 	if randV.Label() < 1 || randV.Label() > 4 {
 		t.Errorf("Random vertex %v is outside the range of valid vertices 2,3", randV.Label())
 	}
