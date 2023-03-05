@@ -69,5 +69,5 @@ maximum size of the queue is equal to the number of vertices at the maximum
 depth of the BFS traversal.
 
 Here you can see how BFS iterator works:
-<img alt="golang generic graph package - BFS traversal" src="https://user-images.githubusercontent.com/11541936/222957305-912411f0-00fe-419e-97f7-5e3fbdab62af.png" style="width:40%" align="right" title="bfs-traversal"/>
+<img alt="golang generic graph package - BFS traversal" src="https://user-images.githubusercontent.com/11541936/222957305-912411f0-00fe-419e-97f7-5e3fbdab62af.png" title="bfs-traversal"/>
 
