@@ -155,9 +155,11 @@ type Iterator[T comparable] interface {
 ```
 
 This package contains the following iterators:
-- Breadth-first iterator
-- Depth-first iterator
-- Topological iterator
+- [Breadth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#BFS)
+- [Depth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#DFS)
+- [Topological iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#Topological-Sort)
+- [Closest-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#Closest-First)
+- [Random Walk iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#random-walk)
 
 ## License
 
