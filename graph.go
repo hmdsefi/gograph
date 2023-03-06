@@ -164,7 +164,7 @@ func (e Edge[T]) Source() *Vertex[T] {
 
 // Destination returns edge dest vertex
 func (e Edge[T]) Destination() *Vertex[T] {
-	return e.source
+	return e.dest
 }
 
 // Vertex represents a node or point in a graph
