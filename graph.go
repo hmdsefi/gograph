@@ -157,6 +157,16 @@ func (e *Edge[T]) OtherVertex(v T) *Vertex[T] {
 	return nil
 }
 
+// Source returns edge source vertex
+func (e Edge[T]) Source() *Vertex[T] {
+	return e.source
+}
+
+// Destination returns edge dest vertex
+func (e Edge[T]) Destination() *Vertex[T] {
+	return e.source
+}
+
 // Vertex represents a node or point in a graph
 type Vertex[T comparable] struct {
 	label      T            // uniquely identifies each vertex
