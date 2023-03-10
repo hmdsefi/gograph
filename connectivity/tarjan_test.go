@@ -1,10 +1,11 @@
 package connectivity
 
 import (
-	"github.com/hmdsefi/gograph"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/hmdsefi/gograph"
 )
 
 func Test_tarjan(t *testing.T) {

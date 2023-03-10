@@ -53,7 +53,6 @@ func tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		for j := range list {
 			result[i][j] = list[j].Vertex
 		}
-
 	}
 	return result
 }
