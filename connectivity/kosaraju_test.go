@@ -8,7 +8,7 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
-func TestTarjan(t *testing.T) {
+func TestKosaraju(t *testing.T) {
 	// Create a dag with 6 vertices and 6 edges
 	g := gograph.New[int](gograph.Directed())
 
@@ -26,7 +26,7 @@ func TestTarjan(t *testing.T) {
 	_, _ = g.AddEdge(v5, v4)
 
 	// call the tarjan function
-	sccs := tarjan(g)
+	sccs := kosaraju(g)
 
 	// check that the function returned the expected number of SCCs
 	if len(sccs) != 2 {
