@@ -22,6 +22,7 @@ It can be used as an external library in production.</p>
         * [Undirected](#Undirected)
         * [Weighted](#Weighted)
     * [Traverse](#Traverse)
+    * [Connectivity](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity)
 * [License](#License)
 
 ## Install
