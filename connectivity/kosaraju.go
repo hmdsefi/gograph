@@ -2,16 +2,34 @@ package connectivity
 
 import "github.com/hmdsefi/gograph"
 
-type kosarajuSCCS[T comparable] struct {
+// Kosaraju's Algorithm: This algorithm is also based on depth-first search
+// and is used to find strongly connected components in a graph. The algorithm
+// has a time complexity of O(V+E) and is considered to be one of the most
+// efficient algorithms for finding strongly connected components.
+//
+// Note that this implementation assumes that the graph is connected, and
+// may not work correctly for disconnected graphs. It also does not handle
+// cases where the graph contains self-loops or parallel edges.
+
+// kosarajuDFS exposes two different depth-first search methods.
+type kosarajuDFS[T comparable] struct {
 	visited map[T]bool
 }
 
-func newKosarajuSCCS[T comparable]() *kosarajuSCCS[T] {
-	return &kosarajuSCCS[T]{
+func newKosarajuSCCS[T comparable]() *kosarajuDFS[T] {
+	return &kosarajuDFS[T]{
 		visited: make(map[T]bool),
 	}
 }
 
+// implements Kosaraju's Algorithm. It performs a depth-first search of
+// the graph to create a stack of vertices, and then performs a second
+// depth-first search on the transposed graph to identify the strongly
+// connected components.
+//
+// The function returns a slice of slices, where each slice represents
+// a strongly connected component and contains the vertices that belong
+// to that component.
 func kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	vertices := g.GetAllVertices()
 
@@ -42,7 +60,8 @@ func kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	return sccs
 }
 
-func (k *kosarajuSCCS[T]) dfs1(v *gograph.Vertex[T], stack *[]T) {
+// dfs1 creates the stack of vertices.
+func (k *kosarajuDFS[T]) dfs1(v *gograph.Vertex[T], stack *[]T) {
 	k.visited[v.Label()] = true
 	neighbors := v.Neighbors()
 	for _, neighbor := range neighbors {
@@ -53,7 +72,8 @@ func (k *kosarajuSCCS[T]) dfs1(v *gograph.Vertex[T], stack *[]T) {
 	*stack = append(*stack, v.Label())
 }
 
-func (k *kosarajuSCCS[T]) dfs2(v *gograph.Vertex[T], scc *[]*gograph.Vertex[T]) {
+// dfs2 explores the strongly connected components.
+func (k *kosarajuDFS[T]) dfs2(v *gograph.Vertex[T], scc *[]*gograph.Vertex[T]) {
 	k.visited[v.Label()] = true
 	*scc = append(*scc, v)
 	neighbors := v.Neighbors()
@@ -64,7 +84,7 @@ func (k *kosarajuSCCS[T]) dfs2(v *gograph.Vertex[T], scc *[]*gograph.Vertex[T]) 
 	}
 }
 
-func (k *kosarajuSCCS[T]) reverse(g gograph.Graph[T]) gograph.Graph[T] {
+func (k *kosarajuDFS[T]) reverse(g gograph.Graph[T]) gograph.Graph[T] {
 	reversed := gograph.New[T](gograph.Directed())
 	vertices := g.GetAllVertices()
 
