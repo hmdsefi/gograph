@@ -17,7 +17,9 @@ type kosarajuDFS[T comparable] struct {
 }
 
 func newKosarajuSCCS[T comparable]() *kosarajuDFS[T] {
-	return &kosarajuDFS[T]{}
+	return &kosarajuDFS[T]{
+		visited: make(map[T]bool),
+	}
 }
 
 // implements Kosaraju's Algorithm. It performs a depth-first search of
