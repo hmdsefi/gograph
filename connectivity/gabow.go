@@ -19,7 +19,7 @@ import "github.com/hmdsefi/gograph"
 // minimum index is called the lowLink of the vertex.
 //
 // When the depth-first search is complete, the algorithm checks if the current
-//vertex is the root of a strongly connected component. This is true if the
+// vertex is the root of a strongly connected component. This is true if the
 // lowLink of the vertex is equal to its index. If the vertex is the root of
 // a strongly connected component, it pops all the vertices on the stack with
 // indices greater than or equal to the vertex's index and adds them to a new
