@@ -48,3 +48,138 @@ network data. Strongly connected graphs are more robust and resilient, enable co
 any pair of vertices, and provide insights into social structures and relationships. Additionally, 
 strong connectivity is important in optimizing algorithms, network reliability, transportation and 
 logistics, graph drawing, and verification of digital circuits.
+
+
+### Tarjan's Algorithm
+Tarjan's algorithm is a popular algorithm in graph theory used to find strongly connected components 
+in a directed graph. The algorithm is named after its inventor, Robert Tarjan. The algorithm is based
+on depth-first search (DFS) and is very efficient in both time and space complexity.
+
+The main usage of the Tarjan algorithm is to find strongly connected components in a directed graph.
+Strongly connected components are used in many applications, such as finding the shortest path between
+two nodes in a graph, identifying the critical paths in a project schedule, and solving problems related
+to synchronization in computer science.
+
+The time complexity of Tarjan's algorithm is O(V + E), where V is the number of vertices in the graph
+and E is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is 
+the number of vertices in the graph.
+
+To use Tarjan algorithm, you can call the 'Tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
+and path your graph to it:
+
+```go
+import (
+  "github.com/hmdsefi/gograph"
+  "github.com/hmdsefi/gograph/connectivity"
+)
+
+func main() {
+  g := gograph.New[int](gograph.Directed())
+  
+  v1 := g.AddVertexByLabel(1)
+  v2 := g.AddVertexByLabel(2)
+  v3 := g.AddVertexByLabel(3)
+  v4 := g.AddVertexByLabel(4)
+  v5 := g.AddVertexByLabel(5)
+  
+  g.AddEdge(v1, v2)
+  g.AddEdge(v2, v3)
+  g.AddEdge(v3, v1)
+  g.AddEdge(v3, v4)
+  g.AddEdge(v4, v5)
+  g.AddEdge(v5, v4)
+  
+  sccs := connectivity.Tarjan(g)
+}
+```
+
+It returns a slice of strongly connected component.
+
+### Kosaraju's Algorithm
+Kosaraju's algorithm is another popular algorithm in graph theory used to find strongly connected
+components in a directed graph. The algorithm is named after its inventor, Sharadha Sharma Kosaraju.
+The algorithm is also based on depth-first search (DFS), but it performs two DFS passes over the graph.
+
+The main usage of Kosaraju's algorithm is to find strongly connected components in a directed graph.
+Strongly connected components are used in many applications, such as finding the shortest path between 
+two nodes in a graph, identifying the critical paths in a project schedule, and solving problems related
+to synchronization in computer science.
+
+The time complexity of Kosaraju's algorithm is O(V + E), where V is the number of vertices in the graph
+and E is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is 
+the number of vertices in the graph.
+
+To use Kosaraju algorithm, you can call the 'Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
+and path your graph to it:
+
+```go
+import (
+  "github.com/hmdsefi/gograph"
+  "github.com/hmdsefi/gograph/connectivity"
+)
+
+func main() {
+  g := gograph.New[int](gograph.Directed())
+  
+  v1 := g.AddVertexByLabel(1)
+  v2 := g.AddVertexByLabel(2)
+  v3 := g.AddVertexByLabel(3)
+  v4 := g.AddVertexByLabel(4)
+  v5 := g.AddVertexByLabel(5)
+  
+  g.AddEdge(v1, v2)
+  g.AddEdge(v2, v3)
+  g.AddEdge(v3, v1)
+  g.AddEdge(v3, v4)
+  g.AddEdge(v4, v5)
+  g.AddEdge(v5, v4)
+  
+  sccs := connectivity.Kosaraju(g)
+}
+```
+
+It returns a slice of strongly connected component.
+
+### Gabow's Algorithm
+Gabow's algorithm is another algorithm used to find strongly connected components (SCCs) in a directed graph.
+The algorithm was invented by Harold N. Gabow in 1985 and is based on a combination of breadth-first search (BFS)
+and depth-first search (DFS).
+
+The main usage of Gabow's algorithm is to find strongly connected components in a directed graph. It can be used
+in many applications, such as detecting cycles in a graph, solving problems related to synchronization, 
+and analyzing network traffic.
+
+The time complexity of Gabow's algorithm is O(V + E), where V is the number of vertices in the graph and E 
+is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is the number 
+of vertices in the graph.
+
+To use Gabow algorithm, you can call the 'Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
+and path your graph to it:
+
+```go
+import (
+  "github.com/hmdsefi/gograph"
+  "github.com/hmdsefi/gograph/connectivity"
+)
+
+func main() {
+  g := gograph.New[int](gograph.Directed())
+  
+  v1 := g.AddVertexByLabel(1)
+  v2 := g.AddVertexByLabel(2)
+  v3 := g.AddVertexByLabel(3)
+  v4 := g.AddVertexByLabel(4)
+  v5 := g.AddVertexByLabel(5)
+  
+  g.AddEdge(v1, v2)
+  g.AddEdge(v2, v3)
+  g.AddEdge(v3, v1)
+  g.AddEdge(v3, v4)
+  g.AddEdge(v4, v5)
+  g.AddEdge(v5, v4)
+  
+  sccs := connectivity.Gabow(g)
+}
+```
+
+It returns a slice of strongly connected component.

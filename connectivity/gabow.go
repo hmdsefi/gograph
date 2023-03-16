@@ -28,10 +28,10 @@ import "github.com/hmdsefi/gograph"
 // The algorithm continues in this way until all vertices have been visited.
 // The resulting strongly connected components are returned by the algorithm.
 
-// gabow runs the Gabow's algorithm, and returns a list of strongly
+// Gabow runs the Gabow's algorithm, and returns a list of strongly
 // connected components, where each component is represented as an
 // array of pointers to vertex structs.
-func gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
+func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	var (
 		index       int
 		components  [][]*gograph.Vertex[T]

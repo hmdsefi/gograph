@@ -30,11 +30,11 @@ func newTarjanSCCS[T comparable](vertices map[T]*tarjanVertex[T]) *tarjanSCCS[T]
 	return &tarjanSCCS[T]{vertices: vertices}
 }
 
-// tarjan is the entry point to the algorithm. It initializes the index,
+// Tarjan is the entry point to the algorithm. It initializes the index,
 // stack, and sccs variables and then loops through all the vertices in
 // the graph. It returns a slice of vertices' slice, where each inner
 // slice represents a strongly connected component of the graph.
-func tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
+func Tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	var (
 		index     int
 		stack     []*tarjanVertex[T]
