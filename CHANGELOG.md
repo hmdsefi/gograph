@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.3.0] - 2023-3-16
+
+### Added
+* Added connectivity package
+* Added Trajan's algorithm implementation to find Strongly Connected Components(SCCs) in a graph
+* Added Kosaraju's algorithm implementation to find SCCs in a graph
+* Added Gabow's algorithm implementation to find SCCs in a graph
+
 ## [v0.2.0] - 2023-3-8
 
 ### Added
