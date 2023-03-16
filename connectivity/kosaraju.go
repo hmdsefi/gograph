@@ -22,15 +22,15 @@ func newKosarajuSCCS[T comparable]() *kosarajuDFS[T] {
 	}
 }
 
-// implements Kosaraju's Algorithm. It performs a depth-first search of
-// the graph to create a stack of vertices, and then performs a second
-// depth-first search on the transposed graph to identify the strongly
-// connected components.
+// Kosaraju implements Kosaraju's Algorithm. It performs a depth-first
+// search of the graph to create a stack of vertices, and then performs
+// a second depth-first search on the transposed graph to identify the
+// strongly connected components.
 //
 // The function returns a slice of slices, where each slice represents
 // a strongly connected component and contains the vertices that belong
 // to that component.
-func kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
+func Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	vertices := g.GetAllVertices()
 
 	// Step 1: Perform a depth-first search of the graph to create a stack of vertices

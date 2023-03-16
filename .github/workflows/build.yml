@@ -44,12 +44,12 @@ jobs:
         run: sh ./.github/scripts/coverage.sh
         shell: bash
 
-#      - name: Upload coverage to codecov
-#        uses: codecov/codecov-action@v3
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          files: ./coverage.out
-#          flags: unittests # optional
-#          name: codecov-umbrella # optional
-#          fail_ci_if_error: false # optional (default = false)
-#          verbose: true # optional (default = false)
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)

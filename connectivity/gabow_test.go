@@ -25,8 +25,8 @@ func TestGabow(t *testing.T) {
 	_, _ = g.AddEdge(v4, v5)
 	_, _ = g.AddEdge(v5, v4)
 
-	// call the tarjan function
-	sccs := gabow(g)
+	// call the Tarjan function
+	sccs := Gabow(g)
 
 	// check that the function returned the expected number of SCCs
 	if len(sccs) != 2 {
