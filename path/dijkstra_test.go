@@ -1,8 +1,9 @@
 package path
 
 import (
-	"github.com/hmdsefi/gograph"
 	"testing"
+
+	"github.com/hmdsefi/gograph"
 )
 
 func TestDijkstra(t *testing.T) {
