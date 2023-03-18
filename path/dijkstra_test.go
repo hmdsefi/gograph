@@ -20,7 +20,13 @@ func TestDijkstraSimple(t *testing.T) {
 	_, _ = g.AddEdge(vB, vD, gograph.WithEdgeWeight(2))
 	_, _ = g.AddEdge(vC, vD, gograph.WithEdgeWeight(4))
 
-	dist := DijkstraSimple(g, "A")
+	// use not existing vertex
+	dist := DijkstraSimple(g, "X")
+	if len(dist) > 0 {
+		t.Errorf("Expected dist map length be 0, got %d", len(dist))
+	}
+
+	dist = DijkstraSimple(g, "A")
 
 	if dist[vA.Label()] != 0 {
 		t.Errorf("Expected distance from A to %s to be 0, got %f", vA.Label(), dist[vA.Label()])
@@ -63,5 +69,11 @@ func TestDijkstra(t *testing.T) {
 	}
 	if dist[v4.Label()] != 6 {
 		t.Errorf("Expected distance from 1 to %d to be 6, got %f", v4.Label(), dist[v4.Label()])
+	}
+
+	// use not existing vertex
+	dist = Dijkstra(g, 0)
+	if len(dist) > 0 {
+		t.Errorf("Expected dist map length be 0, got %d", len(dist))
 	}
 }
