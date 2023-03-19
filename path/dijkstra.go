@@ -103,14 +103,14 @@ func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 
 		// Update the distances of its neighbors
 		neighbors := curr.Vertex().Neighbors()
-		for _, v := range neighbors {
+		for i, v := range neighbors {
 			if !visited[v.Label()] {
 				neighbor := verticesMap[v.Label()]
 				newDist := curr.Priority() + g.GetEdge(curr.Vertex(), v).Weight()
 				if newDist < neighbor.dist {
 					neighbor.dist = newDist
 					neighbor.prev = curr.Vertex().Label()
-					pq.Push(util.NewVertexWithPriority(v, verticesMap[v.Label()].dist))
+					pq.Push(util.NewVertexWithPriority(neighbors[i], verticesMap[v.Label()].dist))
 				}
 			}
 		}
