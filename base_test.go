@@ -794,6 +794,11 @@ func TestBaseGraph_GetAllEdges(t *testing.T) {
 	if edges != nil {
 		t.Errorf("Expected nil, but got %+v", edges)
 	}
+
+	edges = g.GetAllEdges(NewVertex(4), v1)
+	if edges != nil {
+		t.Errorf("Expected nil, but got %+v", edges)
+	}
 }
 
 func TestBaseGraph_GetEdge(t *testing.T) {
@@ -826,6 +831,11 @@ func TestBaseGraph_GetEdge(t *testing.T) {
 	}
 
 	edge = g.GetEdge(v2, NewVertex(4))
+	if edge != nil {
+		t.Errorf("Expected nil, but got %+v", edge)
+	}
+
+	edge = g.GetEdge(NewVertex(4), v1)
 	if edge != nil {
 		t.Errorf("Expected nil, but got %+v", edge)
 	}
