@@ -502,6 +502,10 @@ func TestBaseGraph_ContainsEdge(t *testing.T) {
 		t.Error(t, testErrMsgNotFalse)
 	}
 
+	if g.ContainsEdge(v1, nil) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+
 	v2 := g.AddVertexByLabel(2)
 	v3 := g.AddVertexByLabel(3)
 	v4 := g.AddVertexByLabel(4)
@@ -545,6 +549,9 @@ func TestBaseGraph_ContainsEdge(t *testing.T) {
 		t.Error(t, testErrMsgNotFalse)
 	}
 	if g.ContainsEdge(v3, v1) {
+		t.Error(t, testErrMsgNotFalse)
+	}
+	if g.ContainsEdge(v3, NewVertex(5)) {
 		t.Error(t, testErrMsgNotFalse)
 	}
 }
@@ -842,5 +849,26 @@ func TestBaseGraph_GetEdge(t *testing.T) {
 
 	if v1.Degree() != 1 {
 		t.Errorf("Expected Degree() returns 1, but got %d", v1.Degree())
+	}
+}
+
+func TestBaseGraph_GetAllVerticesByID(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
+	expected := []*Vertex[int]{
+		g.AddVertexByLabel(1),
+		g.AddVertexByLabel(2),
+		g.AddVertexByLabel(3),
+		g.AddVertexByLabel(4),
+	}
+
+	vertices := g.GetAllVerticesByID(1, 2, 3, 4, 5)
+	if len(vertices) != 4 {
+		t.Errorf(testErrMsgWrongLen, 4, len(vertices))
+	}
+
+	for i, vertex := range vertices {
+		if expected[i].Label() != vertex.Label() {
+			t.Errorf(testErrMsgNotEqual, expected[i].Label(), vertex.Label())
+		}
 	}
 }
