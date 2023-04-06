@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.4.0] - 2023-4-6
+
+### Added
+* Added path package
+* Added simple Dijkstra's algorithm
+* Added standard Dijkstra's algorithm
+
 ## [v0.3.0] - 2023-3-16
 
 ### Added
