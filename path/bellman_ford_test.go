@@ -108,3 +108,43 @@ func TestBellmanFord_NegativeCycle(t *testing.T) {
 		t.Errorf("Expected error \"%s\", but got \"%s\"", ErrNegativeWeightCycle, err)
 	}
 }
+
+func TestBellmanFord_NotWeighted(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+	vC := g.AddVertexByLabel("C")
+
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(1))
+
+	_, err := BellmanFord(g, vA.Label())
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+
+	if !errors.Is(err, ErrNotWeighted) {
+		t.Errorf("Expected error \"%s\", but got \"%s\"", ErrNotWeighted, err)
+	}
+}
+
+func TestBellmanFord_NotDirected(t *testing.T) {
+	g := gograph.New[string](gograph.Weighted())
+
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+	vC := g.AddVertexByLabel("C")
+
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(1))
+
+	_, err := BellmanFord(g, vA.Label())
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+
+	if !errors.Is(err, ErrNotDirected) {
+		t.Errorf("Expected error \"%s\", but got \"%s\"", ErrNotDirected, err)
+	}
+}
