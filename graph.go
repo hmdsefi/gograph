@@ -47,6 +47,9 @@ type Graph[T comparable] interface {
 	// If both vertices exist but no edges found, returns an empty set.
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 
+	// AllEdges returns all the edges in the graph.
+	AllEdges() []*Edge[T]
+
 	// GetEdge returns an edge connecting source vertex to target vertex
 	// if such vertices and such edge exist in this graph.
 	//
