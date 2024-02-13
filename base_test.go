@@ -872,3 +872,21 @@ func TestBaseGraph_GetAllVerticesByID(t *testing.T) {
 		}
 	}
 }
+
+func Test_baseGraph_ContainsVertex(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	v3 := g.AddVertexByLabel(3)
+	v4 := g.AddVertexByLabel(4)
+
+	_, _ = g.AddEdge(v1, v2)
+	_, _ = g.AddEdge(v2, v3)
+	_, _ = g.AddEdge(v2, v4)
+
+	edges := g.AllEdges()
+
+	if len(edges) != 3 {
+		t.Errorf("expected len to be %d, but receive %d", 3, len(edges))
+	}
+}

@@ -417,3 +417,14 @@ func (g *baseGraph[T]) ContainsVertex(v *Vertex[T]) bool {
 
 	return g.findVertex(v.label) != nil
 }
+
+func (g *baseGraph[T]) AllEdges() []*Edge[T] {
+	var out []*Edge[T]
+	for _, dest := range g.edges {
+		for _, edge := range dest {
+			out = append(out, edge)
+		}
+	}
+
+	return out
+}
