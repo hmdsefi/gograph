@@ -8,9 +8,9 @@
 <img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%" align="right" title="gograph"/>
 <br/>
 <br/>
-<p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure <br/>
-implementation written in Go. It provides a versatile framework for representing <br/>
-graphs and performing various operations on them, making it ideal for both <br/>
+<p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
+implementation written in Go. It provides a versatile framework for representing 
+graphs and performing various operations on them, making it ideal for both
 educational purposes and practical applications.</p>
 <br/><br/><br/>
 
