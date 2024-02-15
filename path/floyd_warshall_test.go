@@ -67,7 +67,7 @@ func TestFloydWarshall_NotWeighted(t *testing.T) {
 	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(5))
 	_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(1))
 
-	_, err := BellmanFord(g, vA.Label())
+	_, err := FloydWarshall(g)
 	if err == nil {
 		t.Errorf("Expected error, but got nil")
 	}
@@ -87,7 +87,7 @@ func TestFloydWarshall_NotDirected(t *testing.T) {
 	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(5))
 	_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(1))
 
-	_, err := BellmanFord(g, vA.Label())
+	_, err := FloydWarshall(g)
 	if err == nil {
 		t.Errorf("Expected error, but got nil")
 	}
