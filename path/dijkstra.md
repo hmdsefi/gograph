@@ -1,6 +1,6 @@
 # gograph
 ## Shortest Path
-### Bellman-Ford
+### Dijkstra
 Dijkstra's algorithm is a graph algorithm used to find the shortest path from a single source vertex to all
 other vertices in a weighted graph with non-negative edge weights. It was developed by Dutch computer scientist 
 Edsger W. Dijkstra in 1956.
@@ -26,7 +26,7 @@ Dijkstra's algorithm guarantees the shortest path from the source vertex to all 
 as long as the graph does not contain negative weight edges. It works efficiently for sparse graphs with
 non-negative edge weights.
 
-The time complexity of Dijkstra's algorithm is O((V + E) log V), where V is the number of vertices and E is 
+The time complexity of Dijkstra's algorithm is `O((V + E) log V)`, where V is the number of vertices and E is 
 the number of edges in the graph. This complexity arises from the use of a priority queue to maintain the tentative 
 distances efficiently. If a simple array-based implementation is used to select the minimum distance vertex in each
 step, the time complexity becomes O(V^2), which is more suitable for dense graphs.
@@ -39,9 +39,10 @@ Steps:
 4. Relax the distances of its neighboring vertices if a shorter path is found.
 5. Mark the selected vertex as visited.
 
-**Time Complexity:** O(V^2), where V is the number of vertices in the graph. This is because finding the 
-minimum distance vertex in each iteration takes O(V) time, and we perform this process V times.
-**Space Complexity:** O(V^2) for storing the graph and distances.
+**Time Complexity:** `O(V^2)`, where V is the number of vertices in the graph. This is because finding the 
+minimum distance vertex in each iteration takes `O(V)` time, and we perform this process V times.
+
+**Space Complexity:** `O(V^2)` for storing the graph and distances.
 
 #### Implementation with Heap
 Steps:
@@ -50,7 +51,8 @@ we use a heap to maintain the priority queue.
 * The priority queue ensures that the vertex with the smallest tentative distance is efficiently selected
 in each iteration.
 
-**Time Complexity:** O((V + E) log V), where V is the number of vertices and E is the number of edges in
+**Time Complexity:** `O((V + E) log V)`, where V is the number of vertices and E is the number of edges in
 the graph. This is because each vertex is pushed and popped from the priority queue once, and each 
 edge is relaxed once.
-**Space Complexity:** O(V) for storing the priority queue and distances.
+
+**Space Complexity:** `O(V)` for storing the priority queue and distances.

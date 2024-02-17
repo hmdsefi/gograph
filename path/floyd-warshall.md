@@ -23,7 +23,7 @@ is an edge, otherwise set the value to infinity. Also, set the diagonal elements
  pairs of vertices. If there is a negative weight cycle, it might not produce the correct shortest paths, 
  but it can still detect the presence of such cycles.
 
-The time complexity of the Floyd-Warshall algorithm is O(V^3), where V is the number of vertices in the graph.
+The time complexity of the Floyd-Warshall algorithm is `O(V^3)`, where V is the number of vertices in the graph.
 Despite its cubic time complexity, it is often preferred over other algorithms like Bellman-Ford for dense
 graphs or when the graph has negative weight edges and no negative weight cycles, as it calculates shortest
 paths between all pairs of vertices in one go.
