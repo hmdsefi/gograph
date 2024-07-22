@@ -69,6 +69,9 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 		return nil, ErrEdgeAlreadyExists
 	}
 
+	from = g.vertices[from.label]
+	to = g.vertices[to.label]
+
 	from.neighbors = append(from.neighbors, to)
 	to.inDegree++
 
