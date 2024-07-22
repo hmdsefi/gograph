@@ -1,6 +1,7 @@
 package gograph
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -888,5 +889,26 @@ func Test_baseGraph_ContainsVertex(t *testing.T) {
 
 	if len(edges) != 3 {
 		t.Errorf("expected len to be %d, but receive %d", 3, len(edges))
+	}
+}
+
+func Test_baseGraph_Cyclic(t *testing.T) {
+	graph := New[int](Acyclic())
+
+	_, err := graph.AddEdge(NewVertex(1), NewVertex(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = graph.AddEdge(NewVertex(2), NewVertex(3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = graph.AddEdge(NewVertex(3), NewVertex(1))
+	if err == nil {
+		t.Fatalf("expected error, but got nil")
+	}
+
+	if !errors.Is(err, ErrDAGCycle) {
+		t.Errorf("expected error %s, but got %s", ErrDAGCycle, err)
 	}
 }
