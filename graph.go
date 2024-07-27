@@ -113,6 +113,12 @@ type Graph[T comparable] interface {
 	//
 	// If the specified vertex is nil, returns 'false'.
 	ContainsVertex(v *Vertex[T]) bool
+
+	// Order returns the number of vertices in the graph.
+	Order() uint32
+
+	// Size returns the number of edges in the graph
+	Size() uint32
 }
 
 // New creates a new instance of base graph that implemented the Graph interface.

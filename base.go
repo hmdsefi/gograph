@@ -1,5 +1,7 @@
 package gograph
 
+import "sync/atomic"
+
 // baseGraph represents a basic implementation of Graph interface. It
 // supports multiple types of graph.
 //
@@ -16,6 +18,9 @@ type baseGraph[T comparable] struct {
 	edges map[T]map[T]*Edge[T]
 
 	properties GraphProperties
+
+	verticesCount uint32
+	edgesCount    uint32
 }
 
 func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
@@ -38,6 +43,7 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFu
 		g.edges[from.label][to.label] = edge
 	}
 
+	atomic.AddUint32(&g.edgesCount, 1)
 	return edge
 }
 
@@ -133,6 +139,8 @@ func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
 	}
 
 	g.vertices[v.label] = v
+	atomic.AddUint32(&g.verticesCount, 1)
+
 	return v
 }
 
@@ -294,6 +302,7 @@ func (g *baseGraph[T]) removeEdge(edge *Edge[T]) {
 		if len(destMap) == 0 {
 			delete(g.edges, edge.source.label)
 		}
+		atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
 	}
 }
 
@@ -381,6 +390,7 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 
 	delete(g.edges, v.label)
 	delete(g.vertices, v.label)
+	atomic.AddUint32(&g.verticesCount, ^(uint32(1) - 1))
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge
@@ -430,4 +440,14 @@ func (g *baseGraph[T]) AllEdges() []*Edge[T] {
 	}
 
 	return out
+}
+
+// Order returns the number of vertices in the graph.
+func (g *baseGraph[T]) Order() uint32 {
+	return atomic.LoadUint32(&g.verticesCount)
+}
+
+// Size returns the number of edges in the graph
+func (g *baseGraph[T]) Size() uint32 {
+	return atomic.LoadUint32(&g.edgesCount)
 }
