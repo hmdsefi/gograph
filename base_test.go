@@ -149,6 +149,12 @@ func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
 	g.AddVertex(v2)
 	g.AddVertex(v3)
 
+	expectedVerticesCount := uint32(3)
+	actual := g.Order()
+	if actual != expectedVerticesCount {
+		t.Errorf("expected (%d) but got (%d)", expectedVerticesCount, actual)
+	}
+
 	// Add edges from 1 to 2 and from 2 to 3
 	_, err := g.AddEdge(v1, v2)
 	if err != nil {
@@ -164,6 +170,12 @@ func TestBaseGraph_AddEdgeAcyclic(t *testing.T) {
 	_, err = g.AddEdge(v3, v1)
 	if err == nil {
 		t.Error("Expected error, but got none")
+	}
+
+	expectedEdgesCount := uint32(2)
+	actual = g.Size()
+	if actual != expectedEdgesCount {
+		t.Errorf("expected (%d) but got (%d)", expectedEdgesCount, actual)
 	}
 }
 
