@@ -3,6 +3,7 @@
 [![codecov](https://codecov.io/gh/hmdsefi/gograph/branch/master/graph/badge.svg?token=BstHl9wXTN)](https://codecov.io/gh/hmdsefi/gograph)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
+
 # gograph
 
 <img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%" align="right" title="gograph"/>
@@ -19,16 +20,16 @@ educational purposes and practical applications.</p>
 * [Install](#Install)
 * [How to Use](#How-to-Use)
     * [Graph](#Graph)
-      * [Directed](#Directed)
-      * [Acyclic](#Acyclic)
-      * [Undirected](#Undirected)
-      * [Weighted](#Weighted)
+        * [Directed](#Directed)
+        * [Acyclic](#Acyclic)
+        * [Undirected](#Undirected)
+        * [Weighted](#Weighted)
     * [Traverse](#Traverse)
     * [Connectivity](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity)
     * [Shortest Path]()
-      * [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md)
-      * [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md)
-      * [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md)
+        * [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md)
+        * [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md)
+        * [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md)
 * [License](#License)
 
 ## Install
@@ -141,6 +142,7 @@ graph.AddEdge(vC, vD, gograph.WithEdgeWeight(2))
 ```
 
 ![weighted-vertex](https://user-images.githubusercontent.com/11541936/221908278-83f3138d-8b28-4c38-825a-627a46d65294.png)
+
 ```go
 graph := New[string]()
 vA := gograph.AddVertexByLabel("A", gograph.WithVertexWeight(3))
@@ -152,7 +154,9 @@ graph.AddEdge(vB, vC)
 ```
 
 ### Traverse
+
 Traverse package provides the iterator interface that guarantees all the algorithm export the same APIs:
+
 ```go
 type Iterator[T comparable] interface {
 	HasNext() bool
@@ -163,6 +167,7 @@ type Iterator[T comparable] interface {
 ```
 
 This package contains the following iterators:
+
 - [Breadth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#BFS)
 - [Depth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#DFS)
 - [Topological iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#Topological-Sort)

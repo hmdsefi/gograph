@@ -67,8 +67,10 @@ func TestClosestFirstIterator_Next(t *testing.T) {
 	for i := 0; i < len(expected); i++ {
 		v := it.Next()
 		if v.Label() != expected[i] {
-			t.Errorf("Expected Next to return vertex %s, but it returned vertex %s",
-				expected[i], v.Label())
+			t.Errorf(
+				"Expected Next to return vertex %s, but it returned vertex %s",
+				expected[i], v.Label(),
+			)
 		}
 	}
 
@@ -92,10 +94,12 @@ func TestClosestFirstIterator_Iterate(t *testing.T) {
 	visited := make([]string, 0)
 
 	// Iterate over the closest vertices and add their labels to the visited slice
-	err = it.Iterate(func(v *gograph.Vertex[string]) error {
-		visited = append(visited, v.Label())
-		return nil
-	})
+	err = it.Iterate(
+		func(v *gograph.Vertex[string]) error {
+			visited = append(visited, v.Label())
+			return nil
+		},
+	)
 	if err != nil {
 		t.Errorf("Unexpected error during Iterate method call: %v", err)
 	}
@@ -115,14 +119,18 @@ func TestClosestFirstIterator_Iterate(t *testing.T) {
 
 	v := it.Next()
 	if v.Label() != "A" {
-		t.Errorf("Expected Next to return vertex %s, but it returned vertex %s",
-			"A", v.Label())
+		t.Errorf(
+			"Expected Next to return vertex %s, but it returned vertex %s",
+			"A", v.Label(),
+		)
 	}
 
 	expectedErr := errors.New("something went wrong")
-	err = it.Iterate(func(vertex *gograph.Vertex[string]) error {
-		return expectedErr
-	})
+	err = it.Iterate(
+		func(vertex *gograph.Vertex[string]) error {
+			return expectedErr
+		},
+	)
 	if err == nil {
 		t.Error("Expect iter.Iterate(func) returns error, but got nil")
 	}

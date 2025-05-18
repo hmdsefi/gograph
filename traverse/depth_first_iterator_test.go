@@ -84,24 +84,30 @@ func TestDepthFirstIterator(t *testing.T) {
 	// test Iterate method
 	iter.Reset()
 	var ordered []string
-	err = iter.Iterate(func(vertex *gograph.Vertex[string]) error {
-		ordered = append(ordered, vertex.Label())
-		return nil
-	})
+	err = iter.Iterate(
+		func(vertex *gograph.Vertex[string]) error {
+			ordered = append(ordered, vertex.Label())
+			return nil
+		},
+	)
 	if err != nil {
 		t.Errorf("Expect iter.Iterate(func) returns no error, but got one %s", err)
 	}
 
 	if !reflect.DeepEqual(expected, ordered) {
-		t.Errorf("Expect same vertex order, but got different one expected: %v, actual: %v",
-			expected, ordered)
+		t.Errorf(
+			"Expect same vertex order, but got different one expected: %v, actual: %v",
+			expected, ordered,
+		)
 	}
 
 	iter.Reset()
 	expectedErr := errors.New("something went wrong")
-	err = iter.Iterate(func(vertex *gograph.Vertex[string]) error {
-		return expectedErr
-	})
+	err = iter.Iterate(
+		func(vertex *gograph.Vertex[string]) error {
+			return expectedErr
+		},
+	)
 	if err == nil {
 		t.Error("Expect iter.Iterate(func) returns error, but got nil")
 	}

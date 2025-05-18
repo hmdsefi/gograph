@@ -68,23 +68,27 @@ func TestTopologyOrderIterator(t *testing.T) {
 	// test Iterate method
 	iterator.Reset()
 	var j int
-	err = iterator.Iterate(func(vertex *gograph.Vertex[int]) error {
-		if vertex.Label() != expectedOrder[j] {
-			t.Errorf("Expected vertex.Label() to be %+v, but got %+v", expectedOrder[j], vertex.Label())
-		}
+	err = iterator.Iterate(
+		func(vertex *gograph.Vertex[int]) error {
+			if vertex.Label() != expectedOrder[j] {
+				t.Errorf("Expected vertex.Label() to be %+v, but got %+v", expectedOrder[j], vertex.Label())
+			}
 
-		j++
-		return nil
-	})
+			j++
+			return nil
+		},
+	)
 	if err != nil {
 		t.Errorf("Expect iterator.Iterate(func) returns no error, but got one %s", err)
 	}
 
 	iterator.Reset()
 	expectedErr := errors.New("something went wrong")
-	err = iterator.Iterate(func(vertex *gograph.Vertex[int]) error {
-		return expectedErr
-	})
+	err = iterator.Iterate(
+		func(vertex *gograph.Vertex[int]) error {
+			return expectedErr
+		},
+	)
 	if err == nil {
 		t.Error("Expect iter.Iterate(func) returns error, but got nil")
 	}
