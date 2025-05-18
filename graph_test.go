@@ -45,7 +45,7 @@ func TestVertex(t *testing.T) {
 
 	neighbors[0].label = "D"
 	if neighbors[0].Label() == vA.neighbors[0].Label() {
-		t.Errorf(testErrMsgNotFalse)
+		t.Error(testErrMsgNotFalse)
 	}
 }
 

@@ -1,41 +1,50 @@
-linters-settings:
-  govet:
-    check-shadowing: false
-  gocyclo:
-    min-complexity: 25
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  errcheck:
-    check-type-assertions: true
-  gocritic:
-    disabled-checks:
-      - ifElseChain
-  nakedret:
-    max-func-lines: 15
-
-run:
-  skip-dirs:
-    - mock
-
+version: "2"
 linters:
   enable:
-    - gocritic
-    - stylecheck
-    - goimports
-    - gosec
-    - unconvert
-    - unparam
-    - gochecknoinits
-    - gosec
-    - nakedret
-    - whitespace
-    - gosimple
     - bodyclose
     - dogsled
+    - gochecknoinits
+    - gocritic
+    - gosec
+    - nakedret
+    - staticcheck
+    - unconvert
+    - unparam
+    - whitespace
   disable:
-    - maligned
-    - lll
     - dupl
     - gochecknoglobals
-    - typecheck
+    - lll
+  settings:
+    errcheck:
+      check-type-assertions: true
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+    gocyclo:
+      min-complexity: 25
+    nakedret:
+      max-func-lines: 15
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
