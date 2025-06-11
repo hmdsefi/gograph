@@ -98,7 +98,7 @@ graph.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
 ![acyclic-graph](https://user-images.githubusercontent.com/11541936/221911652-ce2dfb5f-5547-4f26-8412-94ad9124d4fa.png)
 
 ```go
-graph := New[int](gograph.Directed())
+graph := New[int](gograph.Acyclic())
 
 graph.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
 graph.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
