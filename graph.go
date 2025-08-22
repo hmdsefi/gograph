@@ -167,12 +167,12 @@ func (e *Edge[T]) OtherVertex(v T) *Vertex[T] {
 }
 
 // Source returns edge source vertex
-func (e Edge[T]) Source() *Vertex[T] {
+func (e *Edge[T]) Source() *Vertex[T] {
 	return e.source
 }
 
 // Destination returns edge dest vertex
-func (e Edge[T]) Destination() *Vertex[T] {
+func (e *Edge[T]) Destination() *Vertex[T] {
 	return e.dest
 }
 
