@@ -15,12 +15,16 @@ The core idea is simple: repeatedly contract randomly chosen edges until exactly
 
 We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true minimum 3-cut for this graph is 4 edges.
 
+<div align="center">
 <img width="241" height="461" alt="Image" src="https://github.com/user-attachments/assets/caba43a0-ace1-4482-a3af-91f49aeb13a7" />
+</div>
 
 **Step 1: Contracting Edge (E, G) into node EG**
 **Correction:** The edge between F and G becomes an edge between F and EG.
 
+<div align="center">
 <img width="266" height="621" alt="Image" src="https://github.com/user-attachments/assets/09c89ee0-d320-4e06-bdc3-8e055cffd756" />
+</div>
 
 **Nodes:** A, B, C, D, F, EG
 **Edges:** A-B, A-C, B-D, B-EG, C-EG, C-F, D-EG, EG-F
@@ -45,7 +49,9 @@ We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true mini
 
 **There is no original edge that would create a connection from B or D to CF.**
 
+<div align="center">
 <img width="506" height="515" alt="Image" src="https://github.com/user-attachments/assets/7ddd78ac-d2b9-4b23-916a-3f75b6ed9461" />
+</div>
 
 **Nodes:** A, B, D, EG, CF
 **Edges:** A-B, A-CF, B-D, B-EG, D-EG, CF-EG
@@ -70,7 +76,9 @@ We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true mini
 
     **There is still no edge between BD and CF.**
 
+<div align="center">
 <img width="774" height="451" alt="Image" src="https://github.com/user-attachments/assets/31f3148f-f46d-4f7c-a5e2-e1dabe6bb9a3" />
+</div>
 
 **Nodes:** A, BD, EG, CF
 **Edges:** A-BD, A-CF, BD-EG, CF-EG
@@ -97,7 +105,9 @@ Let's choose to contract **(CF, EG)** into a new super-node **EGCF**.
 
     The new edges are: **A-EGCF, BD-EGCF**.
 
-<img width="945" height="371" alt="Image" src="https://github.com/user-attachments/assets/f8f38a91-c6b0-4843-be6a-09f3227703be" />
+<div align="center">
+<img width="945" height="311" alt="Image" src="https://github.com/user-attachments/assets/334cd87b-9de1-4826-8c30-f30669b11381" />
+</div>
 
 **Final Clusters (The 3-Cut):**
 
