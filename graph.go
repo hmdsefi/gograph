@@ -1,6 +1,8 @@
 package gograph
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrNilVertices        = errors.New("vertices are nil")
@@ -131,6 +133,7 @@ type Edge[T comparable] struct {
 	source     *Vertex[T] // start point of the edges
 	dest       *Vertex[T] // destination or end point of the edges
 	properties EdgeProperties
+	metadata   any // optional metadata associated with the edge
 }
 
 func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
@@ -176,12 +179,18 @@ func (e *Edge[T]) Destination() *Vertex[T] {
 	return e.dest
 }
 
+// Metadata returns the metadata associated with the edge.
+func (e Edge[T]) Metadata() any {
+	return e.metadata
+}
+
 // Vertex represents a node or point in a graph
 type Vertex[T comparable] struct {
 	label      T            // uniquely identifies each vertex
 	neighbors  []*Vertex[T] // stores pointers to its neighbors
 	inDegree   int          // number of incoming edges to this vertex
 	properties VertexProperties
+	metadata   any // optional metadata associated with the vertex
 }
 
 func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
@@ -246,4 +255,9 @@ func (v *Vertex[T]) Label() T {
 // Weight returns vertex label.
 func (v *Vertex[T]) Weight() float64 {
 	return v.properties.weight
+}
+
+// Metadata returns the metadata associated with the vertex.
+func (v Vertex[T]) Metadata() any {
+	return v.metadata
 }
