@@ -179,6 +179,11 @@ func (e Edge[T]) Destination() *Vertex[T] {
 	return e.dest
 }
 
+// Metadata returns the metadata associated with the edge.
+func (e Edge[T]) Metadata() any {
+	return e.metadata
+}
+
 // Vertex represents a node or point in a graph
 type Vertex[T comparable] struct {
 	label      T            // uniquely identifies each vertex
@@ -250,4 +255,9 @@ func (v *Vertex[T]) Label() T {
 // Weight returns vertex label.
 func (v *Vertex[T]) Weight() float64 {
 	return v.properties.weight
+}
+
+// Metadata returns the metadata associated with the vertex.
+func (v Vertex[T]) Metadata() any {
+	return v.metadata
 }
