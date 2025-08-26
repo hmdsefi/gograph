@@ -39,21 +39,20 @@ Let V be the number of vertices and E the number of edges:
 - **Total Space Complexity:** O(V + E)
 
 ### How It Works
-
-1. Compute Edge Betweenness
+1. **Compute Edge Betweenness**
    - Edge betweenness measures the number of shortest paths that pass through each edge.
    - High-betweenness edges often connect different communities.
    - Computed efficiently using Brandes’ algorithm with BFS from each vertex.
 
-2. Remove High Betweenness Edge(s)
+2. **Remove High Betweenness Edge(s)**
    - Remove the edge with the maximum betweenness centrality.
    - This step gradually disconnects the graph along community boundaries.
 
-3. Update Connected Components
+3. **Update Connected Components**
    - After removing edges, determine connected components using non-recursive BFS.
    - Each connected component represents a potential community.
 
-4. Repeat
+4. **Repeat**
    - Recompute edge betweenness in the modified graph.
    - Continue removing edges until the desired number of communities k is reached, or until no edges remain.
 
