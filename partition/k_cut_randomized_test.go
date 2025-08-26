@@ -44,7 +44,7 @@ func TestRandomizedKCut_SmallGraph(t *testing.T) {
 
 	t.Log(supernodes)
 
-	if uint32(len(supernodes[0])+len(supernodes[1])) != g.Order() {
+	if len(supernodes[0])+len(supernodes[1]) != int(g.Order()) {
 		t.Errorf("expected total number of nodes to be %d, got %d", g.Order(), len(supernodes[0])+len(supernodes[1]))
 	}
 }
