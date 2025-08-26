@@ -58,7 +58,7 @@ Let V be the number of vertices and E the number of edges:
    - Continue removing edges until the desired number of communities k is reached, or until no edges remain.
 
 <div align="center">
-<img width="1380" height="3839" alt="Image" src="https://github.com/user-attachments/assets/438a87b9-9c30-46a9-9734-a70cc1f15300" />
+<img width="460" height="1279" alt="Image" src="https://github.com/user-attachments/assets/438a87b9-9c30-46a9-9734-a70cc1f15300" />
 </div>
 
 ### Example
