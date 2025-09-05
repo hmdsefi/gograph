@@ -258,6 +258,6 @@ func (v *Vertex[T]) Weight() float64 {
 }
 
 // Metadata returns the metadata associated with the vertex.
-func (v Vertex[T]) Metadata() any {
+func (v *Vertex[T]) Metadata() any {
 	return v.metadata
 }
