@@ -148,11 +148,11 @@ func MaximalCliques[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 func wordLen(n int) int { return (n + 63) >> 6 }
 
 func setBit(b []uint64, i int) {
-	b[i>>6] |= 1 << uint(i&63)
+	b[i>>6] |= 1 << i & 63
 }
 
 func clearBit(b []uint64, i int) {
-	b[i>>6] &^= 1 << uint(i&63)
+	b[i>>6] &^= 1 << i & 63
 }
 
 func cloneBitset(b []uint64) []uint64 {
@@ -244,10 +244,14 @@ type heapItem struct {
 }
 type minHeap []heapItem
 
-func (h minHeap) Len() int            { return len(h) }
-func (h minHeap) Less(i, j int) bool  { return h[i].deg < h[j].deg }
-func (h minHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
-func (h *minHeap) Push(x interface{}) { *h = append(*h, x.(heapItem)) }
+func (h minHeap) Len() int           { return len(h) }
+func (h minHeap) Less(i, j int) bool { return h[i].deg < h[j].deg }
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *minHeap) Push(x interface{}) {
+	*h = append(*h, x.(heapItem)) // nolint
+}
+
 func (h *minHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
@@ -273,7 +277,7 @@ func degeneracyOrder(adj [][]int, n int) []int {
 	order := make([]int, 0, n)
 
 	for h.Len() > 0 {
-		it := heap.Pop(h).(heapItem)
+		it := heap.Pop(h).(heapItem) // nolint
 		v := it.v
 		// skip outdated entries (we push updated degs rather than decrease-key)
 		if removed[v] {
@@ -296,29 +300,29 @@ func degeneracyOrder(adj [][]int, n int) []int {
 // bronKerboschPivot does recursion; neighborsBits is adjacency bitset per vertex.
 // n is number of vertices (for word sizes and potential masking if needed).
 func bronKerboschPivot(
-	R []int,
-	P []uint64,
-	X []uint64,
+	r []int,
+	p []uint64,
+	x []uint64,
 	neighborsBits [][]uint64,
-	n int,
+	n int, // nolint
 	cliques *[][]int,
 ) {
 	// if P and X are empty → R is maximal
-	if countBits(P) == 0 && countBits(X) == 0 {
-		c := make([]int, len(R))
-		copy(c, R)
+	if countBits(p) == 0 && countBits(x) == 0 {
+		c := make([]int, len(r))
+		copy(c, r)
 		*cliques = append(*cliques, c)
 		return
 	}
 
 	// choose pivot u from P ∪ X maximizing |P ∩ N(u)|
-	unionPX := unionBitset(P, X)
+	unionPX := unionBitset(p, x)
 	u := -1
 	best := -1
 	forEachSetBit(
 		unionPX, func(idx int) bool {
 			// compute |P ∩ N(idx)|
-			cnt := countBits(intersectBitset(P, neighborsBits[idx]))
+			cnt := countBits(intersectBitset(p, neighborsBits[idx]))
 			if cnt > best {
 				best = cnt
 				u = idx
@@ -330,9 +334,9 @@ func bronKerboschPivot(
 	// candidates = P \ N(u)
 	var candidates []uint64
 	if u >= 0 {
-		candidates = differenceBitset(P, neighborsBits[u])
+		candidates = differenceBitset(p, neighborsBits[u])
 	} else {
-		candidates = cloneBitset(P)
+		candidates = cloneBitset(p)
 	}
 
 	// iterate over set bits in candidates
@@ -347,19 +351,19 @@ func bronKerboschPivot(
 
 	for _, v := range candidateIndices {
 		// R' = R ∪ {v}
-		Rp := append(R, v)
+		Rp := append(r, v) // nolint
 
 		// P' = P ∩ N(v)
-		Pp := intersectBitset(P, neighborsBits[v])
+		Pp := intersectBitset(p, neighborsBits[v])
 
 		// X' = X ∩ N(v)
-		Xp := intersectBitset(X, neighborsBits[v])
+		Xp := intersectBitset(x, neighborsBits[v])
 
 		// recurse
 		bronKerboschPivot(Rp, Pp, Xp, neighborsBits, n, cliques)
 
 		// move v from P to X in the current frame
-		clearBit(P, v)
-		setBit(X, v)
+		clearBit(p, v)
+		setBit(x, v)
 	}
 }
