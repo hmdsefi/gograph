@@ -9,8 +9,8 @@
      src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a"
      title="gograph"
      align="right"
-     width="400"
-     height="300">
+     width="350"
+     height="280">
 
 <br/>
 <br/>
