@@ -63,17 +63,55 @@ graph TD
 Vertices: `A, B, C, D, E, F, G, H, I`
 
 
-
-
 #### Stepwise Visual (Table of R, P, X)
-| Step | R (current clique) | P (candidates)      | X (processed) | Action / Clique Found         |
-| ---- | ------------------ | ------------------- | ------------- | ----------------------------- |
-| 1    | {}                 | {A,B,C,D,E,F,G,H,I} | {}            | Start recursion               |
-| 2    | {A}                | {B,C,D,E,F,G,H,I}   | {}            | pivot B, expand C             |
-| 3    | {A,C}              | {B,D}               | {}            | expand D                      |
-| 4    | {A,C,D}            | {B}                 | {}            | expand B → max clique {A,B,C} |
-| 5    | {E}                | {D,F}               | {}            | expand D → {E,D,F} max clique |
-| 6    | {G}                | {H,I}               | {}            | expand H → {G,H,I} max clique |
+| Step | R (Current Clique) | P (Candidates)      | X (Excluded) | Action / Result          |
+| ---- | ------------------ | ------------------- | ------------ | ------------------------ |
+| 0    | {}                 | {A,B,C,D,E,F,G,H,I} | {}           | Start algorithm          |
+| 1    | {A}                | {B,C}               | {}           | Expand with A            |
+| 2    | {A,B}              | {C}                 | {}           | Expand with B            |
+| 3    | {A,B,C}            | {}                  | {}           | ✅ Maximal clique {A,B,C} |
+| 4    | {A,C}              | {B,D}               | {}           | Expand with C            |
+| 5    | {A,C,B}            | {}                  | {}           | Duplicate {A,B,C}        |
+| 6    | {A,C,D}            | {}                  | {}           | Not maximal              |
+| 7    | {B}                | {C,D}               | {A}          | Expand with B            |
+| 8    | {B,C}              | {D}                 | {A}          | Expand with C            |
+| 9    | {B,C,D}            | {}                  | {A}          | ✅ Maximal clique {B,C,D} |
+| 10   | {E}                | {D,F}               | {}           | Expand with E            |
+| 11   | {E,D}              | {F}                 | {}           | Expand with D            |
+| 12   | {E,D,F}            | {}                  | {}           | ✅ Maximal clique {D,E,F} |
+| 13   | {G}                | {H,I}               | {}           | Expand with G            |
+| 14   | {G,H}              | {I}                 | {}           | Expand with H            |
+| 15   | {G,H,I}            | {}                  | {}           | ✅ Maximal clique {G,H,I} |
+
+**Final Cliques**
+- {A, B, C}
+- {B, C, D}
+- {D, E, F}
+- {G, H, I}
+
+#### Recursion Tree
+```mermaid
+graph TD
+    Root["R={} P={A..I} X={}"]
+    Root --> A["R={A} P={B,C}"]
+    A --> AB["R={A,B} P={C}"]
+    AB --> ABC["R={A,B,C} => clique"]
+    A --> AC["R={A,C} P={B,D}"]
+    AC --> ACB["R={A,C,B} => clique"]
+    AC --> ACD["R={A,C,D} (not maximal)"]
+
+    Root --> B1["R={B} P={C,D}"]
+    B1 --> BC["R={B,C} P={D}"]
+    BC --> BCD["R={B,C,D} => clique"]
+
+    Root --> E1["R={E} P={D,F}"]
+    E1 --> ED["R={E,D} P={F}"]
+    ED --> EDF["R={E,D,F} => clique"]
+
+    Root --> G1["R={G} P={H,I}"]
+    G1 --> GH["R={G,H} P={I}"]
+    GH --> GHI["R={G,H,I} => clique"]
+```
 
 ### References
 - [Bron–Kerbosch algorithm (Wikipedia)](https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm)
