@@ -6,12 +6,11 @@
 
 # gograph
 <img alt="golang generic graph package"
-     src="https://github.com/user-attachments/assets/df50a836-ceab-4c6f-93e0-612009245537"
+     src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a"
      title="gograph"
      align="right"
      width="350"
-     height="300"
-	style="border-radius:10px">
+     height="300">
 
 <br/>
 <br/>
