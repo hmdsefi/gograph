@@ -9,9 +9,8 @@
      src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a"
      title="gograph"
      align="right"
-     width="200"
-     height="160">
-
+     width="40%"
+     height="80%">
 <br/>
 <br/>
 <p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
