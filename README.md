@@ -10,7 +10,7 @@
      title="gograph"
      align="right"
      width="350"
-     height="280"
+     height="300"
 	style="border-radius:10px">
 
 <br/>
