@@ -9,8 +9,8 @@ A clique in a graph is a subset of vertices such that every pair of vertices is 
 - A maximum clique is the largest clique by size (this is a harder problem).
 
 Example:
-- In a triangle graph A—B—C—A, the set {A,B,C} is a maximal clique (and also maximum).
-- If you add another vertex D connected only to B and C, then {B,C,D} is another maximal clique.
+- In a triangle graph `A—B—C—A`, the set `{A,B,C}` is a maximal clique (and also maximum).
+- If you add another vertex `D` connected only to `B` and `C`, then `{B,C,D}` is another maximal clique.
 
 ### Why Are Cliques Useful?
 
@@ -23,10 +23,10 @@ Clique detection has real-world applications in many fields:
 
 ### Bron–Kerbosch Algorithm with Pivot + Degeneracy
 This implementation uses the **Bron–Kerbosch algorithm with pivoting, degeneracy ordering, and bitsets:**
-1. **Bron–Kerbosch recursion:** Expands a current partial clique R by exploring candidates P while excluding already processed vertices X.
+1. **Bron–Kerbosch recursion:** Expands a current partial clique R by exploring candidates P while excluding already processed vertices `X`.
 2. **Pivoting:** Avoids redundant searches by selecting a **pivot vertex** with many neighbors, reducing the branching factor.
 3. **Degeneracy ordering:** Orders vertices by minimum degree expansion, ensuring the recursion explores smaller candidate sets first, greatly improving efficiency on sparse graphs.
-4. **Bitsets:** Efficiently represent and update sets (P, X, neighbors) using bitwise operations, reducing memory overhead and speeding up intersections.
+4. **Bitsets:** Efficiently represent and update sets (`P`, `X`, neighbors) using bitwise operations, reducing memory overhead and speeding up intersections.
 
 ### Time Complexity
 - **Worst-case:** The number of maximal cliques in a graph can be **exponential** in the number of vertices `(O(3^(n/3)))`.
