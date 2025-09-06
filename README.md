@@ -6,7 +6,7 @@
 
 # gograph
 
-<img alt="golang generic graph package" src="https://user-images.githubusercontent.com/11541936/221823924-358994d2-44ff-4236-bbc8-b404de62293e.png" style="width:40%" align="right" title="gograph"/>
+<img alt="golang generic graph package" src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a" style="width:40%" align="right" title="gograph"/>
 <br/>
 <br/>
 <p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
