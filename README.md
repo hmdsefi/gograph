@@ -5,8 +5,12 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
 # gograph
+<img alt="golang generic graph package"
+     src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a"
+     title="gograph"
+     align="right"
+     style="width:40%; height:auto; transform:scaleY(0.8); transform-origin:center;" />
 
-<img alt="golang generic graph package" src="https://github.com/user-attachments/assets/29034e85-c140-47e2-b7e2-c11eed3f3e0a" style="width:40%;height:20%;" align="right" title="gograph"/>
 <br/>
 <br/>
 <p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
