@@ -5,13 +5,10 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
 # gograph
-<svg width="380" height="320" xmlns="http://www.w3.org/2000/svg">
-  <clipPath id="rounded">
-    <rect width="380" height="320" rx="30" ry="30" />
-  </clipPath>
+
   <image href="https://github.com/user-attachments/assets/5aa3d777-1c42-4a39-a8ad-ac7a2f66ffe8"
          width="380" height="320" clip-path="url(#rounded)" />
-</svg>
+
 
 
 <br/>
