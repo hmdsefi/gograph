@@ -5,7 +5,7 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
 
-  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" height="600" title="gograph"/>
+  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" height="600" title="gograph"/>
 
 # gograph
 <br/>
