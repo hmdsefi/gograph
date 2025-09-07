@@ -6,8 +6,7 @@
 
 # gograph
 
-  <image href="https://github.com/user-attachments/assets/5aa3d777-1c42-4a39-a8ad-ac7a2f66ffe8"
-         width="380" height="320" clip-path="url(#rounded)" />
+  <image href="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" />
 
 
 
