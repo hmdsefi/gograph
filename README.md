@@ -4,12 +4,10 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
+
+  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" align="right" title="gograph"/>
+
 # gograph
-
-  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" style="width:40%" align="right" title="gograph"/>
-
-
-
 <br/>
 <br/>
 <p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
