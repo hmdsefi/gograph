@@ -6,7 +6,7 @@
 
 # gograph
 
-  <image href="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" />
+  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/c65434eb-702f-4603-ba0b-3164fec62d36" style="width:40%" align="right" title="gograph"/>
 
 
 
