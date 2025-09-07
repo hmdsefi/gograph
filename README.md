@@ -5,12 +5,14 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
 # gograph
-<img alt="golang generic graph package"
-     src="https://github.com/user-attachments/assets/df50a836-ceab-4c6f-93e0-612009245537"
-     title="gograph"
-     align="right"
-     width="380"
-     height="320">
+<svg width="380" height="320" xmlns="http://www.w3.org/2000/svg">
+  <clipPath id="rounded">
+    <rect width="380" height="320" rx="30" ry="30" />
+  </clipPath>
+  <image href="https://github.com/user-attachments/assets/df50a836-ceab-4c6f-93e0-612009245537"
+         width="380" height="320" clip-path="url(#rounded)" />
+</svg>
+
 
 <br/>
 <br/>
