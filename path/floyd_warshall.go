@@ -82,6 +82,10 @@ func FloydWarshall[T comparable](g gograph.Graph[T]) (map[T]map[T]float64, error
 
 	edges := g.AllEdges()
 	for _, v := range vertices {
+		if dist[v.Label()][v.Label()] < 0 { // Check for negative cycles using diagonal
+			return nil, ErrNegativeWeightCycle
+		}
+
 		for _, edge := range edges {
 			if dist[v.Label()][edge.Source().Label()] != maxValue &&
 				dist[v.Label()][edge.Source().Label()]+edge.Weight() < dist[v.Label()][edge.Destination().Label()] {

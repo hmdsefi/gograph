@@ -28,7 +28,11 @@ func (v *VertexPriorityQueue[T]) Push(in *VertexWithPriority[T]) {
 // Pop removes and returns the minimum element (according to Less) from
 // the underlying heap.
 func (v *VertexPriorityQueue[T]) Pop() *VertexWithPriority[T] {
-	out, _ := heap.Pop(&v.pq).(*VertexWithPriority[T])
+	out, ok := heap.Pop(&v.pq).(*VertexWithPriority[T])
+	if !ok || out == nil {
+		return nil
+	}
+
 	return out
 }
 
