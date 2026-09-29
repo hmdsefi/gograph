@@ -67,46 +67,74 @@ func Tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	return result
 }
 
-// visit updates the index and lowLink values of the vertex, adds it to
-// the stack, and recursively calls itself on each of its neighbors. If
-// a neighbor has not been visited before, its index and lowLink values
-// are updated, and the recursion continues. If a neighbor has already
-// been visited and is still on the stack, its lowLink value is updated.
+// tarjanFrame is a vertex on the current depth-first search path, with
+// its neighbors and the index of the next neighbor to explore.
+type tarjanFrame[T comparable] struct {
+	vertex    *tarjanVertex[T]
+	neighbors []*gograph.Vertex[T]
+	next      int
+}
+
+// visit runs the depth-first search from the root vertex. Each vertex it
+// enters gets an index and lowLink value and is pushed on the stack. If
+// a neighbor has not been visited before, the search continues from it,
+// and its lowLink value is taken into account when it's finished. If a
+// neighbor has already been visited and is still on the stack, its index
+// is taken into account.
+//
+// It keeps the search path in a slice instead of recursing, so the depth
+// of the graph doesn't grow the goroutine stack.
 func (t *tarjanSCCS[T]) visit(
-	v *tarjanVertex[T],
+	root *tarjanVertex[T],
 	index *int,
 	stack *[]*tarjanVertex[T],
 	sccs *[][]*tarjanVertex[T],
 ) {
-	v.index = *index
-	v.lowLink = *index
-	*index++
-	*stack = append(*stack, v)
-	v.onStack = true
-
-	neighbors := v.Neighbors()
-	for _, w := range neighbors {
-		tv := t.vertices[w.Label()]
-		if tv.index == -1 {
-			t.visit(tv, index, stack, sccs)
-			v.lowLink = min(v.lowLink, tv.lowLink)
-		} else if tv.onStack {
-			v.lowLink = min(v.lowLink, tv.index)
-		}
+	var path []tarjanFrame[T]
+	enter := func(v *tarjanVertex[T]) {
+		v.index = *index
+		v.lowLink = *index
+		*index++
+		*stack = append(*stack, v)
+		v.onStack = true
+		path = append(path, tarjanFrame[T]{vertex: v, neighbors: v.Neighbors()})
 	}
 
-	if v.lowLink == v.index {
-		var scc []*tarjanVertex[T]
-		for {
-			w := (*stack)[len(*stack)-1]
-			*stack = (*stack)[:len(*stack)-1]
-			w.onStack = false
-			scc = append(scc, w)
-			if w == v {
-				break
+	enter(root)
+	for len(path) > 0 {
+		frame := &path[len(path)-1]
+		v := frame.vertex
+
+		if frame.next < len(frame.neighbors) {
+			tv := t.vertices[frame.neighbors[frame.next].Label()]
+			frame.next++
+			if tv.index == -1 {
+				enter(tv)
+			} else if tv.onStack {
+				v.lowLink = min(v.lowLink, tv.index)
 			}
+			continue
 		}
-		*sccs = append(*sccs, scc)
+
+		path = path[:len(path)-1]
+		if len(path) > 0 {
+			parent := path[len(path)-1].vertex
+			parent.lowLink = min(parent.lowLink, v.lowLink)
+		}
+
+		if v.lowLink == v.index {
+			var scc []*tarjanVertex[T]
+			for {
+				w := (*stack)[len(*stack)-1]
+				*stack = (*stack)[:len(*stack)-1]
+				w.onStack = false
+				scc = append(scc, w)
+				if w == v {
+					break
+				}
+			}
+			*sccs = append(*sccs, scc)
+		}
 	}
 }
 

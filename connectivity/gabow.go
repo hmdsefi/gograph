@@ -45,60 +45,76 @@ func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		vertices[v.Label()] = newTarjanVertex(v)
 	}
 
-	// strongLinks is a recursive function that performs the DFS search
-	// and identifies the strongly connected components.
-	strongLinks = func(v *tarjanVertex[T]) {
-		v.index = index
-		v.lowLink = index
-		index++
-		stack = append(stack, v)
-		v.onStack = true
-
-		neighbors := v.Neighbors()
-
-		// The DFS search starts at the current vertex, v, and explores all
-		// of its neighbors. For each neighbor w of v, the algorithm either
-		// recursively calls strongLinks on w or updates the lowLink field
-		// of v if w is already on the stack.
-		// If v is a root node (i.e., has no parent), then v is added to a
-		// list of strongly connected components when the DFS search is
-		// complete. If v is not a root node, then it is added to the list
-		// of strongly connected components when its lowLink field is equal
-		// to its index field (i.e., when there is no back edge to a node
-		// with a lower index).
-		for _, neighbor := range neighbors {
-			w := vertices[neighbor.Label()]
-			if w.index == -1 {
-				strongLinks(w)
-				if w.lowLink < v.lowLink {
-					v.lowLink = w.lowLink
-				}
-			} else if w.onStack {
-				if w.index < v.lowLink {
-					v.lowLink = w.index
-				}
-			}
+	// strongLinks performs the DFS search from the root vertex and
+	// identifies the strongly connected components. It keeps the search
+	// path in a slice instead of recursing, so the depth of the graph
+	// doesn't grow the goroutine stack.
+	strongLinks = func(root *tarjanVertex[T]) {
+		var path []tarjanFrame[T]
+		enter := func(v *tarjanVertex[T]) {
+			v.index = index
+			v.lowLink = index
+			index++
+			stack = append(stack, v)
+			v.onStack = true
+			path = append(path, tarjanFrame[T]{vertex: v, neighbors: v.Neighbors()})
 		}
 
-		if v.lowLink == v.index {
-			var (
-				component []*tarjanVertex[T]
-				w         *tarjanVertex[T]
-			)
-			for {
-				w, stack = stack[len(stack)-1], stack[:len(stack)-1]
-				w.onStack = false
-				component = append(component, w)
-				if w == v {
-					break
+		enter(root)
+		for len(path) > 0 {
+			frame := &path[len(path)-1]
+			v := frame.vertex
+
+			// The DFS search explores the neighbors of the vertex on top of
+			// the path one at a time. For each neighbor w of v, the algorithm
+			// either continues the search from w or updates the lowLink field
+			// of v if w is already on the stack.
+			if frame.next < len(frame.neighbors) {
+				w := vertices[frame.neighbors[frame.next].Label()]
+				frame.next++
+				if w.index == -1 {
+					enter(w)
+				} else if w.onStack {
+					if w.index < v.lowLink {
+						v.lowLink = w.index
+					}
+				}
+				continue
+			}
+
+			// All neighbors of v are explored. Its lowLink is final, so pass
+			// it on to the vertex that reached v.
+			path = path[:len(path)-1]
+			if len(path) > 0 {
+				parent := path[len(path)-1].vertex
+				if v.lowLink < parent.lowLink {
+					parent.lowLink = v.lowLink
 				}
 			}
 
-			var temp []*gograph.Vertex[T]
-			for i := range component {
-				temp = append(temp, component[i].Vertex)
+			// v is the root of a strongly connected component when its
+			// lowLink field is equal to its index field (i.e., when there
+			// is no back edge to a node with a lower index).
+			if v.lowLink == v.index {
+				var (
+					component []*tarjanVertex[T]
+					w         *tarjanVertex[T]
+				)
+				for {
+					w, stack = stack[len(stack)-1], stack[:len(stack)-1]
+					w.onStack = false
+					component = append(component, w)
+					if w == v {
+						break
+					}
+				}
+
+				var temp []*gograph.Vertex[T]
+				for i := range component {
+					temp = append(temp, component[i].Vertex)
+				}
+				components = append(components, temp)
 			}
-			components = append(components, temp)
 		}
 	}
 
