@@ -1,5 +1,7 @@
 name: build
 on: [ push, pull_request ]
+permissions:
+  contents: read
 jobs:
   golangci:
     name: lint
@@ -30,8 +32,8 @@ jobs:
   test:
     name: Go test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # commits the coverage badge to the badges branch
+    outputs:
+      coverage: ${{ steps.coverage.outputs.total-coverage }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -45,8 +47,6 @@ jobs:
         uses: vladopajic/go-test-coverage@f94bcf0d6b9fa5fb8b783830b22648f6c17475e2 # v2.19.0
         with:
           config: ./.testcoverage.yml
-          git-token: ${{ github.event_name == 'push' && github.ref_name == 'master' && secrets.GITHUB_TOKEN || '' }}
-          git-branch: badges
 
       - name: Coverage summary
         if: ${{ !cancelled() && steps.coverage.outputs.report != '' }}
@@ -58,3 +58,23 @@ jobs:
             echo "$REPORT"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  coverage-badge:
+    name: Coverage badge
+    needs: test
+    if: github.event_name == 'push' && github.ref_name == 'master'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # the README coverage badge shows the title of issue #162
+    steps:
+      - name: Update coverage badge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COVERAGE: ${{ needs.test.outputs.coverage }}
+        run: |
+          test -n "$COVERAGE"
+          title="$COVERAGE%"
+          current=$(gh issue view 162 --repo "$GITHUB_REPOSITORY" --json title --jq .title)
+          if [ "$current" != "$title" ]; then
+            gh issue edit 162 --repo "$GITHUB_REPOSITORY" --title "$title"
+          fi
