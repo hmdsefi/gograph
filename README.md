@@ -4,159 +4,195 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
-
-  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" height="600" title="gograph"/>
+<p align="center">
+  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" width="480" title="gograph"/>
+</p>
 
 # GoGraph
-<br/>
-<br/>
-<p>GoGraph is a lightweight, efficient, and easy-to-use graph data structure
-implementation written in Go. It provides a versatile framework for representing 
-graphs and performing various operations on them, making it ideal for both
-educational purposes and practical applications.</p>
-<br/><br/><br/>
 
-## Table of Contents
+GoGraph is a generic graph library for Go with first-class support for dependency
+graphs. Acyclic graphs refuse edges that would create a cycle, and `TopologySort`
+gives you an order to run things in. It also covers traversal, shortest paths,
+strongly connected components and graph partitioning, with no dependencies outside
+the standard library.
 
-* [Install](#Install)
-* [How to Use](#How-to-Use)
-    * [Graph](#Graph)
-        * [Directed](#Directed)
-        * [Acyclic](#Acyclic)
-        * [Undirected](#Undirected)
-        * [Weighted](#Weighted)
-    * [Traverse](#Traverse)
-    * [Connectivity](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity)
-    * [Shortest Path]()
-        * [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md)
-        * [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md)
-        * [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md)
-* [License](#License)
+- **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
+- **Dependency graphs:** `Acyclic()` graphs reject cycles, and `TopologySort` returns a valid order.
+- **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
+- **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
+- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow.
+- **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 
-## Install
+Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby).
 
-Use `go get` command to get the latest version of the `gograph`:
+## Quick start
 
 ```shell
 go get github.com/hmdsefi/gograph
 ```
 
-Then you can use import the `gograph` to your code:
-
 ```go
 package main
 
-import "github.com/hmdsefi/gograph"
-```
+import (
+	"errors"
+	"fmt"
 
-## How to Use
+	"github.com/hmdsefi/gograph"
+)
 
-### Graph
+func main() {
+	// An edge A -> B means A has to happen before B.
+	g := gograph.New[string](gograph.Acyclic())
 
-`gograph` contains the `Graph[T comparable]` interface that provides all needed APIs to
-manage a graph. All the supported graph types in `gograph` library implemented this interface.
+	checkout := g.AddVertexByLabel("checkout")
+	build := g.AddVertexByLabel("build")
+	test := g.AddVertexByLabel("test")
+	release := g.AddVertexByLabel("release")
 
-```go
-type Graph[T comparable] interface {
-GraphType
+	_, _ = g.AddEdge(checkout, build)
+	_, _ = g.AddEdge(build, test)
+	_, _ = g.AddEdge(test, release)
 
-AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (*Edge[T], error)
-GetAllEdges(from, to *Vertex[T]) []*Edge[T]
-GetEdge(from, to *Vertex[T]) *Edge[T]
-EdgesOf(v *Vertex[T]) []*Edge[T]
-RemoveEdges(edges ...*Edge[T])
-AddVertexByLabel(label T, options ...VertexOptionFunc) *Vertex[T]
-AddVertex(v *Vertex[T])
-GetVertexByID(label T) *Vertex[T]
-GetAllVerticesByID(label ...T) []*Vertex[T]
-GetAllVertices() []*Vertex[T]
-RemoveVertices(vertices ...*Vertex[T])
-ContainsEdge(from, to *Vertex[T]) bool
-ContainsVertex(v *Vertex[T]) bool
+	// Acyclic graphs reject any edge that would create a cycle.
+	_, err := g.AddEdge(release, checkout)
+	fmt.Println(errors.Is(err, gograph.ErrDAGCycle)) // true
+
+	order, _ := gograph.TopologySort(g)
+	for _, v := range order {
+		fmt.Println(v.Label()) // checkout, build, test, release
+	}
 }
 ```
 
-The generic type of the `T` in `Graph` interface represents the vertex label. The type of `T`
-should be comparable. You cannot use slices and function types for `T`.
+When several orders are valid, `TopologySort` returns one of them, and which one can
+change between runs. A deterministic order is planned in
+[#114](https://github.com/hmdsefi/gograph/issues/114).
 
-#### Directed
+## Table of contents
+
+* [Graphs](#graphs)
+    * [Directed](#directed)
+    * [Acyclic](#acyclic)
+    * [Undirected](#undirected)
+    * [Weighted](#weighted)
+* [Traversal](#traversal)
+* [Algorithms](#algorithms)
+* [Roadmap](#roadmap)
+* [Contributing](#contributing)
+* [License](#license)
+
+## Graphs
+
+`gograph.New[T]` creates a graph. `T` is the vertex label type and must be
+comparable, so slices, maps and functions can't be labels. Options choose the kind
+of graph:
+
+- `gograph.Directed()` creates a directed graph. Without it, graphs are undirected.
+- `gograph.Acyclic()` creates a directed graph that rejects edges that would create a cycle.
+- `gograph.Weighted()` marks the graph as weighted. `BellmanFord` and `FloydWarshall` require it.
+
+Every graph implements the `Graph[T]` interface. See the
+[package documentation](https://pkg.go.dev/github.com/hmdsefi/gograph#Graph) for the full list
+of methods.
+
+`AddEdge` creates missing vertices, so `gograph.NewVertex` is enough for quick
+examples. To keep a reference to a vertex, use `AddVertexByLabel`, which adds the
+vertex and returns it.
+
+### Directed
 
 ![directed-graph](https://user-images.githubusercontent.com/11541936/221904292-face2083-16da-491f-a339-2164b7040264.png)
 
 ```go
-graph := New[int](gograph.Directed())
+g := gograph.New[int](gograph.Directed())
 
-graph.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
-graph.AddEdge(gograph.NewVertex(1), gograph.NewVertex(3))
-graph.AddEdge(gograph.NewVertex(2), gograph.NewVertex(2))
-graph.AddEdge(gograph.NewVertex(3), gograph.NewVertex(4))
-graph.AddEdge(gograph.NewVertex(4), gograph.NewVertex(5))
-graph.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
+_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
+_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(3))
+_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(2))
+_, _ = g.AddEdge(gograph.NewVertex(3), gograph.NewVertex(4))
+_, _ = g.AddEdge(gograph.NewVertex(4), gograph.NewVertex(5))
+_, _ = g.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
 ```
 
-#### Acyclic
+### Acyclic
 
 ![acyclic-graph](https://user-images.githubusercontent.com/11541936/221911652-ce2dfb5f-5547-4f26-8412-94ad9124d4fa.png)
 
 ```go
-graph := New[int](gograph.Acyclic())
+g := gograph.New[int](gograph.Acyclic())
 
-graph.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
-graph.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
-_, err := graph.AddEdge(gograph.NewVertex(3), gograph.NewVertex(1))
-if err != nil {
-// do something
-}
+_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
+_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
+
+_, err := g.AddEdge(gograph.NewVertex(3), gograph.NewVertex(1))
+fmt.Println(err) // edges would create cycle
 ```
 
-#### Undirected
+### Undirected
 
 ![undirected-graph](https://user-images.githubusercontent.com/11541936/221908261-a009049d-2b71-46c3-9026-faa4dcc2a693.png)
 
 ```go
-// by default graph is undirected
-graph := New[string]()
+// Graphs are undirected by default.
+g := gograph.New[string]()
 
-graph.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
-graph.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("D"))
-graph.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("C"))
-graph.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("D"))
+a := g.AddVertexByLabel("A")
+b := g.AddVertexByLabel("B")
+c := g.AddVertexByLabel("C")
+d := g.AddVertexByLabel("D")
+
+_, _ = g.AddEdge(a, b)
+_, _ = g.AddEdge(a, d)
+_, _ = g.AddEdge(b, c)
+_, _ = g.AddEdge(b, d)
+
+// Every undirected edge can be followed both ways.
+fmt.Println(g.ContainsEdge(a, b), g.ContainsEdge(b, a)) // true true
 ```
 
-#### Weighted
+### Weighted
 
 ![weighted-edge](https://user-images.githubusercontent.com/11541936/221908269-b6db15fb-6104-49d9-b9b9-acc062d94e4a.png)
 
 ```go
-graph := New[string]()
+g := gograph.New[string](gograph.Weighted())
 
-vA := gograph.AddVertexByLabel("A")
-vB := gograph.AddVertexByLabel("B")
-vC := gograph.AddVertexByLabel("C")
-vD := gograph.AddVertexByLabel("D")
+a := g.AddVertexByLabel("A")
+b := g.AddVertexByLabel("B")
+c := g.AddVertexByLabel("C")
+d := g.AddVertexByLabel("D")
 
-graph.AddEdge(vA, vB, gograph.WithEdgeWeight(4))
-graph.AddEdge(vA, vD, gograph.WithEdgeWeight(3))
-graph.AddEdge(vB, vC, gograph.WithEdgeWeight(3))
-graph.AddEdge(vB, vD, gograph.WithEdgeWeight(1))
-graph.AddEdge(vC, vD, gograph.WithEdgeWeight(2))
+_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(4))
+_, _ = g.AddEdge(a, d, gograph.WithEdgeWeight(3))
+_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(3))
+_, _ = g.AddEdge(b, d, gograph.WithEdgeWeight(1))
+_, _ = g.AddEdge(c, d, gograph.WithEdgeWeight(2))
+
+dist := path.Dijkstra(g, "A")
+fmt.Println(dist["C"]) // 5
 ```
+
+Vertices can have weights too:
 
 ![weighted-vertex](https://user-images.githubusercontent.com/11541936/221908278-83f3138d-8b28-4c38-825a-627a46d65294.png)
 
 ```go
-graph := New[string]()
-vA := gograph.AddVertexByLabel("A", gograph.WithVertexWeight(3))
-vB := gograph.AddVertexByLabel("B", gograph.WithVertexWeight(2))
-vC := gograph.AddVertexByLabel("C", gograph.WithVertexWeight(4))
+g := gograph.New[string](gograph.Directed(), gograph.Weighted())
 
-graph.AddEdge(vA, vB)
-graph.AddEdge(vB, vC)
+a := g.AddVertexByLabel("A", gograph.WithVertexWeight(3))
+b := g.AddVertexByLabel("B", gograph.WithVertexWeight(2))
+c := g.AddVertexByLabel("C", gograph.WithVertexWeight(4))
+
+_, _ = g.AddEdge(a, b)
+_, _ = g.AddEdge(b, c)
+
+fmt.Println(a.Weight(), b.Weight(), c.Weight()) // 3 2 4
 ```
 
-### Traverse
+## Traversal
 
-Traverse package provides the iterator interface that guarantees all the algorithm export the same APIs:
+The `traverse` package provides iterators that all implement the same interface:
 
 ```go
 type Iterator[T comparable] interface {
@@ -167,14 +203,62 @@ type Iterator[T comparable] interface {
 }
 ```
 
-This package contains the following iterators:
+```go
+g := gograph.New[string](gograph.Directed())
 
-- [Breadth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#BFS)
-- [Depth-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#DFS)
-- [Topological iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#Topological-Sort)
-- [Closest-First iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#Closest-First)
-- [Random Walk iterator](https://github.com/hmdsefi/gograph/tree/master/traverse#random-walk)
+_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
+_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("C"))
+_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("D"))
+
+it, err := traverse.NewBreadthFirstIterator(g, "A")
+if err != nil {
+	fmt.Println(err)
+	return
+}
+
+for it.HasNext() {
+	fmt.Println(it.Next().Label()) // A, B, C, D
+}
+```
+
+Available iterators:
+
+- [Breadth-first](https://github.com/hmdsefi/gograph/tree/master/traverse#bfs)
+- [Depth-first](https://github.com/hmdsefi/gograph/tree/master/traverse#dfs)
+- [Topological](https://github.com/hmdsefi/gograph/tree/master/traverse#topological-sort)
+- [Closest-first](https://github.com/hmdsefi/gograph/tree/master/traverse#closest-first)
+- [Random walk](https://github.com/hmdsefi/gograph/tree/master/traverse#random-walk)
+
+## Algorithms
+
+- **Ordering:** `gograph.TopologySort` (Kahn's algorithm).
+- **Shortest paths** (`path` package):
+  [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md),
+  [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md),
+  [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md).
+- **Transitive reduction** (`path` package):
+  [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
+- **Strongly connected components** (`connectivity` package):
+  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity).
+- **Partitioning** (`partition` package):
+  [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
+  [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),
+  [randomized k-cut](https://github.com/hmdsefi/gograph/blob/master/partition/k-cut.md).
+
+## Roadmap
+
+Planned work, in the order it's likely to land, is tracked in
+[#136](https://github.com/hmdsefi/gograph/issues/136). Issues labeled
+[good first issue](https://github.com/hmdsefi/gograph/labels/good%20first%20issue)
+are a good place to start.
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
+opening a pull request. The README examples are also Go examples in
+[`example_test.go`](example_test.go), so `go test ./...` checks that they still compile
+and print what they claim.
 
 ## License
 
-Apache License, please see [LICENSE](https://github.com/hmdsefi/gograph/blob/master/LICENSE) for details.
+Apache License 2.0, see [LICENSE](LICENSE) for details.
