@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"errors"
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -404,6 +405,143 @@ func TestBaseGraph_RemoveEdges(t *testing.T) {
 	_, existsV2 := destMapV1[v2.label]
 	if existsV2 {
 		t.Error(t, testErrMsgNotFalse)
+	}
+}
+
+func assertEdgeCount[T comparable](t *testing.T, g *baseGraph[T], want int) {
+	t.Helper()
+
+	if int(g.Size()) != want {
+		t.Errorf("Expected Size() %d, but got %d", want, g.Size())
+	}
+	if len(g.AllEdges()) != want {
+		t.Errorf("Expected %d edges in AllEdges(), but got %d", want, len(g.AllEdges()))
+	}
+}
+
+func TestBaseGraph_RemoveEdgesNotInGraph(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Directed()))
+	v1 := g.AddVertexByLabel(1)
+	v2 := g.AddVertexByLabel(2)
+	v3 := g.AddVertexByLabel(3)
+	e12, _ := g.AddEdge(v1, v2)
+	e13, _ := g.AddEdge(v1, v3)
+	e23, _ := g.AddEdge(v2, v3)
+
+	g.RemoveEdges(e12)
+	g.RemoveEdges(e12)
+	assertEdgeCount(t, g, 2)
+
+	g.RemoveEdges(NewEdge(v2, v1))
+	assertEdgeCount(t, g, 2)
+
+	if len(v1.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v1.neighbors))
+	}
+	if len(v2.neighbors) != 1 {
+		t.Errorf(testErrMsgWrongLen, 1, len(v2.neighbors))
+	}
+	if v3.InDegree() != 2 {
+		t.Errorf(testErrMsgNotEqual, 2, v3.InDegree())
+	}
+
+	g.RemoveEdges(e13, e23)
+	assertEdgeCount(t, g, 0)
+}
+
+func TestBaseGraph_RemoveEdgesUndirectedBothDirections(t *testing.T) {
+	tests := []struct {
+		name   string
+		remove func(g *baseGraph[int], v1, v2 *Vertex[int]) []*Edge[int]
+		want   int
+	}{
+		{
+			name: "all edges",
+			remove: func(g *baseGraph[int], _, _ *Vertex[int]) []*Edge[int] {
+				return g.AllEdges()
+			},
+			want: 0,
+		},
+		{
+			name: "edges of a vertex",
+			remove: func(g *baseGraph[int], v1, _ *Vertex[int]) []*Edge[int] {
+				return g.EdgesOf(v1)
+			},
+			want: 2,
+		},
+		{
+			name: "all edges between two vertices",
+			remove: func(g *baseGraph[int], v1, v2 *Vertex[int]) []*Edge[int] {
+				return g.GetAllEdges(v1, v2)
+			},
+			want: 4,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := newBaseGraph[int](newProperties())
+			v1 := g.AddVertexByLabel(1)
+			v2 := g.AddVertexByLabel(2)
+			v3 := g.AddVertexByLabel(3)
+			_, _ = g.AddEdge(v1, v2)
+			_, _ = g.AddEdge(v1, v3)
+			_, _ = g.AddEdge(v2, v3)
+			assertEdgeCount(t, g, 6)
+
+			g.RemoveEdges(tt.remove(g, v1, v2)...)
+			assertEdgeCount(t, g, tt.want)
+		})
+	}
+}
+
+func TestBaseGraph_SizeAfterRandomEdgeChanges(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		var g *baseGraph[int]
+		if directed {
+			g = newBaseGraph[int](newProperties(Directed()))
+		} else {
+			g = newBaseGraph[int](newProperties())
+		}
+
+		const order = 8
+		for i := 0; i < order; i++ {
+			g.AddVertexByLabel(i)
+		}
+
+		rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so failures are reproducible
+		var removed []*Edge[int]
+		for step := 0; step < 3000; step++ {
+			from := g.GetVertexByID(rng.Intn(order))
+			to := g.GetVertexByID(rng.Intn(order))
+			// Undirected self-loops are counted differently, see #142.
+			if from == to && !directed {
+				continue
+			}
+
+			switch rng.Intn(4) {
+			case 0:
+				_, _ = g.AddEdge(from, to)
+			case 1:
+				if edge := g.GetEdge(from, to); edge != nil {
+					removed = append(removed, edge)
+					g.RemoveEdges(edge)
+				}
+			case 2:
+				if len(removed) > 0 {
+					g.RemoveEdges(removed[rng.Intn(len(removed))])
+				}
+			case 3:
+				g.RemoveEdges(g.EdgesOf(from)...)
+			}
+
+			if int(g.Size()) != len(g.AllEdges()) {
+				t.Fatalf(
+					"directed=%v step %d: Size() is %d, but AllEdges() has %d edges",
+					directed, step, g.Size(), len(g.AllEdges()),
+				)
+			}
+		}
 	}
 }
 

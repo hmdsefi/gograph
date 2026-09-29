@@ -290,8 +290,13 @@ func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
 
 // removeEdge removes the edge from edges destination map, if size of
 // the internal map is zero, removes the source label from the edges.
+// It does nothing if the graph doesn't contain the edge.
 func (g *baseGraph[T]) removeEdge(edge *Edge[T]) {
 	if destMap, ok := g.edges[edge.source.label]; ok {
+		if _, exists := destMap[edge.dest.label]; !exists {
+			return
+		}
+
 		delete(destMap, edge.dest.label)
 
 		// remove the neighbor vertex from the source neighbors slice.
