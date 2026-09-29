@@ -219,9 +219,9 @@ func (v *Vertex[T]) NeighborByLabel(label T) *Vertex[T] {
 
 // HasNeighbor checks if the input vertex is the neighbor of the
 // current node or not. It returns 'true' if it finds the input
-// in the neighbors. Otherwise, returns 'false'.
+// in the neighbors. Otherwise, or if the input is nil, returns 'false'.
 func (v *Vertex[T]) HasNeighbor(vertex *Vertex[T]) bool {
-	return v.NeighborByLabel(vertex.label) != nil
+	return vertex != nil && v.NeighborByLabel(vertex.label) != nil
 }
 
 // InDegree returns the number of incoming edges to the current vertex.

@@ -20,14 +20,22 @@ func NewVertexPriorityQueue[T comparable]() *VertexPriorityQueue[T] {
 	}
 }
 
-// Push adds new VertexWithPriority to the queue.
+// Push adds new VertexWithPriority to the queue. A nil input is ignored.
 func (v *VertexPriorityQueue[T]) Push(in *VertexWithPriority[T]) {
+	if in == nil {
+		return
+	}
+
 	heap.Push(&v.pq, in)
 }
 
 // Pop removes and returns the minimum element (according to Less) from
-// the underlying heap.
+// the underlying heap. It returns nil if the queue is empty.
 func (v *VertexPriorityQueue[T]) Pop() *VertexWithPriority[T] {
+	if v.Len() == 0 {
+		return nil
+	}
+
 	out, ok := heap.Pop(&v.pq).(*VertexWithPriority[T])
 	if !ok || out == nil {
 		return nil
