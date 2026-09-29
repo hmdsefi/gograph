@@ -12,7 +12,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.1.6  # Latest stable version as of the search results:cite[2]:cite[3]
+          version: v2.1.6
 
   build:
     name: Go build
