@@ -2,6 +2,7 @@ package traverse
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -129,6 +130,61 @@ func TestRandomWalkIterator_Iterate(t *testing.T) {
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("Expect %+v error, but got %+v", expectedErr, err)
+	}
+}
+
+func TestRandomWalkIterator_StartWithoutOutgoingEdges(t *testing.T) {
+	tests := []struct {
+		name     string
+		graph    gograph.Graph[string]
+		addEdge  bool
+		steps    int
+		expected []string
+	}{
+		{name: "directed", graph: gograph.New[string](gograph.Directed()), steps: 5, expected: []string{"A"}},
+		{name: "undirected", graph: gograph.New[string](), steps: 5, expected: []string{"A"}},
+		{name: "weighted", graph: gograph.New[string](gograph.Weighted()), steps: 5, expected: []string{"A"}},
+		{name: "one step", graph: gograph.New[string](gograph.Directed()), steps: 1, expected: []string{"A"}},
+		{name: "zero steps", graph: gograph.New[string](gograph.Directed()), steps: 0, expected: []string{}},
+		{
+			name:     "stops at a vertex without outgoing edges",
+			graph:    gograph.New[string](gograph.Directed()),
+			addEdge:  true,
+			steps:    5,
+			expected: []string{"A", "B"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := tt.graph.AddVertexByLabel("A")
+			if tt.addEdge {
+				_, _ = tt.graph.AddEdge(a, tt.graph.AddVertexByLabel("B"))
+			}
+
+			it, err := NewRandomWalkIterator(tt.graph, "A", tt.steps)
+			if err != nil {
+				t.Fatalf("Expect NewRandomWalkIterator doesn't return error, but got %s", err)
+			}
+
+			for range 2 {
+				visited := make([]string, 0)
+				_ = it.Iterate(func(v *gograph.Vertex[string]) error {
+					visited = append(visited, v.Label())
+					return nil
+				})
+
+				if !reflect.DeepEqual(visited, tt.expected) {
+					t.Errorf("Expect walk %v, but got %v", tt.expected, visited)
+				}
+
+				if v := it.Next(); v != nil {
+					t.Errorf("Expect Next returns nil after the walk, but got %v", v.Label())
+				}
+
+				it.Reset()
+			}
+		})
 	}
 }
 

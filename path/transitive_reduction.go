@@ -22,6 +22,10 @@ var (
 // For directed acyclic graphs (DAGs), the transitive reduction can be computed efficiently
 // without needing to build the full transitive closure matrix.
 //
+// The result keeps the vertex weights and the weights of the remaining edges, and is
+// weighted if g is weighted. It isn't created with Acyclic, even if g is, so AddEdge
+// on the result doesn't reject edges that create a cycle.
+//
 // It returns an error if the graph is not directed or if the graph contains cycles.
 func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], error) {
 	// Transitive reduction requires a directed graph
@@ -49,7 +53,7 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 	// Add all vertices from the original graph to the reduced graph
 	vertices := g.GetAllVertices()
 	for _, v := range vertices {
-		reducedGraph.AddVertexByLabel(v.Label())
+		reducedGraph.AddVertexByLabel(v.Label(), gograph.WithVertexWeight(v.Weight()))
 	}
 
 	// Map to cache descendants for vertices that we've already processed
@@ -88,21 +92,12 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 		uVertex := reducedGraph.GetVertexByID(u.Label())
 		for neighbor := range neighbors {
 			vVertex := reducedGraph.GetVertexByID(neighbor)
+			// neighbors only holds labels from u.Neighbors(), so g has this edge.
+			originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor))
 
-			// Preserve edge weight if the graph is weighted
-			if g.IsWeighted() {
-				originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor))
-				if originalEdge != nil {
-					_, err := reducedGraph.AddEdge(uVertex, vVertex, gograph.WithEdgeWeight(originalEdge.Weight()))
-					if err != nil {
-						return nil, err
-					}
-				}
-			} else {
-				_, err := reducedGraph.AddEdge(uVertex, vVertex)
-				if err != nil {
-					return nil, err
-				}
+			_, err := reducedGraph.AddEdge(uVertex, vVertex, gograph.WithEdgeWeight(originalEdge.Weight()))
+			if err != nil {
+				return nil, err
 			}
 		}
 	}

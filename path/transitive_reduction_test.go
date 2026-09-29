@@ -214,6 +214,68 @@ func TestTransitiveReduction_WeightPreservation(t *testing.T) {
 	}
 }
 
+func TestTransitiveReduction_KeepsWeights(t *testing.T) {
+	tests := []struct {
+		name    string
+		options []gograph.GraphOptionFunc
+	}{
+		{name: "weighted", options: []gograph.GraphOptionFunc{gograph.Directed(), gograph.Weighted()}},
+		{name: "not weighted", options: []gograph.GraphOptionFunc{gograph.Directed()}},
+		{name: "acyclic", options: []gograph.GraphOptionFunc{gograph.Acyclic()}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := gograph.New[string](tt.options...)
+			vA := g.AddVertexByLabel("A", gograph.WithVertexWeight(5))
+			vB := g.AddVertexByLabel("B", gograph.WithVertexWeight(7))
+			vC := g.AddVertexByLabel("C")
+			_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(3))
+			_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(4))
+			_, _ = g.AddEdge(vA, vC, gograph.WithEdgeWeight(10))
+
+			reduced, err := TransitiveReduction(g)
+			if err != nil {
+				t.Fatalf("TransitiveReduction returned an error: %v", err)
+			}
+
+			if reduced.IsWeighted() != g.IsWeighted() {
+				t.Errorf("Expected IsWeighted %v, got %v", g.IsWeighted(), reduced.IsWeighted())
+			}
+
+			for label, weight := range map[string]float64{"A": 5, "B": 7, "C": 0} {
+				if got := reduced.GetVertexByID(label).Weight(); got != weight {
+					t.Errorf("Vertex %s should have weight %v, got %v", label, weight, got)
+				}
+			}
+
+			vAReduced := reduced.GetVertexByID("A")
+			vBReduced := reduced.GetVertexByID("B")
+			vCReduced := reduced.GetVertexByID("C")
+
+			if reduced.GetEdge(vAReduced, vCReduced) != nil {
+				t.Errorf("Edge A->C should not exist in reduced graph")
+			}
+
+			for _, e := range []struct {
+				from, to *gograph.Vertex[string]
+				weight   float64
+			}{{vAReduced, vBReduced, 3}, {vBReduced, vCReduced, 4}} {
+				edge := reduced.GetEdge(e.from, e.to)
+				if edge == nil {
+					t.Errorf("Edge %s->%s should exist in reduced graph", e.from.Label(), e.to.Label())
+					continue
+				}
+
+				if edge.Weight() != e.weight {
+					t.Errorf("Edge %s->%s should have weight %v, got %v",
+						e.from.Label(), e.to.Label(), e.weight, edge.Weight())
+				}
+			}
+		})
+	}
+}
+
 func TestTransitiveReduction_ErrorCases(t *testing.T) {
 	// Test case 1: Undirected graph
 	undirectedGraph := gograph.New[string]()

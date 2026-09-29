@@ -48,11 +48,12 @@ func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps 
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited or not.
+// to be visited or not. The walk returns the start vertex first, and
+// stops after steps vertices or at a vertex without outgoing edges.
 func (r *randomWalkIterator[T]) HasNext() bool {
 	return r.current != nil &&
-		r.current.OutDegree() > 0 &&
-		r.currentStep < r.steps
+		r.currentStep < r.steps &&
+		(r.currentStep == 0 || r.current.OutDegree() > 0)
 }
 
 // Next returns the next vertex to be visited in the random walk traversal.

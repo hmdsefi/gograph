@@ -20,7 +20,8 @@ Here's a step-by-step explanation of how the transitive reduction algorithm work
    and can be removed, since there's already a path through v.
 
 4. **Create the reduced graph:** The algorithm constructs a new graph with all vertices from the original
-   graph but only includes non-redundant edges.
+   graph but only includes non-redundant edges. Vertex and edge weights are kept, and the new graph is
+   weighted when the original graph is.
 
 The time complexity of this transitive reduction algorithm is `O(V(V+E))`, where V is the number of vertices
 and E is the number of edges in the graph. This is more efficient than the O(V³) approach using Floyd-Warshall,
