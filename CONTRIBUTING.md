@@ -26,9 +26,11 @@ cd gograph
 
 go test -race ./...     # run all tests, same as make test
 golangci-lint run ./... # run the linters, same as make lint
+make check-coverage     # run the tests and check test coverage
 ```
 
-CI runs the linters and the tests on every pull request.
+CI runs the linters and the tests on every pull request, and fails if total test
+coverage drops below 95% (see `.testcoverage.yml`).
 
 ## Backward compatibility
 

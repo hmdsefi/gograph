@@ -30,25 +30,31 @@ jobs:
   test:
     name: Go test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # commits the coverage badge to the badges branch
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.24.2
-      - name: go get & test
+          go-version-file: go.mod
+      - name: Test
+        run: go test -race -covermode=atomic -coverprofile=cover.out ./...
+
+      - name: Check coverage
+        id: coverage
+        uses: vladopajic/go-test-coverage@f94bcf0d6b9fa5fb8b783830b22648f6c17475e2 # v2.19.0
+        with:
+          config: ./.testcoverage.yml
+          git-token: ${{ github.event_name == 'push' && github.ref_name == 'master' && secrets.GITHUB_TOKEN || '' }}
+          git-branch: badges
+
+      - name: Coverage summary
+        if: ${{ !cancelled() && steps.coverage.outputs.report != '' }}
+        env:
+          REPORT: ${{ fromJSON(steps.coverage.outputs.report) }}
         run: |
-          go get -v -t -d ./...
-          go test -v ./...
-
-      - name: Generate coverage report
-        run: sh ./.github/scripts/coverage.sh
-        shell: bash
-
-      - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.out
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          fail_ci_if_error: false # optional (default = false)
-          verbose: true # optional (default = false)
+          {
+            echo '```'
+            echo "$REPORT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
