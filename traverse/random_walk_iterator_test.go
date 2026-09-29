@@ -143,6 +143,7 @@ func TestRandomWalkIterator_StartWithoutOutgoingEdges(t *testing.T) {
 	}{
 		{name: "directed", graph: gograph.New[string](gograph.Directed()), steps: 5, expected: []string{"A"}},
 		{name: "undirected", graph: gograph.New[string](), steps: 5, expected: []string{"A"}},
+		{name: "weighted", graph: gograph.New[string](gograph.Weighted()), steps: 5, expected: []string{"A"}},
 		{name: "one step", graph: gograph.New[string](gograph.Directed()), steps: 1, expected: []string{"A"}},
 		{name: "zero steps", graph: gograph.New[string](gograph.Directed()), steps: 0, expected: []string{}},
 		{
