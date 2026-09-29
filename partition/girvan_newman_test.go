@@ -76,6 +76,29 @@ func TestGirvanNewman_IntGraph(t *testing.T) {
 	}
 }
 
+func TestGirvanNewman_RemovesEveryEdge(t *testing.T) {
+	// The edge removal order depends on map iteration, so repeat the run.
+	for run := 0; run < 50; run++ {
+		g := gograph.New[int]()
+		v := make([]*gograph.Vertex[int], 5)
+		for i := range v {
+			v[i] = g.AddVertexByLabel(i)
+		}
+		_, _ = g.AddEdge(v[0], v[2])
+		_, _ = g.AddEdge(v[0], v[4])
+		_, _ = g.AddEdge(v[1], v[2])
+		_, _ = g.AddEdge(v[2], v[3])
+
+		components, err := GirvanNewman(g, 0)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(components) != len(v) {
+			t.Fatalf("run %d: expected %d components, got %d", run, len(v), len(components))
+		}
+	}
+}
+
 func TestGirvanNewman_ComplexGraph(t *testing.T) {
 	g := gograph.New[string]()
 
