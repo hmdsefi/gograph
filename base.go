@@ -54,7 +54,8 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFu
 // In undirected graph, it creates edges in both directions between
 // the specified vertices.
 //
-// It creates the input vertices if they don't exist in the graph.
+// It creates the input vertices if they don't exist in the graph, the
+// same way AddVertex does, so a vertex from another graph is copied.
 // If any of the specified vertices is nil, returns nil.
 // If edge already exist, returns error.
 func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (*Edge[T], error) {
@@ -125,6 +126,10 @@ func (g *baseGraph[T]) AddVertexByLabel(label T, options ...VertexOptionFunc) *V
 // AddVertex adds the input vertex to the graph. It doesn't add
 // vertex to the graph if the input vertex label is already exists
 // in the graph.
+//
+// A vertex belongs to one graph. If the input vertex has already been
+// added to a graph, including this one before it was removed, the graph
+// stores a copy with the same label, weight and metadata, and no edges.
 func (g *baseGraph[T]) AddVertex(v *Vertex[T]) {
 	if v == nil {
 		return
@@ -137,6 +142,11 @@ func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
 	if _, ok := g.vertices[v.label]; ok {
 		return nil
 	}
+
+	if v.stored {
+		v = &Vertex[T]{label: v.label, properties: v.properties, metadata: v.metadata}
+	}
+	v.stored = true
 
 	g.vertices[v.label] = v
 	atomic.AddUint32(&g.verticesCount, 1)

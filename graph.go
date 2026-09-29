@@ -34,7 +34,8 @@ type Graph[T comparable] interface {
 	// them to the new edge.
 	//
 	//
-	// It creates the input vertices if they don't exist in the graph.
+	// It creates the input vertices if they don't exist in the graph, the
+	// same way AddVertex does, so a vertex from another graph is copied.
 	// If any of the specified vertices is nil, returns nil.
 	// If edge already exist, returns error.
 	AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (*Edge[T], error)
@@ -85,6 +86,10 @@ type Graph[T comparable] interface {
 	// AddVertex adds the input vertex to the graph. It doesn't add
 	// vertex to the graph if the input vertex label is already exists
 	// in the graph.
+	//
+	// A vertex belongs to one graph. If the input vertex has already been
+	// added to a graph, including this one before it was removed, the graph
+	// stores a copy with the same label, weight and metadata, and no edges.
 	AddVertex(v *Vertex[T])
 
 	// GetVertexByID returns the vertex with the input label.
@@ -190,7 +195,8 @@ type Vertex[T comparable] struct {
 	neighbors  []*Vertex[T] // stores pointers to its neighbors
 	inDegree   int          // number of incoming edges to this vertex
 	properties VertexProperties
-	metadata   any // optional metadata associated with the vertex
+	metadata   any  // optional metadata associated with the vertex
+	stored     bool // whether a graph has stored this vertex
 }
 
 func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
