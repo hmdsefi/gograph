@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A random walk from a vertex without outgoing edges returned nothing. It now
   returns the start vertex. ([#147])
+- `TransitiveReduction` dropped vertex weights, and dropped edge weights when the
+  input graph wasn't created with `Weighted()`. It now keeps both. ([#148])
 
 ## [0.7.2] - 2026-09-29
 
@@ -138,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#143]: https://github.com/hmdsefi/gograph/issues/143
 [#144]: https://github.com/hmdsefi/gograph/issues/144
 [#147]: https://github.com/hmdsefi/gograph/issues/147
+[#148]: https://github.com/hmdsefi/gograph/issues/148
 [#149]: https://github.com/hmdsefi/gograph/issues/149
 [#151]: https://github.com/hmdsefi/gograph/pull/151
 [#152]: https://github.com/hmdsefi/gograph/pull/152
