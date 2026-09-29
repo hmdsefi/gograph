@@ -33,6 +33,10 @@ func TestVertex(t *testing.T) {
 		t.Error(testErrMsgNotFalse)
 	}
 
+	if vA.HasNeighbor(nil) {
+		t.Error(testErrMsgNotFalse)
+	}
+
 	if vA.OutDegree() != 2 {
 		t.Errorf(testErrMsgNotEqual, 2, vA.OutDegree())
 	}

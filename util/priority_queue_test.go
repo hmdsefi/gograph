@@ -83,3 +83,47 @@ func TestVertexPriorityQueue(t *testing.T) {
 		t.Errorf("Expected Peek returns nil, but got %v", vpq.Peek())
 	}
 }
+
+func TestVertexPriorityQueue_Empty(t *testing.T) {
+	vpq := NewVertexPriorityQueue[string]()
+	if item := vpq.Pop(); item != nil {
+		t.Errorf("Expected Pop on a new queue returns nil, but got %v", item)
+	}
+
+	vpq.Push(NewVertexWithPriority(gograph.NewVertex("A"), 1))
+	if item := vpq.Pop(); item == nil || item.Vertex().Label() != "A" {
+		t.Errorf("Expected Pop returns A, but got %v", item)
+	}
+
+	if item := vpq.Pop(); item != nil {
+		t.Errorf("Expected Pop on an emptied queue returns nil, but got %v", item)
+	}
+
+	if vpq.Len() != 0 {
+		t.Errorf("VertexPriorityQueue length = %d; want 0", vpq.Len())
+	}
+}
+
+func TestVertexPriorityQueue_PushNil(t *testing.T) {
+	vpq := NewVertexPriorityQueue[string]()
+	vpq.Push(nil)
+	if vpq.Len() != 0 {
+		t.Errorf("VertexPriorityQueue length = %d; want 0", vpq.Len())
+	}
+
+	vpq.Push(NewVertexWithPriority(gograph.NewVertex("B"), 2))
+	vpq.Push(nil)
+	vpq.Push(NewVertexWithPriority(gograph.NewVertex("A"), 1))
+	if vpq.Len() != 2 {
+		t.Errorf("VertexPriorityQueue length = %d; want 2", vpq.Len())
+	}
+
+	items := make([]string, 0)
+	for vpq.Len() > 0 {
+		items = append(items, vpq.Pop().Vertex().Label())
+	}
+
+	if expected := []string{"A", "B"}; !reflect.DeepEqual(items, expected) {
+		t.Errorf("VertexPriorityQueue Pop() order = %v; want %v", items, expected)
+	}
+}
