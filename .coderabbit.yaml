@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+
+reviews:
+  profile: quiet
+  high_level_summary: false
+  review_status: false
+  review_details: false
+  in_progress_fortune: false
+  poem: false
+  collapse_walkthrough: true
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  assess_linked_issues: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  suggested_reviewers: false
+  enable_prompt_for_ai_agents: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_instructions:
+    - path: "**/*.go"
+      instructions: |
+        gograph is a public library, so backward compatibility matters most.
+        Flag any change to an exported signature, any new method on an
+        exported interface, and any change to documented behavior. Flag
+        behavior changes that don't come with tests. The library must not
+        depend on anything outside the standard library. Skip style points
+        that golangci-lint already enforces.
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: "off"
+    description:
+      mode: "off"
+    issue_assessment:
+      mode: "off"
+
+  tools:
+    golangci-lint:
+      enabled: false
+    markdownlint:
+      enabled: false
+    languagetool:
+      enabled: false
+
+chat:
+  art: false
