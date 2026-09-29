@@ -50,3 +50,6 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
+
+# Go coverage profile
+cover.out

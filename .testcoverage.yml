@@ -1,0 +1,7 @@
+# Settings for go-test-coverage, used by CI and by `make check-coverage`.
+# See https://github.com/vladopajic/go-test-coverage for all options.
+profile: cover.out
+
+threshold:
+  # Minimum coverage of the whole module, in percent.
+  total: 95

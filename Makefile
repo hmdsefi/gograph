@@ -26,6 +26,12 @@ coverage: sync
   	 go tool cover -func=c.out;\
   	 rm c.out
 
+.PHONY: check-coverage
+check-coverage:
+	$(info $(M) checking test coverage)
+	 go test -race -covermode=atomic -coverprofile=cover.out ./...
+	 go run github.com/vladopajic/go-test-coverage/v2@v2.19.0 --config=./.testcoverage.yml
+
 
 
 .PHONY: build
