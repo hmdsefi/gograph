@@ -60,6 +60,9 @@ import (
 //	}
 //
 // Notes:
+//   - Self-loops are ignored.
+//   - In a directed graph, edges are treated as undirected: two vertices are
+//     adjacent if there is an edge between them in either direction.
 //   - The function returns the actual Vertex pointers from the input graph;
 //     do not modify the vertices while iterating the results.
 //   - The order of cliques or vertices within a clique is not guaranteed.
@@ -86,11 +89,23 @@ func MaximalCliques[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		neighborsBits[i] = make([]uint64, words)
 	}
 
+	// Bron-Kerbosch needs a symmetric adjacency without self-loops, so add
+	// each edge in both directions, once, and skip loops.
+	linked := make(map[[2]int]bool)
+	link := func(i, j int) {
+		if linked[[2]int{i, j}] {
+			return
+		}
+		linked[[2]int{i, j}] = true
+		adj[i] = append(adj[i], j)
+		setBit(neighborsBits[i], j)
+	}
+
 	for i, v := range vertices {
 		for _, nb := range v.Neighbors() {
-			if j, ok := indexOf[nb.Label()]; ok {
-				adj[i] = append(adj[i], j)
-				setBit(neighborsBits[i], j)
+			if j, ok := indexOf[nb.Label()]; ok && j != i {
+				link(i, j)
+				link(j, i)
 			}
 		}
 	}
