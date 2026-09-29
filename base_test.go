@@ -3,6 +3,7 @@ package gograph
 import (
 	"errors"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -922,5 +923,197 @@ func Test_baseGraph_Cyclic(t *testing.T) {
 
 	if !errors.Is(err, ErrDAGCycle) {
 		t.Errorf("expected error %s, but got %s", ErrDAGCycle, err)
+	}
+}
+
+// assertNeighborsInGraph fails if a vertex of g lists a neighbor that g
+// doesn't contain, or a neighbor that isn't backed by an edge of g.
+func assertNeighborsInGraph[T comparable](t *testing.T, name string, g Graph[T]) {
+	t.Helper()
+
+	for _, v := range g.GetAllVertices() {
+		for _, n := range v.Neighbors() {
+			if !g.ContainsVertex(n) {
+				t.Errorf("%s: %v lists neighbor %v, which isn't in the graph", name, v.Label(), n.Label())
+				continue
+			}
+			if g.GetEdge(v, n) == nil {
+				t.Errorf("%s: %v lists neighbor %v, but there's no edge", name, v.Label(), n.Label())
+			}
+		}
+	}
+}
+
+func neighborLabels[T comparable](v *Vertex[T]) []T {
+	var labels []T
+	for _, n := range v.Neighbors() {
+		labels = append(labels, n.Label())
+	}
+
+	return labels
+}
+
+func TestBaseGraph_AddEdgeWithVerticesFromAnotherGraph(t *testing.T) {
+	src := New[string](Directed())
+	a := src.AddVertexByLabel("A")
+	b := src.AddVertexByLabel("B")
+	_, _ = src.AddEdge(a, b)
+
+	dst := New[string](Directed())
+	for _, e := range src.AllEdges() {
+		if _, err := dst.AddEdge(e.Source(), e.Destination()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if dst.GetVertexByID("A") == a {
+		t.Error("dst stores the vertex of src")
+	}
+
+	c := dst.AddVertexByLabel("C")
+	if _, err := dst.AddEdge(dst.GetVertexByID("A"), c); err != nil {
+		t.Fatal(err)
+	}
+
+	if src.Size() != 1 || a.OutDegree() != 1 || b.InDegree() != 1 {
+		t.Errorf("src changed: Size %d, A out-degree %d, B in-degree %d", src.Size(), a.OutDegree(), b.InDegree())
+	}
+	if dst.Size() != 2 || dst.GetVertexByID("A").OutDegree() != 2 {
+		t.Errorf("dst: Size %d, A out-degree %d", dst.Size(), dst.GetVertexByID("A").OutDegree())
+	}
+	assertNeighborsInGraph(t, "src", src)
+	assertNeighborsInGraph(t, "dst", dst)
+}
+
+func TestBaseGraph_AddVertexFromAnotherGraph(t *testing.T) {
+	full := New[string](Directed())
+	p := full.AddVertexByLabel("P")
+	q := full.AddVertexByLabel("Q")
+	r := full.AddVertexByLabel("R")
+	_, _ = full.AddEdge(p, q)
+	_, _ = full.AddEdge(q, r)
+
+	sub := New[string](Directed())
+	sub.AddVertex(p)
+	sub.AddVertex(q)
+
+	if sub.Order() != 2 || sub.Size() != 0 {
+		t.Errorf("sub: Order %d, Size %d", sub.Order(), sub.Size())
+	}
+	for _, v := range sub.GetAllVertices() {
+		if v.OutDegree() != 0 || v.InDegree() != 0 {
+			t.Errorf("sub: %v has out-degree %d and in-degree %d", v.Label(), v.OutDegree(), v.InDegree())
+		}
+	}
+	if p.OutDegree() != 1 || q.InDegree() != 1 || q.OutDegree() != 1 {
+		t.Error("full changed")
+	}
+	assertNeighborsInGraph(t, "sub", sub)
+}
+
+func TestBaseGraph_AddEdgeAcyclicWithVertexFromAnotherGraph(t *testing.T) {
+	full := New[string](Directed())
+	p := full.AddVertexByLabel("P")
+	q := full.AddVertexByLabel("Q")
+	_, _ = full.AddEdge(p, q)
+
+	dag := New[string](Acyclic())
+	if _, err := dag.AddEdge(q, NewVertex("S")); err != nil {
+		t.Fatalf("AddEdge(Q, S): %v", err)
+	}
+	if _, err := dag.AddEdge(NewVertex("T"), NewVertex("U")); err != nil {
+		t.Fatalf("AddEdge(T, U): %v", err)
+	}
+	if _, err := TopologySort[string](dag); err != nil {
+		t.Fatalf("TopologySort: %v", err)
+	}
+
+	if !reflect.DeepEqual(neighborLabels(q), []string(nil)) || q.InDegree() != 1 {
+		t.Errorf("full changed: Q neighbors %v, in-degree %d", neighborLabels(q), q.InDegree())
+	}
+	assertNeighborsInGraph(t, "dag", dag)
+}
+
+func TestBaseGraph_AddVertexAfterRemoval(t *testing.T) {
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	_, _ = g.AddEdge(a, b)
+
+	g.RemoveVertices(a)
+	g.AddVertex(a)
+
+	added := g.GetVertexByID("A")
+	if added.OutDegree() != 0 || g.ContainsEdge(added, b) {
+		t.Errorf("A came back with neighbors %v", neighborLabels(added))
+	}
+	if a.OutDegree() != 1 {
+		t.Errorf("the removed vertex lost its neighbors: %v", neighborLabels(a))
+	}
+	assertNeighborsInGraph(t, "g", g)
+}
+
+func TestBaseGraph_AddEdgeWithNeighborCopy(t *testing.T) {
+	g1 := New[string](Directed())
+	x := g1.AddVertexByLabel("X")
+	a := g1.AddVertexByLabel("A")
+	_, _ = g1.AddEdge(x, a)
+	for _, label := range []string{"B", "C", "D"} {
+		_, _ = g1.AddEdge(a, g1.AddVertexByLabel(label))
+	}
+
+	g2 := New[string](Directed())
+	if _, err := g2.AddEdge(x.Neighbors()[0], g2.AddVertexByLabel("E")); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = g1.AddEdge(a, g1.AddVertexByLabel("F"))
+
+	if got := neighborLabels(g2.GetVertexByID("A")); !reflect.DeepEqual(got, []string{"E"}) {
+		t.Errorf("A in g2 has neighbors %v, expected [E]", got)
+	}
+
+	got := neighborLabels(a)
+	sort.Strings(got)
+	if !reflect.DeepEqual(got, []string{"B", "C", "D", "F"}) {
+		t.Errorf("A in g1 has neighbors %v, expected [B C D F]", got)
+	}
+	assertNeighborsInGraph(t, "g1", g1)
+	assertNeighborsInGraph(t, "g2", g2)
+}
+
+func TestBaseGraph_AddVertexCopyKeepsProperties(t *testing.T) {
+	g1 := New[string]()
+	v := g1.AddVertexByLabel("A", WithVertexWeight(5))
+	v.metadata = "data"
+
+	g2 := New[string]()
+	g2.AddVertex(v)
+
+	got := g2.GetVertexByID("A")
+	if got == v {
+		t.Fatal("g2 stores the vertex of g1")
+	}
+	if got.Weight() != 5 || got.Metadata() != "data" {
+		t.Errorf("copy has weight %v and metadata %v", got.Weight(), got.Metadata())
+	}
+}
+
+func TestBaseGraph_AddVertexKeepsNewVertex(t *testing.T) {
+	g := New[int](Directed())
+	v := NewVertex(1)
+	g.AddVertex(v)
+	if g.GetVertexByID(1) != v {
+		t.Error("AddVertex didn't store the vertex it was given")
+	}
+
+	from, to := NewVertex(2), NewVertex(3)
+	edge, err := g.AddEdge(from, to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g.GetVertexByID(2) != from || g.GetVertexByID(3) != to {
+		t.Error("AddEdge didn't store the vertices it was given")
+	}
+	if edge.Source() != from || edge.Destination() != to {
+		t.Error("the edge doesn't point to the graph's vertices")
 	}
 }
