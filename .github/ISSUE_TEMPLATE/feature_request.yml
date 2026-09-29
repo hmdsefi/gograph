@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new algorithm, API or improvement.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and why is it hard with the current API?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Function signatures and a short usage example, if you have them in mind.
+      render: go
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you use today, or other designs you considered.
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Backward compatibility
+      description: See the backward compatibility section in CONTRIBUTING.md.
+      options:
+        - label: The proposal doesn't add methods to exported interfaces or change existing signatures or behavior.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to implement this myself.

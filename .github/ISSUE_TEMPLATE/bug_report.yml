@@ -1,0 +1,45 @@
+name: Bug report
+description: Something doesn't work as documented.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. For security problems, please follow SECURITY.md instead of opening a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: gograph version
+      placeholder: v0.7.1
+    validations:
+      required: true
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      description: Output of `go version`.
+      placeholder: go version go1.24.2 linux/amd64
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: A small, complete program that shows the problem. Include the graph options you use, such as Directed(), Acyclic() or Weighted().
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the full output or panic message.
+    validations:
+      required: true
