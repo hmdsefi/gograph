@@ -60,28 +60,59 @@ func Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	return sccs
 }
 
+// kosarajuFrame is a vertex on the current depth-first search path, with
+// its neighbors and the index of the next neighbor to explore.
+type kosarajuFrame[T comparable] struct {
+	vertex    *gograph.Vertex[T]
+	neighbors []*gograph.Vertex[T]
+	next      int
+}
+
+// search runs a depth-first search from the root vertex over vertices
+// that aren't visited yet. It calls enter when it first reaches a vertex
+// and finish when all of the vertex's neighbors are explored.
+//
+// It keeps the search path in a slice instead of recursing, so the depth
+// of the graph doesn't grow the goroutine stack.
+func (k *kosarajuDFS[T]) search(root *gograph.Vertex[T], enter, finish func(v *gograph.Vertex[T])) {
+	k.visited[root.Label()] = true
+	enter(root)
+	path := []kosarajuFrame[T]{{vertex: root, neighbors: root.Neighbors()}}
+
+	for len(path) > 0 {
+		frame := &path[len(path)-1]
+		if frame.next < len(frame.neighbors) {
+			neighbor := frame.neighbors[frame.next]
+			frame.next++
+			if !k.visited[neighbor.Label()] {
+				k.visited[neighbor.Label()] = true
+				enter(neighbor)
+				path = append(path, kosarajuFrame[T]{vertex: neighbor, neighbors: neighbor.Neighbors()})
+			}
+			continue
+		}
+
+		finish(frame.vertex)
+		path = path[:len(path)-1]
+	}
+}
+
 // dfs1 creates the stack of vertices.
 func (k *kosarajuDFS[T]) dfs1(v *gograph.Vertex[T], stack *[]T) {
-	k.visited[v.Label()] = true
-	neighbors := v.Neighbors()
-	for _, neighbor := range neighbors {
-		if !k.visited[neighbor.Label()] {
-			k.dfs1(neighbor, stack)
-		}
-	}
-	*stack = append(*stack, v.Label())
+	k.search(
+		v,
+		func(*gograph.Vertex[T]) {},
+		func(v *gograph.Vertex[T]) { *stack = append(*stack, v.Label()) },
+	)
 }
 
 // dfs2 explores the strongly connected components.
 func (k *kosarajuDFS[T]) dfs2(v *gograph.Vertex[T], scc *[]*gograph.Vertex[T]) {
-	k.visited[v.Label()] = true
-	*scc = append(*scc, v)
-	neighbors := v.Neighbors()
-	for _, neighbor := range neighbors {
-		if !k.visited[neighbor.Label()] {
-			k.dfs2(neighbor, scc)
-		}
-	}
+	k.search(
+		v,
+		func(v *gograph.Vertex[T]) { *scc = append(*scc, v) },
+		func(*gograph.Vertex[T]) {},
+	)
 }
 
 func (k *kosarajuDFS[T]) reverse(g gograph.Graph[T]) gograph.Graph[T] {
