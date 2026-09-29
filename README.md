@@ -1,5 +1,6 @@
 ![build](https://github.com/hmdsefi/gograph/actions/workflows/build.yml/badge.svg)
 [![coverage](https://raw.githubusercontent.com/hmdsefi/gograph/badges/.badges/master/coverage.svg)](https://github.com/hmdsefi/gograph/actions/workflows/build.yml?query=branch%3Amaster)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/hmdsefi/gograph?utm_source=oss&utm_medium=github&utm_campaign=hmdsefi%2Fgograph&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 
