@@ -3,6 +3,7 @@ language: en-US
 
 reviews:
   profile: quiet
+  request_changes_workflow: true
   high_level_summary: false
   review_status: false
   review_details: false
