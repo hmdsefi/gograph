@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-30
+
+### Fixed
+
+- `NewVertex` ignored its options, so a weight set with `WithVertexWeight` was
+  lost, including for vertices passed to `AddVertex` and `AddEdge`. It now
+  applies them. ([#97], [#172])
+- The weighted random walk panicked when the edge weights of a vertex added up
+  to less than 1, and picked neighbors with the wrong odds when the weights
+  weren't whole numbers. Each step now picks a neighbor with a probability
+  proportional to the weight of the edge to it. Edges with a weight of zero or
+  less are never picked, unless no edge of the vertex has a positive weight.
+  Then each edge has an equal chance. ([#98], [#173])
+- The closest-first iterator and the random walk returned copies of the
+  vertices after the start vertex, and `Kosaraju` returned the vertices of the
+  reversed graph it builds, which have no weight and neighbors that point the
+  other way. They now return the vertices stored in the graph. ([#100], [#174])
+
 ## [0.8.0] - 2026-09-30
 
 ### Added
@@ -165,7 +183,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/hmdsefi/gograph/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/hmdsefi/gograph/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/hmdsefi/gograph/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/hmdsefi/gograph/compare/v0.7.0...v0.7.1
@@ -183,7 +202,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#94]: https://github.com/hmdsefi/gograph/pull/94
 [#95]: https://github.com/hmdsefi/gograph/issues/95
 [#96]: https://github.com/hmdsefi/gograph/issues/96
+[#97]: https://github.com/hmdsefi/gograph/issues/97
+[#98]: https://github.com/hmdsefi/gograph/issues/98
 [#99]: https://github.com/hmdsefi/gograph/issues/99
+[#100]: https://github.com/hmdsefi/gograph/issues/100
 [#114]: https://github.com/hmdsefi/gograph/issues/114
 [#117]: https://github.com/hmdsefi/gograph/issues/117
 [#122]: https://github.com/hmdsefi/gograph/issues/122
@@ -214,3 +236,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#168]: https://github.com/hmdsefi/gograph/pull/168
 [#169]: https://github.com/hmdsefi/gograph/pull/169
 [#170]: https://github.com/hmdsefi/gograph/pull/170
+[#172]: https://github.com/hmdsefi/gograph/pull/172
+[#173]: https://github.com/hmdsefi/gograph/pull/173
+[#174]: https://github.com/hmdsefi/gograph/pull/174
