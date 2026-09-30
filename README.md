@@ -65,9 +65,15 @@ func main() {
 }
 ```
 
-When several orders are valid, `TopologySort` returns one of them, and which one can
-change between runs. A deterministic order is planned in
-[#114](https://github.com/hmdsefi/gograph/issues/114).
+When several orders are valid, `TopologySort` follows the order the vertices and edges
+were added, so the same graph gives the same result on every run. To choose the order
+yourself, `StableTopologySort` takes a compare function such as `cmp.Compare` and always
+picks the smallest vertex that is ready.
+
+`GetAllVertices` returns vertices in the order they were added, and `AllEdges` and
+`EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
+`GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
+built the same way.
 
 ## Table of contents
 
@@ -231,7 +237,8 @@ Available iterators:
 
 ## Algorithms
 
-- **Ordering:** `gograph.TopologySort` (Kahn's algorithm).
+- **Ordering:** `gograph.TopologySort` (Kahn's algorithm) and `gograph.StableTopologySort`
+  (smallest ready vertex first).
 - **Shortest paths** (`path` package):
   [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md),
   [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md),

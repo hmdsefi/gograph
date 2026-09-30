@@ -34,6 +34,10 @@ func newTarjanSCCS[T comparable](vertices map[T]*tarjanVertex[T]) *tarjanSCCS[T]
 // stack, and sccs variables and then loops through all the vertices in
 // the graph. It returns a slice of vertices' slice, where each inner
 // slice represents a strongly connected component of the graph.
+//
+// The order of the components and of the vertices in them is stable: it
+// only depends on the order of the vertices and edges in the graph, so a
+// graph built the same way gives the same result on every run.
 func Tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	var (
 		index     int
@@ -51,9 +55,9 @@ func Tarjan[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 
 	tarj := newTarjanSCCS(tvertices)
 
-	for _, v := range tvertices {
-		if v.index < 0 {
-			tarj.visit(v, &index, &stack, &sccs)
+	for _, v := range vertices {
+		if tv := tvertices[v.Label()]; tv.index < 0 {
+			tarj.visit(tv, &index, &stack, &sccs)
 		}
 	}
 

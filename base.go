@@ -17,6 +17,12 @@ type baseGraph[T comparable] struct {
 	// map is the label of destination vertex.
 	edges map[T]map[T]*Edge[T]
 
+	// order keeps the vertices in the order they were added. A removed
+	// vertex leaves a nil slot, and removedCount counts those slots
+	// until removeFromOrder drops them.
+	order        []*Vertex[T]
+	removedCount int
+
 	properties GraphProperties
 
 	verticesCount uint32
@@ -149,9 +155,34 @@ func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
 	v.stored = true
 
 	g.vertices[v.label] = v
+	v.position = len(g.order)
+	g.order = append(g.order, v)
 	atomic.AddUint32(&g.verticesCount, 1)
 
 	return v
+}
+
+// removeFromOrder clears the slot of v in the insertion order. Once more
+// than half of the slots are empty, it moves the remaining vertices to the
+// front, so removals stay O(1) amortized.
+func (g *baseGraph[T]) removeFromOrder(v *Vertex[T]) {
+	g.order[v.position] = nil
+	g.removedCount++
+	if g.removedCount <= len(g.order)/2 {
+		return
+	}
+
+	n := 0
+	for _, u := range g.order {
+		if u != nil {
+			u.position = n
+			g.order[n] = u
+			n++
+		}
+	}
+	clear(g.order[n:])
+	g.order = g.order[:n]
+	g.removedCount = 0
 }
 
 func (g *baseGraph[T]) findVertex(label T) *Vertex[T] {
@@ -229,6 +260,10 @@ func (g *baseGraph[T]) GetEdge(from, to *Vertex[T]) *Edge[T] {
 // EdgesOf returns a slice of all edges touching the specified vertex.
 // If no edges are touching the specified vertex returns an empty slice.
 //
+// The edges that start from the vertex come first, in the order they were
+// added. The edges that end at the vertex follow, in the order of their
+// source vertices in GetAllVertices.
+//
 // If the input vertex is nil, returns nil.
 // If the input vertex does not exist, returns nil.
 func (g *baseGraph[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
@@ -236,34 +271,49 @@ func (g *baseGraph[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
 		return nil
 	}
 
-	if g.findVertex(v.label) == nil {
+	vertex := g.findVertex(v.label)
+	if vertex == nil {
 		return nil
 	}
 
-	var edges []*Edge[T]
-
 	// find all the edges that start from the input vertex
-	if destMap, ok := g.edges[v.label]; ok {
-		for destID := range destMap {
-			edges = append(edges, destMap[destID])
-		}
-	}
+	edges := g.outgoingEdges(vertex, nil)
 
 	// find all the edges that the input vertex is the
 	// destination of the edge
-	for sourceID, destMap := range g.edges {
-		if sourceID == v.label {
+	for _, source := range g.order {
+		if source == nil || source.label == vertex.label {
 			continue
 		}
 
-		for destID := range destMap {
-			if destID == v.label {
-				edges = append(edges, destMap[destID])
-			}
+		if edge, ok := g.edges[source.label][vertex.label]; ok {
+			edges = append(edges, edge)
 		}
 	}
 
 	return edges
+}
+
+// outgoingEdges appends the edges that start from v to out, in the order
+// of its neighbors, and returns the result.
+func (g *baseGraph[T]) outgoingEdges(v *Vertex[T], out []*Edge[T]) []*Edge[T] {
+	destMap := g.edges[v.label]
+	selfLoop := false
+	for _, neighbor := range v.neighbors {
+		// list a self-loop once, even if v is in its own neighbor list twice
+		if neighbor.label == v.label {
+			if selfLoop {
+				continue
+			}
+			selfLoop = true
+		}
+
+		if edge, ok := destMap[neighbor.label]; ok {
+			out = append(out, edge)
+		}
+	}
+
+	return out
 }
 
 // RemoveEdges removes input edges from the graph from the specified
@@ -362,11 +412,19 @@ func (g *baseGraph[T]) GetAllVerticesByID(idList ...T) []*Vertex[T] {
 	return vertices
 }
 
-// GetAllVertices returns a slice of all existing vertices in the graph.
+// GetAllVertices returns a slice of all existing vertices in the graph, in
+// the order they were added. A vertex that is removed and added again
+// moves to the end.
 func (g *baseGraph[T]) GetAllVertices() []*Vertex[T] {
-	var vertices []*Vertex[T]
-	for _, vertex := range g.vertices {
-		vertices = append(vertices, vertex)
+	if len(g.vertices) == 0 {
+		return nil
+	}
+
+	vertices := make([]*Vertex[T], 0, len(g.vertices))
+	for _, vertex := range g.order {
+		if vertex != nil {
+			vertices = append(vertices, vertex)
+		}
 	}
 
 	return vertices
@@ -389,6 +447,8 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 	if v == nil {
 		return
 	}
+
+	g.removeFromOrder(v)
 
 	if g.IsDirected() {
 		for i := range v.neighbors {
@@ -450,11 +510,14 @@ func (g *baseGraph[T]) ContainsVertex(v *Vertex[T]) bool {
 	return g.findVertex(v.label) != nil
 }
 
+// AllEdges returns all the edges in the graph. The edges are grouped by
+// source vertex in the order of GetAllVertices, and the edges of each
+// source vertex are in the order they were added.
 func (g *baseGraph[T]) AllEdges() []*Edge[T] {
 	var out []*Edge[T]
-	for _, dest := range g.edges {
-		for _, edge := range dest {
-			out = append(out, edge)
+	for _, vertex := range g.order {
+		if vertex != nil {
+			out = g.outgoingEdges(vertex, out)
 		}
 	}
 

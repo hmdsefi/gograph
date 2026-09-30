@@ -31,6 +31,10 @@ import "github.com/hmdsefi/gograph"
 // Gabow runs the Gabow's algorithm, and returns a list of strongly
 // connected components, where each component is represented as an
 // array of pointers to vertex structs.
+//
+// The order of the components and of the vertices in them is stable: it
+// only depends on the order of the vertices and edges in the graph, so a
+// graph built the same way gives the same result on every run.
 func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	var (
 		index       int
@@ -118,9 +122,9 @@ func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		}
 	}
 
-	for _, v := range vertices {
-		if v.index == -1 {
-			strongLinks(v)
+	for _, v := range graphVertices {
+		if tv := vertices[v.Label()]; tv.index == -1 {
+			strongLinks(tv)
 		}
 	}
 

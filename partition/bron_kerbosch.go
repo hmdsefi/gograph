@@ -65,9 +65,11 @@ import (
 //     adjacent if there is an edge between them in either direction.
 //   - The function returns the actual Vertex pointers from the input graph;
 //     do not modify the vertices while iterating the results.
-//   - The order of cliques or vertices within a clique is not guaranteed.
-//     If deterministic ordering is required, use a normalization function
-//     (e.g., sort by vertex label).
+//   - The order of cliques and of the vertices within a clique is stable: it
+//     only depends on the order of the vertices and edges in the graph, so
+//     a graph built the same way gives the same result on every run. The
+//     order itself is not specified. If a specific order is required, sort
+//     the result (e.g., by vertex label).
 func MaximalCliques[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	vertices := g.GetAllVertices()
 	n := len(vertices)

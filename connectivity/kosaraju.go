@@ -30,6 +30,10 @@ func newKosarajuSCCS[T comparable]() *kosarajuDFS[T] {
 // The function returns a slice of slices, where each slice represents
 // a strongly connected component and contains the vertices that belong
 // to that component.
+//
+// The order of the components and of the vertices in them is stable: it
+// only depends on the order of the vertices and edges in the graph, so a
+// graph built the same way gives the same result on every run.
 func Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	vertices := g.GetAllVertices()
 

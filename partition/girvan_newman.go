@@ -36,6 +36,8 @@ import (
 //
 // Returns:
 //   - A slice of gograph.Graph[T], each representing a connected component (community).
+//     The order of the communities and of the vertices in them is stable: a
+//     graph built the same way gives the same result on every run.
 //   - An error if the operation fails.
 //
 // Time Complexity:
@@ -66,10 +68,15 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 			break
 		}
 
-		// Find max betweenness
+		// Find max betweenness, going through the edges in graph order so
+		// the result doesn't depend on map iteration
 		maxVal := -1.0
 		var edgesToRemove []*gograph.Edge[T]
-		for e, val := range betweenness {
+		for _, e := range working.AllEdges() {
+			val, ok := betweenness[e]
+			if !ok {
+				continue
+			}
 			if val > maxVal {
 				maxVal = val
 				edgesToRemove = []*gograph.Edge[T]{e}
