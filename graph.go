@@ -28,7 +28,7 @@ type Graph[T comparable] interface {
 	// the 'to' label to the vertex with the 'from' label by appending
 	// the 'from' vertex to the 'neighbors' slice of the 'to' vertex. it
 	// means that it create the edges in both direction between the specified
-	// vertices.
+	// vertices. A self-loop is stored once.
 	//
 	// This method accepts additional edge options such as weight and adds
 	// them to the new edge.
@@ -43,7 +43,7 @@ type Graph[T comparable] interface {
 	// GetAllEdges returns a slice of all edges connecting source vertex to
 	// target vertex if such vertices exist in this graph.
 	//
-	// In directed graph, it returns a single edge.
+	// In directed graph, or if both vertices are the same, it returns a single edge.
 	//
 	// If any of the specified vertices is nil, returns nil.
 	// If any of the vertices does not exist, returns nil.
