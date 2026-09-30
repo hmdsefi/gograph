@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A random walk from a vertex without outgoing edges returned nothing. It now
   returns the start vertex. ([#147])
+- `MaximalCliques` returned wrong cliques for graphs with more than six vertices.
+  It now finds every maximal clique. ([#95])
 - `TransitiveReduction` dropped vertex weights, and dropped edge weights when the
   input graph wasn't created with `Weighted()`. It now keeps both. ([#148])
 - `FloydWarshall` reported the weight of a self-loop as a vertex's distance to
@@ -146,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#76]: https://github.com/hmdsefi/gograph/pull/76
 [#94]: https://github.com/hmdsefi/gograph/pull/94
+[#95]: https://github.com/hmdsefi/gograph/issues/95
 [#137]: https://github.com/hmdsefi/gograph/pull/137
 [#138]: https://github.com/hmdsefi/gograph/pull/138
 [#139]: https://github.com/hmdsefi/gograph/pull/139

@@ -53,6 +53,85 @@ func cliqueLabels(cliques [][]*gograph.Vertex[string]) [][]string {
 	return out
 }
 
+// addClique adds a vertex for each label and connects every pair of them.
+func addClique(g gograph.Graph[int], labels []int) {
+	vertices := make([]*gograph.Vertex[int], len(labels))
+	for i, label := range labels {
+		vertices[i] = g.AddVertexByLabel(label)
+	}
+
+	for i := range vertices {
+		for j := i + 1; j < len(vertices); j++ {
+			_, _ = g.AddEdge(vertices[i], vertices[j])
+		}
+	}
+}
+
+func labelRange(from, to int) []int {
+	labels := make([]int, 0, to-from)
+	for i := from; i < to; i++ {
+		labels = append(labels, i)
+	}
+
+	return labels
+}
+
+func intCliqueLabels(cliques [][]*gograph.Vertex[int]) [][]int {
+	out := make([][]int, 0, len(cliques))
+	for _, c := range cliques {
+		labels := make([]int, 0, len(c))
+		for _, v := range c {
+			labels = append(labels, v.Label())
+		}
+		sort.Ints(labels)
+		out = append(out, labels)
+	}
+
+	sort.Slice(
+		out, func(i, j int) bool {
+			return fmt.Sprint(out[i]) < fmt.Sprint(out[j])
+		},
+	)
+
+	return out
+}
+
+func TestMaximalCliques_MoreThanSixVertices(t *testing.T) {
+	tests := []struct {
+		name    string
+		cliques [][]int
+	}{
+		{
+			name:    "complete graph on 7 vertices",
+			cliques: [][]int{labelRange(0, 7)},
+		},
+		{
+			name:    "complete graph on 70 vertices",
+			cliques: [][]int{labelRange(0, 70)},
+		},
+		{
+			name:    "two disjoint cliques",
+			cliques: [][]int{labelRange(0, 5), labelRange(5, 12)},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Bit indices follow map order, so check several runs.
+			for run := 0; run < 20; run++ {
+				g := gograph.New[int]()
+				for _, c := range tt.cliques {
+					addClique(g, c)
+				}
+
+				if got := intCliqueLabels(MaximalCliques(g)); !reflect.DeepEqual(got, tt.cliques) {
+					t.Fatalf("run %d: expected %v, got %v", run, tt.cliques, got)
+				}
+			}
+		})
+	}
+}
+
 func TestMaximalCliques_SelfLoop(t *testing.T) {
 	g := gograph.New[string]()
 

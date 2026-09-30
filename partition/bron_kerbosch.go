@@ -163,11 +163,11 @@ func MaximalCliques[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 func wordLen(n int) int { return (n + 63) >> 6 }
 
 func setBit(b []uint64, i int) {
-	b[i>>6] |= 1 << i & 63
+	b[i>>6] |= 1 << (i & 63)
 }
 
 func clearBit(b []uint64, i int) {
-	b[i>>6] &^= 1 << i & 63
+	b[i>>6] &^= 1 << (i & 63)
 }
 
 func cloneBitset(b []uint64) []uint64 {
