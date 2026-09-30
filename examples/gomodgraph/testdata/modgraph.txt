@@ -1,0 +1,10 @@
+example.com/app example.com/lib@v1.4.0
+example.com/app example.com/log@v1.1.0
+example.com/app go@1.24.2
+example.com/app toolchain@go1.24.2
+example.com/lib@v1.4.0 example.com/util@v0.3.1
+example.com/lib@v1.4.0 go@1.22
+example.com/log@v1.1.0 example.com/util@v0.2.0
+example.com/util@v0.3.1 example.com/codec@v0.5.0
+example.com/codec@v0.5.0 example.com/util@v0.3.1
+go@1.24.2 toolchain@go1.24.2
