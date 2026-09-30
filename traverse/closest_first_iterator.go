@@ -78,7 +78,7 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 		edge := c.graph.GetEdge(currNode, neighbor)
 		if !c.visited[neighbor.Label()] {
 			dist := c.currDist + edge.Weight()
-			c.pq.Push(util.NewVertexWithPriority(neighbor, dist))
+			c.pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(neighbor.Label()), dist))
 		}
 	}
 

@@ -89,7 +89,7 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 	}
 
 	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
-	r.current = neighbors[i.Int64()]
+	r.current = r.graph.GetVertexByID(neighbors[i.Int64()].Label())
 
 	return r.current
 }
