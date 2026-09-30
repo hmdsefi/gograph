@@ -134,6 +134,20 @@ func TestAllEdges_OrderUndirected(t *testing.T) {
 	assertEdgeOrder(t, "AllEdges()", g.AllEdges, []string{"a>b", "a>c", "b>a", "b>c", "c>b", "c>a"})
 }
 
+func TestEdges_UndirectedSelfLoopOnce(t *testing.T) {
+	g := New[string]()
+	a := g.AddVertexByLabel("a")
+	if _, err := g.AddEdge(a, a); err != nil {
+		t.Fatalf(testErrMsgError, err)
+	}
+	if _, err := g.AddEdge(a, NewVertex("b")); err != nil {
+		t.Fatalf(testErrMsgError, err)
+	}
+
+	assertEdgeOrder(t, "AllEdges()", g.AllEdges, []string{"a>a", "a>b", "b>a"})
+	assertEdgeOrder(t, "EdgesOf(a)", func() []*Edge[string] { return g.EdgesOf(a) }, []string{"a>a", "a>b", "b>a"})
+}
+
 func TestEdgesOf_Order(t *testing.T) {
 	g := New[string](Directed())
 	for _, label := range []string{"a", "b", "c", "d"} {

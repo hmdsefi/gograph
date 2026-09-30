@@ -298,7 +298,16 @@ func (g *baseGraph[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
 // of its neighbors, and returns the result.
 func (g *baseGraph[T]) outgoingEdges(v *Vertex[T], out []*Edge[T]) []*Edge[T] {
 	destMap := g.edges[v.label]
+	selfLoop := false
 	for _, neighbor := range v.neighbors {
+		// list a self-loop once, even if v is in its own neighbor list twice
+		if neighbor.label == v.label {
+			if selfLoop {
+				continue
+			}
+			selfLoop = true
+		}
+
 		if edge, ok := destMap[neighbor.label]; ok {
 			out = append(out, edge)
 		}

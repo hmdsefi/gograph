@@ -71,8 +71,9 @@ yourself, `StableTopologySort` takes a compare function such as `cmp.Compare` an
 picks the smallest vertex that is ready.
 
 `GetAllVertices` returns vertices in the order they were added, and `AllEdges` and
-`EdgesOf` follow the same order. The strongly connected component and partitioning
-functions give the same result on every run for a graph built the same way.
+`EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
+`GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
+built the same way.
 
 ## Table of contents
 

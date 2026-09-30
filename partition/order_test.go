@@ -40,10 +40,23 @@ func communityLabels(graphs []gograph.Graph[string]) []string {
 	return out
 }
 
+// rawCliqueLabels keeps the order of the cliques and of their vertices,
+// unlike cliqueLabels, which sorts both.
+func rawCliqueLabels(cliques [][]*gograph.Vertex[string]) [][]string {
+	out := make([][]string, len(cliques))
+	for i, c := range cliques {
+		out[i] = make([]string, len(c))
+		for j, v := range c {
+			out[i][j] = v.Label()
+		}
+	}
+	return out
+}
+
 func TestMaximalCliques_StableOrder(t *testing.T) {
-	want := cliqueLabels(MaximalCliques(orderTestGraph()))
+	want := rawCliqueLabels(MaximalCliques(orderTestGraph()))
 	for range 50 {
-		if got := cliqueLabels(MaximalCliques(orderTestGraph())); !reflect.DeepEqual(got, want) {
+		if got := rawCliqueLabels(MaximalCliques(orderTestGraph())); !reflect.DeepEqual(got, want) {
 			t.Fatalf("MaximalCliques() = %v, want %v", got, want)
 		}
 	}
