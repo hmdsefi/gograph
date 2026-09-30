@@ -52,7 +52,7 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFu
 // 'neighbors' slice of the 'from' vertex, in directed graph.
 //
 // In undirected graph, it creates edges in both directions between
-// the specified vertices.
+// the specified vertices. A self-loop is stored once.
 //
 // It creates the input vertices if they don't exist in the graph, the
 // same way AddVertex does, so a vertex from another graph is copied.
@@ -96,7 +96,7 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 	}
 
 	// add "from" to the "to" vertex neighbor slice, if graph is undirected.
-	if !g.properties.isDirected {
+	if !g.properties.isDirected && from.label != to.label {
 		to.neighbors = append(to.neighbors, from)
 		from.inDegree++
 
@@ -161,7 +161,7 @@ func (g *baseGraph[T]) findVertex(label T) *Vertex[T] {
 // GetAllEdges returns a slice of all edges connecting source vertex to
 // target vertex if such vertices exist in this graph.
 //
-// In directed graph, it returns a single edge.
+// In directed graph, or if both vertices are the same, it returns a single edge.
 //
 // If any of the specified vertices is nil, returns nil.
 // If any of the vertices does not exist, returns nil.
@@ -187,7 +187,7 @@ func (g *baseGraph[T]) GetAllEdges(from, to *Vertex[T]) []*Edge[T] {
 		}
 	}
 
-	if !g.IsDirected() {
+	if !g.IsDirected() && from.label != to.label {
 		if destMap, ok := g.edges[to.label]; ok {
 			if edge, ok := destMap[from.label]; ok {
 				edges = append(edges, edge)
@@ -293,7 +293,7 @@ func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
 
 	g.removeEdge(edge)
 
-	if !g.IsDirected() {
+	if !g.IsDirected() && edge.source.label != edge.dest.label {
 		g.removeEdge(NewEdge(edge.dest, edge.source))
 	}
 }
@@ -403,6 +403,10 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 		}
 	}
 
+	// In a directed graph, the outgoing edges of v are still in the map.
+	for range g.edges[v.label] {
+		atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
+	}
 	delete(g.edges, v.label)
 	delete(g.vertices, v.label)
 	atomic.AddUint32(&g.verticesCount, ^(uint32(1) - 1))

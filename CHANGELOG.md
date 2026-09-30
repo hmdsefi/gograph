@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `VertexPriorityQueue.Pop` panicked on an empty queue, and `Push(nil)` and
   `Vertex.HasNeighbor(nil)` panicked too. `Pop` now returns nil, `Push` ignores
   nil, and `HasNeighbor` returns false. ([#146])
+- In directed graphs, `RemoveVertices` didn't subtract the outgoing edges of the
+  removed vertex, so `Size()` stayed too high. ([#96])
+- In undirected graphs, a self-loop was counted twice in some places and once in
+  others, and removing it left the vertex listed as its own neighbor. A loop is
+  now stored once, so it adds 1 to `Size()`, `InDegree()` and `OutDegree()`, and
+  `GetAllEdges(a, a)` returns it once. ([#142])
 
 ## [0.7.2] - 2026-09-29
 
@@ -140,6 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#139]: https://github.com/hmdsefi/gograph/pull/139
 [#140]: https://github.com/hmdsefi/gograph/pull/140
 [#141]: https://github.com/hmdsefi/gograph/issues/141
+[#96]: https://github.com/hmdsefi/gograph/issues/96
+[#142]: https://github.com/hmdsefi/gograph/issues/142
 [#143]: https://github.com/hmdsefi/gograph/issues/143
 [#144]: https://github.com/hmdsefi/gograph/issues/144
 [#146]: https://github.com/hmdsefi/gograph/issues/146

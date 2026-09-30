@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -515,12 +516,8 @@ func TestBaseGraph_SizeAfterRandomEdgeChanges(t *testing.T) {
 		for step := 0; step < 3000; step++ {
 			from := g.GetVertexByID(rng.Intn(order))
 			to := g.GetVertexByID(rng.Intn(order))
-			// Undirected self-loops are counted differently, see #142.
-			if from == to && !directed {
-				continue
-			}
 
-			switch rng.Intn(4) {
+			switch rng.Intn(5) {
 			case 0:
 				_, _ = g.AddEdge(from, to)
 			case 1:
@@ -534,15 +531,104 @@ func TestBaseGraph_SizeAfterRandomEdgeChanges(t *testing.T) {
 				}
 			case 3:
 				g.RemoveEdges(g.EdgesOf(from)...)
+			case 4:
+				g.RemoveVertices(from)
+				g.AddVertexByLabel(from.Label())
 			}
 
-			if int(g.Size()) != len(g.AllEdges()) {
-				t.Fatalf(
-					"directed=%v step %d: Size() is %d, but AllEdges() has %d edges",
-					directed, step, g.Size(), len(g.AllEdges()),
-				)
-			}
+			checkEdgeCounts(t, g, fmt.Sprintf("directed=%v step %d", directed, step))
 		}
+	}
+}
+
+// checkEdgeCounts fails the test if Size(), AllEdges() and the degrees of the
+// vertices don't agree with the edges stored in the graph.
+func checkEdgeCounts[T comparable](t *testing.T, g *baseGraph[T], msg string) {
+	t.Helper()
+
+	if int(g.Size()) != len(g.AllEdges()) {
+		t.Fatalf("%s: Size() is %d, but AllEdges() has %d edges", msg, g.Size(), len(g.AllEdges()))
+	}
+
+	inDegrees := make(map[T]int)
+	for _, edge := range g.AllEdges() {
+		inDegrees[edge.Destination().Label()]++
+	}
+
+	for _, v := range g.GetAllVertices() {
+		if v.OutDegree() != len(g.edges[v.Label()]) {
+			t.Fatalf(
+				"%s: vertex %v has OutDegree() %d, but %d outgoing edges",
+				msg, v.Label(), v.OutDegree(), len(g.edges[v.Label()]),
+			)
+		}
+
+		if v.InDegree() != inDegrees[v.Label()] {
+			t.Fatalf(
+				"%s: vertex %v has InDegree() %d, but %d incoming edges",
+				msg, v.Label(), v.InDegree(), inDegrees[v.Label()],
+			)
+		}
+	}
+}
+
+func TestBaseGraph_UndirectedSelfLoop(t *testing.T) {
+	for _, withOtherEdge := range []bool{false, true} {
+		t.Run(fmt.Sprintf("with other edge %v", withOtherEdge), func(t *testing.T) {
+			g := newBaseGraph[string](newProperties())
+			a := g.AddVertexByLabel("A")
+			b := g.AddVertexByLabel("B")
+
+			// An undirected edge between two vertices is stored in both directions.
+			otherEdges := 0
+			if withOtherEdge {
+				_, _ = g.AddEdge(a, b)
+				otherEdges = 2
+			}
+
+			loop, err := g.AddEdge(a, a)
+			if err != nil {
+				t.Fatalf(testErrMsgError, err)
+			}
+
+			checkEdgeCounts(t, g, "after adding the loop")
+			if int(g.Size()) != otherEdges+1 {
+				t.Errorf(testErrMsgNotEqual, otherEdges+1, g.Size())
+			}
+
+			if got := len(g.GetAllEdges(a, a)); got != 1 {
+				t.Errorf(testErrMsgWrongLen, 1, got)
+			}
+
+			if _, err = g.AddEdge(a, a); !errors.Is(err, ErrEdgeAlreadyExists) {
+				t.Errorf(testErrMsgNotEqual, ErrEdgeAlreadyExists, err)
+			}
+
+			g.RemoveEdges(loop)
+			checkEdgeCounts(t, g, "after removing the loop")
+			if int(g.Size()) != otherEdges {
+				t.Errorf(testErrMsgNotEqual, otherEdges, g.Size())
+			}
+
+			if a.HasNeighbor(a) {
+				t.Error(testErrMsgNotFalse)
+			}
+
+			if _, err = g.AddEdge(a, a); err != nil {
+				t.Fatalf(testErrMsgError, err)
+			}
+
+			checkEdgeCounts(t, g, "after adding the loop again")
+			if int(g.Size()) != otherEdges+1 {
+				t.Errorf(testErrMsgNotEqual, otherEdges+1, g.Size())
+			}
+
+			g.RemoveVertices(a)
+			checkEdgeCounts(t, g, "after removing the vertex")
+			if g.Size() != 0 {
+				t.Errorf(testErrMsgNotEqual, 0, g.Size())
+			}
+		})
 	}
 }
 
@@ -583,6 +669,11 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	}
 
 	g.RemoveVertices(v2)
+	checkEdgeCounts(t, g, "after removing 2")
+	if g.Size() != 3 {
+		t.Errorf(testErrMsgNotEqual, 3, g.Size())
+	}
+
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
@@ -611,6 +702,11 @@ func TestBaseGraph_RemoveVertices(t *testing.T) {
 	}
 
 	g.RemoveVertices(v1, v5)
+	checkEdgeCounts(t, g, "after removing 1 and 5")
+	if g.Size() != 1 {
+		t.Errorf(testErrMsgNotEqual, 1, g.Size())
+	}
+
 	if v3.InDegree() != 0 {
 		t.Errorf(testErrMsgNotEqual, 0, v3.InDegree())
 	}
@@ -853,6 +949,8 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	}
 
 	g.RemoveVertices(v2)
+	checkEdgeCounts(t, g, "after removing 2")
+
 	if !reflect.DeepEqual(v3, v1.neighbors[0]) {
 		t.Errorf(testErrMsgNotEqual, v3, v1.neighbors[0])
 	}
