@@ -88,12 +88,15 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 			}
 		}
 
-		// Add edges from u to its remaining neighbors in the reduced graph
+		// Add edges from u to its remaining neighbors in the reduced graph,
+		// in the order of u's neighbors
 		uVertex := reducedGraph.GetVertexByID(u.Label())
-		for neighbor := range neighbors {
-			vVertex := reducedGraph.GetVertexByID(neighbor)
-			// neighbors only holds labels from u.Neighbors(), so g has this edge.
-			originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor))
+		for _, neighbor := range u.Neighbors() {
+			if !neighbors[neighbor.Label()] {
+				continue
+			}
+			vVertex := reducedGraph.GetVertexByID(neighbor.Label())
+			originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor.Label()))
 
 			_, err := reducedGraph.AddEdge(uVertex, vVertex, gograph.WithEdgeWeight(originalEdge.Weight()))
 			if err != nil {
