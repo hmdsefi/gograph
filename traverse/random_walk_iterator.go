@@ -2,6 +2,7 @@ package traverse
 
 import (
 	"crypto/rand"
+	"math"
 	"math/big"
 
 	"github.com/hmdsefi/gograph"
@@ -22,7 +23,9 @@ import (
 // as the next node to visit is proportional to the weight of the edge
 // connecting the current node and the neighbor. This means that nodes
 // connected by heavier edges are more likely to be visited during the
-// traversal.
+// traversal. Edges with a weight of zero or less are never chosen, unless
+// none of the edges of the current node has a positive weight. Then each
+// of them has an equal chance.
 type randomWalkIterator[T comparable] struct {
 	graph       gograph.Graph[T]   // the graph that being traversed.
 	start       T                  // the label of starting point of the traversal.
@@ -33,6 +36,13 @@ type randomWalkIterator[T comparable] struct {
 
 // NewRandomWalkIterator creates a new instance of randomWalkIterator
 // and returns it as the Iterator interface.
+//
+// In a weighted graph, each step picks a neighbor with a probability
+// proportional to the weight of the edge to it. Edges with a weight of
+// zero or less are never picked, unless none of the edges of the current
+// vertex has a positive weight. Then each of them has an equal chance. An
+// edge with a weight of positive infinity is picked over any edge with a
+// finite weight.
 func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps int) (Iterator[T], error) {
 	v := graph.GetVertexByID(start)
 	if v == nil {
@@ -108,29 +118,70 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 		return nil
 	}
 
-	var totalWeight float64
+	var maxWeight float64
 	var edges []*gograph.Edge[T]
 	neighbors := v.Neighbors()
 
-	// calculate the sum of edge weights
 	for _, neighbor := range neighbors {
 		if edge := r.graph.GetEdge(v, neighbor); edge != nil {
 			edges = append(edges, edge)
-			totalWeight += edge.Weight()
+			if edge.Weight() > maxWeight {
+				maxWeight = edge.Weight()
+			}
 		}
 	}
 
-	// generate a random number between 0 and the sum of edge weights
-	randNum, _ := rand.Int(rand.Reader, big.NewInt(int64(totalWeight)))
-	randWeight := float64(randNum.Int64())
+	if len(edges) == 0 {
+		return nil
+	}
 
-	// find the vertex that corresponds to the random weight
+	if maxWeight <= 0 {
+		return edges[randomIndex(len(edges))].OtherVertex(v.Label())
+	}
+
+	if math.IsInf(maxWeight, 1) {
+		var infinite []*gograph.Edge[T]
+		for _, edge := range edges {
+			if math.IsInf(edge.Weight(), 1) {
+				infinite = append(infinite, edge)
+			}
+		}
+		return infinite[randomIndex(len(infinite))].OtherVertex(v.Label())
+	}
+
+	// dividing by the largest weight keeps the sum from overflowing
+	var totalWeight float64
 	for _, edge := range edges {
-		randWeight -= edge.Weight()
-		if randWeight < 0 {
-			return edge.OtherVertex(v.Label())
+		if edge.Weight() > 0 {
+			totalWeight += edge.Weight() / maxWeight
 		}
 	}
 
-	return nil
+	// find the vertex that corresponds to a random weight in [0, totalWeight)
+	randWeight := randomFraction() * totalWeight
+	var last *gograph.Edge[T]
+	for _, edge := range edges {
+		if w := edge.Weight(); w > 0 {
+			last = edge
+			randWeight -= w / maxWeight
+			if randWeight < 0 {
+				return edge.OtherVertex(v.Label())
+			}
+		}
+	}
+
+	// rounding can leave a remainder after the last positive edge
+	return last.OtherVertex(v.Label())
+}
+
+// randomIndex returns a random integer in [0, n).
+func randomIndex(n int) int {
+	i, _ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+	return int(i.Int64())
+}
+
+// randomFraction returns a random number in [0, 1).
+func randomFraction() float64 {
+	n, _ := rand.Int(rand.Reader, big.NewInt(1<<53))
+	return float64(n.Int64()) / (1 << 53)
 }

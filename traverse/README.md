@@ -164,7 +164,9 @@ vertex to visit is proportional to the weights of the edges connecting the curre
 to its neighbors. This means that edges with higher weights have a higher probability of
 being selected in the random walk. Weighted random walk iterator is commonly used in
 applications such as recommendation systems, where we want to find similar items or users based on their interactions in
-a network.
+a network. Edges with a weight of zero or less are never selected, unless none of the
+edges of the current vertex has a positive weight. Then each of them has an equal
+probability.
 
 In the unweighted random walk iterator, the probability distribution for selecting the
 next vertex to visit is uniform and does not depend on the weights of the edges. This
