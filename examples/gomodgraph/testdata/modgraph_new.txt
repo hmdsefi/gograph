@@ -1,0 +1,7 @@
+example.com/app example.com/lib@v1.5.0
+example.com/app example.com/metrics@v0.1.0
+example.com/app go@1.24.2
+example.com/lib@v1.5.0 example.com/util@v0.3.1
+example.com/metrics@v0.1.0 example.com/util@v0.3.1
+example.com/util@v0.3.1 example.com/codec@v0.5.0
+example.com/codec@v0.5.0 example.com/util@v0.3.1

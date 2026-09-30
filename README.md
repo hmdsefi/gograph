@@ -85,6 +85,7 @@ built the same way.
     * [Weighted](#weighted)
 * [Traversal](#traversal)
 * [Algorithms](#algorithms)
+* [Examples](#examples)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -254,6 +255,12 @@ Available iterators:
   [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
   [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),
   [randomized k-cut](https://github.com/hmdsefi/gograph/blob/master/partition/k-cut.md).
+
+## Examples
+
+- [gomodgraph](examples/gomodgraph): loads `go mod graph` output and finds requirement
+  cycles, the modules that depend on a module, why a module is needed, and what changed
+  between two versions of `go.mod`.
 
 ## Roadmap
 
