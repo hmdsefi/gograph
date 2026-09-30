@@ -10,6 +10,7 @@ var (
 	ErrEdgeAlreadyExists  = errors.New("edge already exists")
 	ErrDAGCycle           = errors.New("edges would create cycle")
 	ErrDAGHasCycle        = errors.New("the graph contains a cycle")
+	ErrNotDirected        = errors.New("graph is not directed")
 )
 
 // Graph defines methods for managing a graph with vertices and edges. It is the
