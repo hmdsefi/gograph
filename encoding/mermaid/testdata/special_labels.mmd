@@ -1,0 +1,12 @@
+flowchart TD
+    n0["#lt;b#gt;bold#lt;/b#gt; #amp; more"]
+    n1["#96;code#96;"]
+    n2["a#35;b;"]
+    n3["line one<br>line two"]
+    n4["say #quot;hi#quot;"]
+    n5["two words"]
+    n0 --> n3
+    n2 --> n0
+    n3 --> n1
+    n4 -->|"pipe #124; and #quot;quotes#quot;"| n5
+    n5 --> n2
