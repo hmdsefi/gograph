@@ -7,28 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-30
+
+### Added
+
+- `StableTopologySort`, a topological sort that takes a compare function and
+  picks the smallest ready vertex at each step, so the result doesn't depend on
+  the order the graph was built in. ([#114], [#167])
+- `dag` package with `Descendants`, `Ancestors` and `Affected`, to find what a
+  vertex depends on, what depends on it, and what a change to it affects.
+  ([#117], [#168])
+- `encoding/mermaid` package that writes a graph as a Mermaid flowchart, with
+  options for the direction, the vertex and edge labels, and classes. ([#122],
+  [#169])
+- `gograph.ErrNotDirected`. `path.ErrNotDirected` is now the same error, so
+  existing `errors.Is` checks keep working. ([#168])
+- `examples/gomodgraph`, an example program that finds cycles, dependents and
+  dependency paths in `go mod graph` output, and compares two of them. ([#127],
+  [#170])
+
+### Changed
+
+- `GetAllVertices`, `AllEdges` and `EdgesOf` return vertices and edges in the
+  order they were added. The order used to be random. ([#114], [#167])
+- `TopologySort`, `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
+  `GirvanNewman` and `TransitiveReduction` give the same result on every run for
+  a graph built the same way. ([#114], [#167])
+
 ### Fixed
 
 - A random walk from a vertex without outgoing edges returned nothing. It now
-  returns the start vertex. ([#147])
+  returns the start vertex. ([#147], [#157])
 - `MaximalCliques` returned wrong cliques for graphs with more than six vertices.
-  It now finds every maximal clique. ([#95])
+  It now finds every maximal clique. ([#95], [#166])
 - `TransitiveReduction` dropped vertex weights, and dropped edge weights when the
-  input graph wasn't created with `Weighted()`. It now keeps both. ([#148])
+  input graph wasn't created with `Weighted()`. It now keeps both. ([#148],
+  [#157])
 - `FloydWarshall` reported the weight of a self-loop as a vertex's distance to
   itself. It now reports 0, and a negative loop is still reported as a negative
-  cycle. ([#145])
+  cycle. ([#145], [#165])
 - `BellmanFord` returned distances for a start vertex that isn't in the graph. It
-  now returns `gograph.ErrVertexDoesNotExist`. ([#99])
+  now returns `gograph.ErrVertexDoesNotExist`. ([#99], [#165])
 - `VertexPriorityQueue.Pop` panicked on an empty queue, and `Push(nil)` and
   `Vertex.HasNeighbor(nil)` panicked too. `Pop` now returns nil, `Push` ignores
-  nil, and `HasNeighbor` returns false. ([#146])
+  nil, and `HasNeighbor` returns false. ([#146], [#159])
 - In directed graphs, `RemoveVertices` didn't subtract the outgoing edges of the
-  removed vertex, so `Size()` stayed too high. ([#96])
+  removed vertex, so `Size()` stayed too high. ([#96], [#164])
 - In undirected graphs, a self-loop was counted twice in some places and once in
   others, and removing it left the vertex listed as its own neighbor. A loop is
   now stored once, so it adds 1 to `Size()`, `InDegree()` and `OutDegree()`, and
-  `GetAllEdges(a, a)` returns it once. ([#142])
+  `GetAllEdges(a, a)` returns it once. ([#142], [#164])
 
 ## [0.7.2] - 2026-09-29
 
@@ -133,7 +161,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/hmdsefi/gograph/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/hmdsefi/gograph/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/hmdsefi/gograph/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/hmdsefi/gograph/compare/v0.6.0...v0.7.0
@@ -149,16 +178,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#76]: https://github.com/hmdsefi/gograph/pull/76
 [#94]: https://github.com/hmdsefi/gograph/pull/94
 [#95]: https://github.com/hmdsefi/gograph/issues/95
+[#96]: https://github.com/hmdsefi/gograph/issues/96
+[#99]: https://github.com/hmdsefi/gograph/issues/99
+[#114]: https://github.com/hmdsefi/gograph/issues/114
+[#117]: https://github.com/hmdsefi/gograph/issues/117
+[#122]: https://github.com/hmdsefi/gograph/issues/122
+[#127]: https://github.com/hmdsefi/gograph/issues/127
 [#137]: https://github.com/hmdsefi/gograph/pull/137
 [#138]: https://github.com/hmdsefi/gograph/pull/138
 [#139]: https://github.com/hmdsefi/gograph/pull/139
 [#140]: https://github.com/hmdsefi/gograph/pull/140
 [#141]: https://github.com/hmdsefi/gograph/issues/141
-[#96]: https://github.com/hmdsefi/gograph/issues/96
 [#142]: https://github.com/hmdsefi/gograph/issues/142
 [#143]: https://github.com/hmdsefi/gograph/issues/143
 [#144]: https://github.com/hmdsefi/gograph/issues/144
-[#99]: https://github.com/hmdsefi/gograph/issues/99
 [#145]: https://github.com/hmdsefi/gograph/issues/145
 [#146]: https://github.com/hmdsefi/gograph/issues/146
 [#147]: https://github.com/hmdsefi/gograph/issues/147
@@ -168,3 +201,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#152]: https://github.com/hmdsefi/gograph/pull/152
 [#153]: https://github.com/hmdsefi/gograph/pull/153
 [#154]: https://github.com/hmdsefi/gograph/pull/154
+[#157]: https://github.com/hmdsefi/gograph/pull/157
+[#159]: https://github.com/hmdsefi/gograph/pull/159
+[#164]: https://github.com/hmdsefi/gograph/pull/164
+[#165]: https://github.com/hmdsefi/gograph/pull/165
+[#166]: https://github.com/hmdsefi/gograph/pull/166
+[#167]: https://github.com/hmdsefi/gograph/pull/167
+[#168]: https://github.com/hmdsefi/gograph/pull/168
+[#169]: https://github.com/hmdsefi/gograph/pull/169
+[#170]: https://github.com/hmdsefi/gograph/pull/170
