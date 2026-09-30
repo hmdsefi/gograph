@@ -50,7 +50,11 @@ type Graph[T comparable] interface {
 	// If both vertices exist but no edges found, returns an empty set.
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 
-	// AllEdges returns all the edges in the graph.
+	// AllEdges returns all the edges in the graph. The edges are grouped by
+	// source vertex in the order of GetAllVertices, and the edges of each
+	// source vertex are in the order they were added. In an undirected
+	// graph, each edge is stored in both directions, so it appears in the
+	// group of both its vertices.
 	AllEdges() []*Edge[T]
 
 	// GetEdge returns an edge connecting source vertex to target vertex
@@ -65,6 +69,10 @@ type Graph[T comparable] interface {
 
 	// EdgesOf returns a slice of all edges touching the specified vertex.
 	// If no edges are touching the specified vertex returns an empty slice.
+	//
+	// The edges that start from the vertex come first, in the order they
+	// were added. The edges that end at the vertex follow, in the order of
+	// their source vertices in GetAllVertices.
 	//
 	// If the input vertex is nil, returns nil.
 	// If the input vertex does not exist, returns nil.
@@ -102,7 +110,9 @@ type Graph[T comparable] interface {
 	// If vertex doesn't exist, doesn't add nil to the output list.
 	GetAllVerticesByID(label ...T) []*Vertex[T]
 
-	// GetAllVertices returns a slice of all existing vertices in the graph.
+	// GetAllVertices returns a slice of all existing vertices in the graph,
+	// in the order they were added. A vertex that is removed and added
+	// again moves to the end.
 	GetAllVertices() []*Vertex[T]
 
 	// RemoveVertices removes all the specified vertices from this graph including
@@ -197,6 +207,7 @@ type Vertex[T comparable] struct {
 	properties VertexProperties
 	metadata   any  // optional metadata associated with the vertex
 	stored     bool // whether a graph has stored this vertex
+	position   int  // index of the vertex in the insertion order of its graph
 }
 
 func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
