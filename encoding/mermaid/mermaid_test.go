@@ -162,6 +162,33 @@ func TestMarshal_CustomLabels(t *testing.T) {
 	assertGolden(t, "custom_labels", out)
 }
 
+func TestMarshal_EmptyLabels(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	addEdges(t, g, [2]string{"", "a"})
+	assertGolden(t, "empty_label", mustMarshal(t, g))
+
+	blank := WithVertexLabel(func(*gograph.Vertex[string]) string { return "" })
+	assertGolden(t, "empty_label_func", mustMarshal(t, g, blank))
+}
+
+func TestMarshal_SamePrintedLabels(t *testing.T) {
+	// all three labels print as "1", so the order comes from their types
+	build := func() gograph.Graph[any] {
+		g := gograph.New[any](gograph.Directed())
+		_, _ = g.AddEdge(gograph.NewVertex[any]("1"), gograph.NewVertex[any](1))
+		_, _ = g.AddEdge(gograph.NewVertex[any](int64(1)), gograph.NewVertex[any]("1"))
+		return g
+	}
+
+	want := mustMarshal(t, build())
+	assertGolden(t, "same_printed_labels", want)
+	for range 50 {
+		if got := mustMarshal(t, build()); !bytes.Equal(got, want) {
+			t.Fatalf("output changed between runs\ngot:\n%s\nwant:\n%s", got, want)
+		}
+	}
+}
+
 func TestMarshal_Empty(t *testing.T) {
 	assertGolden(t, "empty", mustMarshal(t, gograph.New[string]()))
 }
@@ -207,6 +234,14 @@ func TestMarshal_InvalidOptions(t *testing.T) {
 		"empty class def":  {WithClassDef[string]("", "fill:#f96")},
 		"class def style":  {WithClassDef[string]("hot", "fill:#f96;\nA --> B")},
 		"empty class body": {WithClassDef[string]("hot", "")},
+		"hyphen in name":   {WithClassDef[string]("is-hot", "fill:#f96")},
+		"digit first":      {WithClassDef[string]("1hot", "fill:#f96")},
+	}
+	for _, keyword := range []string{"end", "graph", "class", "classDef", "style", "subgraph", "_self"} {
+		tests["keyword "+keyword+" as class def"] = []Option[string]{WithClassDef[string](keyword, "fill:#f96")}
+		tests["keyword "+keyword+" as vertex class"] = []Option[string]{
+			WithVertexClass(func(*gograph.Vertex[string]) string { return keyword }),
+		}
 	}
 	for name, opts := range tests {
 		t.Run(name, func(t *testing.T) {

@@ -80,8 +80,9 @@ func WithEdgeLabel[T comparable](fn func(*gograph.Edge[T]) string) Option[T] {
 
 // WithVertexClass assigns a class to each vertex, for example to highlight a
 // path or a cycle. An empty string means no class. Class names can contain
-// letters, digits, '_' and '-', and can't start with a digit or '-'.
-// Declare the style of each class with WithClassDef.
+// letters, digits and '_', can't start with a digit, and can't be a word
+// that Mermaid reads as a keyword, such as end, class or style. Declare the
+// style of each class with WithClassDef.
 func WithVertexClass[T comparable](fn func(*gograph.Vertex[T]) string) Option[T] {
 	return func(o *options[T]) {
 		o.vertexClass = fn
@@ -147,7 +148,11 @@ func Write[T comparable](w io.Writer, g gograph.Graph[T], opts ...Option[T]) err
 	bw := bufio.NewWriter(w)
 	_, _ = fmt.Fprintf(bw, "flowchart %s\n", o.direction)
 	for i, v := range vertices {
-		_, _ = fmt.Fprintf(bw, "    n%d[\"%s\"]\n", i, escape(o.vertexLabel(v)))
+		label := escape(o.vertexLabel(v))
+		if label == "" {
+			label = " " // Mermaid rejects a node with empty text
+		}
+		_, _ = fmt.Fprintf(bw, "    n%d[\"%s\"]\n", i, label)
 	}
 
 	writeEdges(bw, g, vertices, ids, o.edgeLabel)
@@ -183,19 +188,32 @@ func (o *options[T]) validate() error {
 
 // sortedVertices returns the vertices of g ordered by fmt.Sprint of their
 // labels, so the output doesn't depend on the order of GetAllVertices.
+// Different labels can print the same, like 1 and "1" in a Graph[any], so
+// ties are broken by the type and then the Go syntax of the label.
 func sortedVertices[T comparable](g gograph.Graph[T]) []*gograph.Vertex[T] {
 	type keyed struct {
-		key    string
-		vertex *gograph.Vertex[T]
+		text     string
+		typ      string
+		goSyntax string
+		vertex   *gograph.Vertex[T]
 	}
 
 	all := g.GetAllVertices()
 	keys := make([]keyed, len(all))
 	for i, v := range all {
-		keys[i] = keyed{key: fmt.Sprint(v.Label()), vertex: v}
+		keys[i] = keyed{
+			text:     fmt.Sprint(v.Label()),
+			typ:      fmt.Sprintf("%T", v.Label()),
+			goSyntax: fmt.Sprintf("%#v", v.Label()),
+			vertex:   v,
+		}
 	}
 	slices.SortStableFunc(keys, func(a, b keyed) int {
-		return cmp.Compare(a.key, b.key)
+		return cmp.Or(
+			cmp.Compare(a.text, b.text),
+			cmp.Compare(a.typ, b.typ),
+			cmp.Compare(a.goSyntax, b.goSyntax),
+		)
 	})
 
 	vertices := make([]*gograph.Vertex[T], len(keys))
@@ -280,15 +298,24 @@ func groupClasses[T comparable](vertices []*gograph.Vertex[T], vertexClass func(
 	return classes, nil
 }
 
+// reservedClassNames are the words that the Mermaid flowchart parser reads
+// as keywords, so a diagram that uses them as class names doesn't parse.
+var reservedClassNames = map[string]bool{
+	"end": true, "graph": true, "flowchart": true, "subgraph": true,
+	"class": true, "classDef": true, "style": true, "linkStyle": true,
+	"click": true, "call": true, "href": true, "interpolate": true,
+	"_self": true, "_blank": true, "_parent": true, "_top": true,
+}
+
 func validClassName(name string) bool {
-	if name == "" {
+	if name == "" || reservedClassNames[name] {
 		return false
 	}
 
 	for i, r := range name {
 		switch {
 		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r == '_':
-		case i > 0 && (r >= '0' && r <= '9' || r == '-'):
+		case i > 0 && r >= '0' && r <= '9':
 		default:
 			return false
 		}
