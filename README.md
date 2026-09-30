@@ -17,7 +17,7 @@ strongly connected components and graph partitioning, with no dependencies outsi
 the standard library.
 
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
-- **Dependency graphs:** `Acyclic()` graphs reject cycles, and `TopologySort` returns a valid order.
+- **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what.
 - **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
 - **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
 - **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow.
@@ -245,6 +245,8 @@ Available iterators:
   [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md).
 - **Transitive reduction** (`path` package):
   [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
+- **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
+  (what it depends on) and `Affected` (what a change reaches).
 - **Strongly connected components** (`connectivity` package):
   [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity).
 - **Partitioning** (`partition` package):

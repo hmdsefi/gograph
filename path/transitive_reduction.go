@@ -2,7 +2,7 @@ package path
 
 import (
 	"github.com/hmdsefi/gograph"
-	"github.com/hmdsefi/gograph/traverse"
+	"github.com/hmdsefi/gograph/dag"
 )
 
 var (
@@ -108,24 +108,14 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 	return reducedGraph, nil
 }
 
-// findDescendants returns a map of all descendants of a vertex in the graph
-// using the depth-first traversal iterator from the traverse package
+// findDescendants returns the labels of all descendants of a vertex in the graph.
 func findDescendants[T comparable](g gograph.Graph[T], v *gograph.Vertex[T]) map[T]bool {
-	descendants := make(map[T]bool)
+	// g is directed and contains v, so Descendants doesn't return an error.
+	vertices, _ := dag.Descendants(g, v.Label())
 
-	// Process each neighbor of the vertex
-	for _, neighbor := range v.Neighbors() {
-		// Create a depth-first iterator starting from this neighbor
-		dfsIter, err := traverse.NewDepthFirstIterator(g, neighbor.Label())
-		if err != nil {
-			continue
-		}
-
-		// Add all other reachable vertices as descendants
-		for dfsIter.HasNext() {
-			descendant := dfsIter.Next()
-			descendants[descendant.Label()] = true
-		}
+	descendants := make(map[T]bool, len(vertices))
+	for _, d := range vertices {
+		descendants[d.Label()] = true
 	}
 
 	return descendants

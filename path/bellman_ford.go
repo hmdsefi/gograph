@@ -9,7 +9,7 @@ import (
 
 var (
 	ErrNegativeWeightCycle = errors.New("graph contains negative weight cycle")
-	ErrNotDirected         = errors.New("graph is not directed")
+	ErrNotDirected         = gograph.ErrNotDirected
 	ErrNotWeighted         = errors.New("graph is not weighted")
 )
 
