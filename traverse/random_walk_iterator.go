@@ -2,6 +2,7 @@ package traverse
 
 import (
 	"crypto/rand"
+	"math"
 	"math/big"
 
 	"github.com/hmdsefi/gograph"
@@ -39,7 +40,9 @@ type randomWalkIterator[T comparable] struct {
 // In a weighted graph, each step picks a neighbor with a probability
 // proportional to the weight of the edge to it. Edges with a weight of
 // zero or less are never picked, unless none of the edges of the current
-// vertex has a positive weight. Then each of them has an equal chance.
+// vertex has a positive weight. Then each of them has an equal chance. An
+// edge with a weight of positive infinity is picked over any edge with a
+// finite weight.
 func NewRandomWalkIterator[T comparable](graph gograph.Graph[T], start T, steps int) (Iterator[T], error) {
 	v := graph.GetVertexByID(start)
 	if v == nil {
@@ -115,15 +118,16 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 		return nil
 	}
 
-	var totalWeight float64
+	var maxWeight float64
 	var edges []*gograph.Edge[T]
 	neighbors := v.Neighbors()
 
-	// calculate the sum of the positive edge weights
 	for _, neighbor := range neighbors {
 		if edge := r.graph.GetEdge(v, neighbor); edge != nil {
 			edges = append(edges, edge)
-			totalWeight += max(edge.Weight(), 0)
+			if edge.Weight() > maxWeight {
+				maxWeight = edge.Weight()
+			}
 		}
 	}
 
@@ -131,22 +135,38 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 		return nil
 	}
 
-	if totalWeight <= 0 {
+	if maxWeight <= 0 {
 		return edges[randomIndex(len(edges))].OtherVertex(v.Label())
+	}
+
+	if math.IsInf(maxWeight, 1) {
+		var infinite []*gograph.Edge[T]
+		for _, edge := range edges {
+			if math.IsInf(edge.Weight(), 1) {
+				infinite = append(infinite, edge)
+			}
+		}
+		return infinite[randomIndex(len(infinite))].OtherVertex(v.Label())
+	}
+
+	// dividing by the largest weight keeps the sum from overflowing
+	var totalWeight float64
+	for _, edge := range edges {
+		if edge.Weight() > 0 {
+			totalWeight += edge.Weight() / maxWeight
+		}
 	}
 
 	// find the vertex that corresponds to a random weight in [0, totalWeight)
 	randWeight := randomFraction() * totalWeight
 	var last *gograph.Edge[T]
 	for _, edge := range edges {
-		if edge.Weight() <= 0 {
-			continue
-		}
-
-		last = edge
-		randWeight -= edge.Weight()
-		if randWeight < 0 {
-			return edge.OtherVertex(v.Label())
+		if w := edge.Weight(); w > 0 {
+			last = edge
+			randWeight -= w / maxWeight
+			if randWeight < 0 {
+				return edge.OtherVertex(v.Label())
+			}
 		}
 	}
 

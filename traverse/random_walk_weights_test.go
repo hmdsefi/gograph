@@ -59,6 +59,10 @@ func TestRandomWalkIterator_WeightOdds(t *testing.T) {
 		{name: "negative weight", weights: [2]float64{-1, 1}, shares: [2]float64{0, 1}},
 		{name: "only zero weights", weights: [2]float64{0, 0}, shares: [2]float64{0.5, 0.5}},
 		{name: "only negative weights", weights: [2]float64{-1, -2}, shares: [2]float64{0.5, 0.5}},
+		{name: "weights near the float limit", weights: [2]float64{1e308, 1e308}, shares: [2]float64{0.5, 0.5}},
+		{name: "infinite weight", weights: [2]float64{math.Inf(1), 1}, shares: [2]float64{1, 0}},
+		{name: "only infinite weights", weights: [2]float64{math.Inf(1), math.Inf(1)}, shares: [2]float64{0.5, 0.5}},
+		{name: "not a number", weights: [2]float64{math.NaN(), 1}, shares: [2]float64{0, 1}},
 	}
 
 	for _, tt := range tests {
