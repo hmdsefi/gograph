@@ -57,6 +57,44 @@ func TestFloydWarshall(t *testing.T) {
 	}
 }
 
+func TestFloydWarshall_SelfLoop(t *testing.T) {
+	g := gograph.New[string](gograph.Weighted(), gograph.Directed())
+
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+
+	_, _ = g.AddEdge(vA, vA, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(1))
+
+	dist, err := FloydWarshall(g)
+	if err != nil {
+		t.Fatalf("Expected no errors, but get an err: %s", err)
+	}
+
+	if dist["A"]["A"] != 0 {
+		t.Errorf("expected distance 0 from A to A, but got %f", dist["A"]["A"])
+	}
+
+	if dist["A"]["B"] != 1 {
+		t.Errorf("expected distance 1 from A to B, but got %f", dist["A"]["B"])
+	}
+}
+
+func TestFloydWarshall_NegativeSelfLoop(t *testing.T) {
+	g := gograph.New[string](gograph.Weighted(), gograph.Directed())
+
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+
+	_, _ = g.AddEdge(vA, vA, gograph.WithEdgeWeight(-1))
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(1))
+
+	_, err := FloydWarshall(g)
+	if !errors.Is(err, ErrNegativeWeightCycle) {
+		t.Errorf("Expected error \"%s\", but got \"%v\"", ErrNegativeWeightCycle, err)
+	}
+}
+
 func TestFloydWarshall_NotWeighted(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
 

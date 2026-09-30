@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   returns the start vertex. ([#147])
 - `TransitiveReduction` dropped vertex weights, and dropped edge weights when the
   input graph wasn't created with `Weighted()`. It now keeps both. ([#148])
+- `FloydWarshall` reported the weight of a self-loop as a vertex's distance to
+  itself. It now reports 0, and a negative loop is still reported as a negative
+  cycle. ([#145])
+- `BellmanFord` returned distances for a start vertex that isn't in the graph. It
+  now returns `gograph.ErrVertexDoesNotExist`. ([#99])
 - `VertexPriorityQueue.Pop` panicked on an empty queue, and `Push(nil)` and
   `Vertex.HasNeighbor(nil)` panicked too. `Pop` now returns nil, `Push` ignores
   nil, and `HasNeighbor` returns false. ([#146])
@@ -142,6 +147,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#141]: https://github.com/hmdsefi/gograph/issues/141
 [#143]: https://github.com/hmdsefi/gograph/issues/143
 [#144]: https://github.com/hmdsefi/gograph/issues/144
+[#99]: https://github.com/hmdsefi/gograph/issues/99
+[#145]: https://github.com/hmdsefi/gograph/issues/145
 [#146]: https://github.com/hmdsefi/gograph/issues/146
 [#147]: https://github.com/hmdsefi/gograph/issues/147
 [#148]: https://github.com/hmdsefi/gograph/issues/148

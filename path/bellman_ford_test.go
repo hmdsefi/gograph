@@ -148,3 +148,21 @@ func TestBellmanFord_NotDirected(t *testing.T) {
 		t.Errorf("Expected error \"%s\", but got \"%s\"", ErrNotDirected, err)
 	}
 }
+
+func TestBellmanFord_MissingStart(t *testing.T) {
+	g := gograph.New[string](gograph.Weighted(), gograph.Directed())
+
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(1))
+
+	dist, err := BellmanFord(g, "X")
+	if !errors.Is(err, gograph.ErrVertexDoesNotExist) {
+		t.Errorf("Expected error \"%s\", but got \"%v\"", gograph.ErrVertexDoesNotExist, err)
+	}
+
+	if dist != nil {
+		t.Errorf("Expected nil distances, but got %v", dist)
+	}
+}
