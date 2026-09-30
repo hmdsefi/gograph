@@ -40,6 +40,8 @@ var (
 //
 // The time complexity of the Bellman-Ford algorithm is O(V*E), where V is the number of vertices
 // and E is the number of edges.
+//
+// If the start vertex isn't in the graph, it returns gograph.ErrVertexDoesNotExist.
 func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, error) {
 	if !g.IsWeighted() {
 		return nil, ErrNotWeighted
@@ -47,6 +49,10 @@ func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, erro
 
 	if !g.IsDirected() {
 		return nil, ErrNotDirected
+	}
+
+	if g.GetVertexByID(start) == nil {
+		return nil, gograph.ErrVertexDoesNotExist
 	}
 
 	vertices := g.GetAllVertices()

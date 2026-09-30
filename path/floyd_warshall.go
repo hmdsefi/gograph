@@ -16,7 +16,8 @@ import (
 //  1. Initialization: Create a distance matrix D[][] where D[i][j] represents the
 //     shortest distance between vertex i and vertex j. Initialize this matrix with
 //     the weights of the edges between vertices if there is an edge, otherwise set
-//     the value to infinity. Also, set the diagonal elements D[i][i] to 0.
+//     the value to infinity. Also, set the diagonal elements D[i][i] to 0. A self-loop
+//     only changes D[i][i] if its weight is negative.
 //
 //  2. Shortest Path Calculation: Iterate through all vertices as intermediate vertices.
 //     For each pair of vertices (i, j), check if going through the current intermediate
@@ -62,7 +63,9 @@ func FloydWarshall[T comparable](g gograph.Graph[T]) (map[T]map[T]float64, error
 			}
 
 			if edge := g.GetEdge(source, dest); edge != nil {
-				destMap[dest.Label()] = edge.Weight()
+				if source.Label() != dest.Label() || edge.Weight() < 0 {
+					destMap[dest.Label()] = edge.Weight()
+				}
 			}
 
 			dist[source.Label()] = destMap
