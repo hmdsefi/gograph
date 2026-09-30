@@ -211,8 +211,16 @@ type Vertex[T comparable] struct {
 	position   int  // index of the vertex in the insertion order of its graph
 }
 
+// NewVertex creates a vertex with the given label and applies the options,
+// such as WithVertexWeight, to it. The vertex doesn't belong to a graph
+// until it's added with AddVertex or AddEdge.
 func NewVertex[T comparable](label T, options ...VertexOptionFunc) *Vertex[T] {
-	return &Vertex[T]{label: label}
+	var properties VertexProperties
+	for _, option := range options {
+		option(&properties)
+	}
+
+	return &Vertex[T]{label: label, properties: properties}
 }
 
 // NeighborByLabel iterates over the neighbor slice and returns the

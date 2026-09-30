@@ -53,6 +53,36 @@ func TestVertex(t *testing.T) {
 	}
 }
 
+func TestNewVertex_Options(t *testing.T) {
+	if w := NewVertex("A").Weight(); w != 0 {
+		t.Errorf(testErrMsgNotEqual, 0.0, w)
+	}
+
+	if w := NewVertex("A", WithVertexWeight(3)).Weight(); w != 3 {
+		t.Errorf(testErrMsgNotEqual, 3.0, w)
+	}
+
+	if w := NewVertex("A", WithVertexWeight(1), WithVertexWeight(2)).Weight(); w != 2 {
+		t.Errorf(testErrMsgNotEqual, 2.0, w)
+	}
+
+	g := New[string]()
+	g.AddVertex(NewVertex("A", WithVertexWeight(3)))
+	if w := g.GetVertexByID("A").Weight(); w != 3 {
+		t.Errorf("AddVertex: "+testErrMsgNotEqual, 3.0, w)
+	}
+
+	if _, err := g.AddEdge(NewVertex("B", WithVertexWeight(5)), NewVertex("C", WithVertexWeight(7))); err != nil {
+		t.Fatalf(testErrMsgError, err)
+	}
+	if w := g.GetVertexByID("B").Weight(); w != 5 {
+		t.Errorf("AddEdge source: "+testErrMsgNotEqual, 5.0, w)
+	}
+	if w := g.GetVertexByID("C").Weight(); w != 7 {
+		t.Errorf("AddEdge destination: "+testErrMsgNotEqual, 7.0, w)
+	}
+}
+
 func TestEdge_OtherVertex(t *testing.T) {
 	edge := NewEdge[int](NewVertex(1), NewVertex(2))
 

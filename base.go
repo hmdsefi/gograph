@@ -119,12 +119,7 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 // If there is a vertex with the same label in the graph, returns nil.
 // Otherwise, returns the created vertex.
 func (g *baseGraph[T]) AddVertexByLabel(label T, options ...VertexOptionFunc) *Vertex[T] {
-	var properties VertexProperties
-	for _, option := range options {
-		option(&properties)
-	}
-
-	v := g.addVertex(&Vertex[T]{label: label, properties: properties})
+	v := g.addVertex(NewVertex(label, options...))
 
 	return v
 }
