@@ -28,8 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `GetAllVertices`, `AllEdges` and `EdgesOf` return vertices and edges in the
-  order they were added. The order used to be random. ([#114], [#167])
+- `GetAllVertices` returns vertices in the order they were added. `AllEdges`
+  groups edges by source vertex in that order, with the edges of each vertex in
+  the order they were added. `EdgesOf` returns the edges that start from the
+  vertex first, in the order they were added, and then the edges that end at it,
+  in the order of their source vertices. The order used to be random. ([#114],
+  [#167])
 - `TopologySort`, `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
   `GirvanNewman` and `TransitiveReduction` give the same result on every run for
   a graph built the same way. ([#114], [#167])
