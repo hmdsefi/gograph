@@ -1,0 +1,12 @@
+flowchart TD
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n0 --> n1
+    n1 --> n2
+    n2 --> n3
+    classDef critical fill:#f96,stroke:#333
+    classDef done fill:#9f6
+    class n0,n2 critical
+    class n3 done

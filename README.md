@@ -22,6 +22,7 @@ the standard library.
 - **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
 - **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
+- **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown.
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby).
 
