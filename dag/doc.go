@@ -1,5 +1,6 @@
 // Package dag answers the everyday questions about dependency graphs: what a
-// vertex depends on, what depends on it, and what a change affects.
+// vertex depends on, what depends on it, what a change affects, and which
+// vertices can run at the same time.
 //
 // # Edge direction
 //
@@ -23,17 +24,32 @@
 // If a graph stores "A requires B" as A -> B instead, the meanings swap:
 // Ancestors returns the dependents and Descendants returns the dependencies.
 //
+// # Running in dependency order
+//
+// Levels and Tracker help to run the vertices with plain goroutines or any
+// other executor, starting each one after everything it depends on:
+//
+//   - Levels groups the vertices into levels that can each run at the same
+//     time, one level after the other. In the example above, the levels
+//     are [checkout], [build] and [test lint].
+//   - Tracker hands out each vertex as soon as its own dependencies are
+//     done, so a slow vertex doesn't hold up the ones that don't depend
+//     on it.
+//
 // # Behavior
 //
-// The functions work on any directed graph, including graphs with cycles,
-// and return each vertex once, as the graph's own vertex pointers. They
-// return gograph.ErrNotDirected for undirected graphs, and an error that
-// matches gograph.ErrVertexDoesNotExist with errors.Is if a label is not in
-// the graph.
+// Descendants, Ancestors and Affected work on any directed graph, including
+// graphs with cycles. Levels and NewTracker return gograph.ErrDAGHasCycle
+// for a graph with a cycle, since its vertices can't run in dependency
+// order. All functions return gograph.ErrNotDirected for undirected graphs,
+// and an error that matches gograph.ErrVertexDoesNotExist with errors.Is if
+// a label is not in the graph.
 //
-// The results are in breadth-first order, nearest first. For vertices at
-// the same distance, Descendants and Affected follow the order the edges
-// were added, and Ancestors follows the order of the graph's AllEdges.
+// Every function returns each vertex once, as the graph's own vertex
+// pointers. The results of Descendants, Ancestors and Affected are in
+// breadth-first order, nearest first. For vertices at the same distance,
+// Descendants and Affected follow the order the edges were added, and
+// Ancestors follows the order of the graph's AllEdges.
 //
 // All searches are iterative, so long chains don't grow the call stack.
 package dag
