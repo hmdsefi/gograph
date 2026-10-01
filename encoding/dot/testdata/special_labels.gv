@@ -1,0 +1,12 @@
+digraph {
+	n0 [label=""];
+	n1 [label="<nil>"];
+	n2 [label="C:\\path\\"];
+	n3 [label="Node"];
+	n4 [label="a b; c=d [e] {f} -> g"];
+	n5 [label="graph"];
+	n6 [label="say \"hi\""];
+	n7 [label="two\nlines"];
+	n8 [label="windows\nline"];
+	n9 [label="日本"];
+}
