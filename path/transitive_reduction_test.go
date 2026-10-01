@@ -242,6 +242,9 @@ func TestTransitiveReduction_KeepsWeights(t *testing.T) {
 			if reduced.IsWeighted() != g.IsWeighted() {
 				t.Errorf("Expected IsWeighted %v, got %v", g.IsWeighted(), reduced.IsWeighted())
 			}
+			if reduced.IsAcyclic() != g.IsAcyclic() {
+				t.Errorf("Expected IsAcyclic %v, got %v", g.IsAcyclic(), reduced.IsAcyclic())
+			}
 
 			for label, weight := range map[string]float64{"A": 5, "B": 7, "C": 0} {
 				if got := reduced.GetVertexByID(label).Weight(); got != weight {
@@ -273,6 +276,50 @@ func TestTransitiveReduction_KeepsWeights(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestTransitiveReduction_KeepsAcyclic(t *testing.T) {
+	g := gograph.New[string](gograph.Acyclic())
+	vA := g.AddVertexByLabel("A", gograph.WithVertexWeight(5))
+	vB := g.AddVertexByLabel("B")
+	_, err := g.AddEdge(vA, vB, gograph.WithEdgeWeight(3))
+	if err != nil {
+		t.Fatalf("AddEdge returned an error: %v", err)
+	}
+
+	reduced, err := TransitiveReduction(g)
+	if err != nil {
+		t.Fatalf("TransitiveReduction returned an error: %v", err)
+	}
+	if !reduced.IsAcyclic() {
+		t.Fatal("expected reduced graph to be acyclic")
+	}
+	if got := reduced.GetVertexByID("A").Weight(); got != 5 {
+		t.Errorf("vertex A weight = %v, want 5", got)
+	}
+	edge := reduced.GetEdge(reduced.GetVertexByID("A"), reduced.GetVertexByID("B"))
+	if edge == nil || edge.Weight() != 3 {
+		t.Fatalf("edge A->B weight = %v, want 3", edge)
+	}
+
+	// The result must reject a cycle, matching AddEdge on the input.
+	_, err = reduced.AddEdge(reduced.GetVertexByID("B"), reduced.GetVertexByID("A"))
+	if !errors.Is(err, gograph.ErrDAGCycle) {
+		t.Errorf("AddEdge cycle error = %v, want ErrDAGCycle", err)
+	}
+
+	// A directed DAG that was not created with Acyclic stays unmarked.
+	plain := gograph.New[string](gograph.Directed())
+	pA := plain.AddVertexByLabel("A")
+	pB := plain.AddVertexByLabel("B")
+	_, _ = plain.AddEdge(pA, pB)
+	reducedPlain, err := TransitiveReduction(plain)
+	if err != nil {
+		t.Fatalf("TransitiveReduction returned an error: %v", err)
+	}
+	if reducedPlain.IsAcyclic() {
+		t.Error("expected a directed graph without the acyclic option to stay unmarked")
 	}
 }
 
