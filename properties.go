@@ -67,12 +67,12 @@ func WithEdgeWeight(weight float64) EdgeOptionFunc {
 // modifies the specified vertex properties.
 type VertexOptionFunc func(properties *VertexProperties)
 
-// VertexProperties represents the properties of an edge.
+// VertexProperties represents the properties of a vertex.
 type VertexProperties struct {
 	weight float64
 }
 
-// WithVertexWeight sets the edge weight for the specified vertex
+// WithVertexWeight sets the weight for the specified vertex
 // properties in the returned VertexOptionFunc.
 func WithVertexWeight(weight float64) VertexOptionFunc {
 	return func(properties *VertexProperties) {

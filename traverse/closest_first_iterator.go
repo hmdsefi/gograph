@@ -5,17 +5,12 @@ import (
 	"github.com/hmdsefi/gograph/util"
 )
 
-// closestFirstIterator implements the Iterator interface to travers
-// a graph in a random walk fashion.
+// closestFirstIterator implements the Iterator interface to traverse
+// a graph by increasing distance from the start vertex.
 //
-// Closest-first traversal, also known as the Best-First search or
-// Greedy Best-First search, is a graph traversal algorithm that
-// explores the graph in a manner that always prioritizes the next
-// node to visit based on some evaluation function that estimates
-// how close a node is to the goal.
-//
-// The metric for closest here is the weight of the edge between two
-// connected vertices.
+// Closest-first traversal visits the next reachable vertex with the
+// smallest total distance from the start vertex. The distance is the
+// sum of edge weights along the shortest path found so far.
 type closestFirstIterator[T comparable] struct {
 	graph    gograph.Graph[T]             // the graph that being traversed.
 	start    T                            // the label of starting point of the traversal.
@@ -24,7 +19,7 @@ type closestFirstIterator[T comparable] struct {
 	currDist float64                      // the current distance from the start node.
 }
 
-// NewClosestFirstIterator creates a new instance of depthFirstIterator
+// NewClosestFirstIterator creates a new instance of closestFirstIterator
 // and returns it as the Iterator interface.
 //
 // if the start node doesn't exist, returns error.
@@ -59,8 +54,7 @@ func (c *closestFirstIterator[T]) HasNext() bool {
 	return false
 }
 
-// Next returns the next vertex to be visited in the random walk traversal.
-// It chooses one of the neighbors randomly and returns it.
+// Next returns the next vertex to be visited in closest-first order.
 //
 // If the HasNext is false, returns nil.
 func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
@@ -85,7 +79,7 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 	return currNode
 }
 
-// Iterate iterates through the vertices in random order and applies
+// Iterate iterates through the vertices in closest-first order and applies
 // the given function to each vertex. If the function returns an error,
 // the iteration stops and the error is returned.
 func (c *closestFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {

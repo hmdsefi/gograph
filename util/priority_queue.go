@@ -6,8 +6,8 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
-// VertexPriorityQueue wraps the priorityQueue type to decrease the
-// exposes methods, and increase the type safety.
+// VertexPriorityQueue wraps priorityQueue to expose a small,
+// type-safe API.
 type VertexPriorityQueue[T comparable] struct {
 	pq priorityQueue[T] // a slice of VertexWithPriority that represents min heap.
 }
@@ -44,7 +44,8 @@ func (v *VertexPriorityQueue[T]) Pop() *VertexWithPriority[T] {
 	return out
 }
 
-// Peek is the number of elements in the underlying queue.
+// Peek returns the minimum element without removing it. It returns nil
+// if the queue is empty.
 func (v *VertexPriorityQueue[T]) Peek() *VertexWithPriority[T] {
 	if v.Len() > 0 {
 		return v.pq[0]
