@@ -6,7 +6,8 @@ import "sync/atomic"
 // supports multiple types of graph.
 //
 // This implementation is not safe for concurrent read/write from different
-// goroutines. If two goroutines try to modify the same graph it raises panic.
+// goroutines. Use a lock around every call when any goroutine modifies the
+// graph; otherwise the results are undefined and the program may crash.
 type baseGraph[T comparable] struct {
 	// vertices is a map of vertices of the graph. the key of the map
 	// is the vertex label.

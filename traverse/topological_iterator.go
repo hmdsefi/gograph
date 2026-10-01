@@ -49,7 +49,7 @@ func (t *topologicalIterator[T]) Next() *gograph.Vertex[T] {
 	return t.queue[t.head]
 }
 
-// Iterate iterates through all the vertices in the BFS traversal order
+// Iterate iterates through all the vertices in topological order
 // and applies the given function to each vertex. If the function returns
 // an error, the iteration stops and the error is returned.
 func (t *topologicalIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {

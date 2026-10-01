@@ -30,12 +30,16 @@ type randomWalkIterator[T comparable] struct {
 	graph       gograph.Graph[T]   // the graph that being traversed.
 	start       T                  // the label of starting point of the traversal.
 	current     *gograph.Vertex[T] // the latest node that has been returned by the iterator.
-	steps       int                // the maximum number of steps to be taken during the traversal.
+	steps       int                // the maximum number of vertices returned during the traversal.
 	currentStep int                // the step counter.
 }
 
 // NewRandomWalkIterator creates a new instance of randomWalkIterator
 // and returns it as the Iterator interface.
+//
+// The walk returns the start vertex first. The steps argument is the
+// maximum number of vertices returned, including the start vertex, so a
+// walk with five steps moves at most four times.
 //
 // In a weighted graph, each step picks a neighbor with a probability
 // proportional to the weight of the edge to it. Edges with a weight of

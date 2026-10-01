@@ -278,7 +278,7 @@ func (v *Vertex[T]) Label() T {
 	return v.label
 }
 
-// Weight returns vertex label.
+// Weight returns the vertex weight.
 func (v *Vertex[T]) Weight() float64 {
 	return v.properties.weight
 }

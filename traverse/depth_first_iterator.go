@@ -34,8 +34,8 @@ func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirs
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited in the DFS traversal. It returns true if the head index
-// is in the range of the queue indices.
+// to be visited in the DFS traversal. It returns true if the stack is
+// not empty.
 func (d *depthFirstIterator[T]) HasNext() bool {
 	return len(d.stack) > 0
 }
@@ -48,12 +48,12 @@ func (d *depthFirstIterator[T]) Next() *gograph.Vertex[T] {
 		return nil
 	}
 
-	// get the next vertex from the queue
+	// get the next vertex from the stack
 	label := d.stack[len(d.stack)-1]
 	d.stack = d.stack[:len(d.stack)-1]
 	currentNode := d.graph.GetVertexByID(label)
 
-	// add unvisited neighbors to the queue
+	// add unvisited neighbors to the stack
 	neighbors := currentNode.Neighbors()
 	for _, neighbor := range neighbors {
 		if !d.visited[neighbor.Label()] {
