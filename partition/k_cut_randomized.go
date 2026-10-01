@@ -7,9 +7,12 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
+// KCutResult is the result of RandomizedKCut.
 type KCutResult[T comparable] struct {
+	// Supernodes are the groups of vertices left after contraction.
 	Supernodes [][]*gograph.Vertex[T]
-	CutEdges   []*gograph.Edge[T]
+	// CutEdges are the edges of the graph between two different supernodes.
+	CutEdges []*gograph.Edge[T]
 }
 
 // RandomizedKCut computes an approximate k-cut of an undirected graph using
@@ -33,9 +36,16 @@ type KCutResult[T comparable] struct {
 //   - Only applicable to undirected graphs; for directed graphs, results are
 //     approximate and may not correspond to a global min-cut.
 //   - The returned supernodes are slices of vertex pointers representing
-//     the contracted vertex groups after k-way partitioning.
-//   - The returned cut edges are edges that connect different supernodes in the
-//     original graph.
+//     the contracted vertex groups after k-way partitioning. Supernodes are
+//     ordered by their first vertex in GetAllVertices(), and the vertices in
+//     each supernode follow the same order.
+//   - The returned cut edges are all edges of the original graph that connect
+//     different supernodes. In an undirected graph each edge is listed once,
+//     in one of its two directions. In a directed graph, u->v and v->u are
+//     two edges and both are listed.
+//   - Contraction only merges vertices that are connected. If g has more than
+//     k connected components, the edges run out first, and the result has one
+//     supernode per connected component, which is more than k.
 //
 // Time Complexity: O(n * m) per run, where n is the number of vertices and m
 // is the number of edges in the graph.
@@ -56,11 +66,11 @@ type KCutResult[T comparable] struct {
 //
 // Example usage:
 //
-//	g := NewBaseGraph[string](false, false) // undirected, unweighted
+//	g := gograph.New[string]() // undirected, unweighted
 //	a := g.AddVertexByLabel("A")
 //	b := g.AddVertexByLabel("B")
-//	g.AddEdge(a, b)
-//	result, err := RandomizedKCut(g, 2)
+//	_, _ = g.AddEdge(a, b)
+//	result, err := partition.RandomizedKCut(g, 2)
 //	if err != nil { log.Fatal(err) }
 //	fmt.Println("Supernodes:", result.Supernodes)
 //	fmt.Println("Cut edges:", result.CutEdges)
@@ -107,38 +117,36 @@ func RandomizedKCut[T comparable](g gograph.Graph[T], k int) (*KCutResult[T], er
 		delete(supernodes, v.Label())
 	}
 
-	// 4. Collect cut edges (edges that connect different supernodes)
+	// 4. Collect cut edges (edges that connect different supernodes). An
+	// undirected graph stores each edge in both directions, so the reverse
+	// of an edge that is already in the result is skipped.
+	type labelPair struct{ from, to T }
 	var cutEdges []*gograph.Edge[T]
-
-	if len(supernodes) < int(g.Order()) {
-		seen := make(map[string]bool) // deduplicate undirected edges
-		for _, e := range g.AllEdges() {
-			u := vertexToSupernode[e.Source().Label()]
-			v := vertexToSupernode[e.Destination().Label()]
-			if u != v {
-				// canonical key for undirected edge
-				var key string
-				if fmt.Sprint(u) < fmt.Sprint(v) {
-					key = fmt.Sprintf("%v-%v", u, v)
-				} else {
-					key = fmt.Sprintf("%v-%v", v, u)
-				}
-				if !seen[key] {
-					cutEdges = append(cutEdges, e)
-					seen[key] = true
-				}
-			}
+	inCut := make(map[labelPair]bool)
+	for _, e := range g.AllEdges() {
+		from, to := e.Source().Label(), e.Destination().Label()
+		if vertexToSupernode[from] == vertexToSupernode[to] {
+			continue
 		}
+		if !g.IsDirected() && inCut[labelPair{to, from}] {
+			continue
+		}
+		inCut[labelPair{from, to}] = true
+		cutEdges = append(cutEdges, e)
 	}
 
-	// 5. Convert supernodes map to slices
+	// 5. Convert supernodes to slices, in the order of GetAllVertices()
 	resultSupernodes := make([][]*gograph.Vertex[T], 0, len(supernodes))
-	for _, nodes := range supernodes {
-		group := make([]*gograph.Vertex[T], 0, len(nodes))
-		for _, v := range nodes {
-			group = append(group, v)
+	groupOf := make(map[*gograph.Vertex[T]]int, len(supernodes))
+	for _, v := range g.GetAllVertices() {
+		supernode := vertexToSupernode[v.Label()]
+		i, ok := groupOf[supernode]
+		if !ok {
+			i = len(resultSupernodes)
+			groupOf[supernode] = i
+			resultSupernodes = append(resultSupernodes, nil)
 		}
-		resultSupernodes = append(resultSupernodes, group)
+		resultSupernodes[i] = append(resultSupernodes[i], v)
 	}
 
 	return &KCutResult[T]{
