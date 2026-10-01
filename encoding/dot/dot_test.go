@@ -274,7 +274,7 @@ func TestWrite(t *testing.T) {
 }
 
 // TestGolden_Graphviz checks that Graphviz reads every golden file without
-// errors or warnings. It runs when dot is on the PATH.
+// errors or warnings. It runs when dot is on the PATH, which CI installs.
 func TestGolden_Graphviz(t *testing.T) {
 	dot, err := exec.LookPath("dot")
 	if err != nil {
