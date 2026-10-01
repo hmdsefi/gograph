@@ -16,11 +16,18 @@ import (
 //  1. Compute edge betweenness centrality for all edges using Brandes algorithm.
 //     - BFS is used from each vertex to determine the shortest paths.
 //     - Dependencies are accumulated to assign betweenness values to edges.
-//  2. Identify edges with maximum betweenness.
-//  3. Remove one or more edges with the highest betweenness.
+//  2. Identify the edge with the highest betweenness. When several edges tie,
+//     take the first one in the order of AllEdges().
+//  3. Remove that edge.
 //  4. Update connected components using a non-recursive BFS traversal.
 //  5. Repeat steps 1-4 until the desired number of components (`k`) is reached.
 //     If k <= 0, continue until all edges are removed.
+//
+// Removing one edge adds at most one component, so the result has exactly k
+// communities when g has at least k vertices and at most k connected
+// components. If g already has more than k connected components, they are
+// returned as they are. If g has fewer than k vertices, every vertex ends up
+// in its own community.
 //
 // Important details:
 //   - High betweenness edges typically act as bridges between clusters and are
@@ -38,6 +45,9 @@ import (
 //   - A slice of gograph.Graph[T], each representing a connected component (community).
 //     The order of the communities and of the vertices in them is stable: a
 //     graph built the same way gives the same result on every run.
+//     Each community has every edge of g between its vertices, including
+//     edges the algorithm removed while splitting the graph. The communities
+//     keep the vertex and edge weights, and are weighted if g is weighted.
 //   - An error if the operation fails.
 //
 // Time Complexity:
@@ -69,9 +79,11 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 		}
 
 		// Find max betweenness, going through the edges in graph order so
-		// the result doesn't depend on map iteration
+		// the result doesn't depend on map iteration. Only one edge is
+		// removed per iteration: removing every tied edge at once can split
+		// the graph into more than k components.
 		maxVal := -1.0
-		var edgesToRemove []*gograph.Edge[T]
+		var edgeToRemove *gograph.Edge[T]
 		for _, e := range working.AllEdges() {
 			val, ok := betweenness[e]
 			if !ok {
@@ -79,14 +91,11 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 			}
 			if val > maxVal {
 				maxVal = val
-				edgesToRemove = []*gograph.Edge[T]{e}
-			} else if val == maxVal {
-				edgesToRemove = append(edgesToRemove, e)
+				edgeToRemove = e
 			}
 		}
 
-		// Remove edges
-		working.RemoveEdges(edgesToRemove...)
+		working.RemoveEdges(edgeToRemove)
 
 		components = getConnectedComponents(working)
 		if k > 0 && len(components) >= k {
@@ -94,13 +103,18 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 		}
 	}
 
+	var options []gograph.GraphOptionFunc
+	if g.IsWeighted() {
+		options = append(options, gograph.Weighted())
+	}
+
 	// Convert components to Graph[T] objects
 	result := make([]gograph.Graph[T], len(components))
 	for i, comp := range components {
-		subgraph := gograph.New[T]()
+		subgraph := gograph.New[T](options...)
 		// Add vertices
 		for _, v := range comp {
-			subgraph.AddVertexByLabel(v.Label(), func(p *gograph.VertexProperties) {})
+			subgraph.AddVertexByLabel(v.Label(), gograph.WithVertexWeight(v.Weight()))
 		}
 		// Add edges
 		for _, v := range comp {

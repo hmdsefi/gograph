@@ -56,8 +56,10 @@ Let V be the number of vertices and E the number of edges:
     - High-betweenness edges often connect different communities.
     - Computed efficiently using Brandes’ algorithm with BFS from each vertex.
 
-2. **Remove High Betweenness Edge(s)**
+2. **Remove the Highest Betweenness Edge**
     - Remove the edge with the maximum betweenness centrality.
+    - When several edges tie, remove only the first one in the order of `AllEdges()`. Removing one edge adds at most
+      one component, so the algorithm can stop at exactly k communities.
     - This step gradually disconnects the graph along community boundaries.
 
 3. **Update Connected Components**
