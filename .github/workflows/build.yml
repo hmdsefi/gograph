@@ -7,12 +7,12 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: '1.24.2'  # Explicitly set Go version
+          go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.1.6
 
@@ -20,14 +20,12 @@ jobs:
     name: Go build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: 1.24.2
+          go-version: stable # the test job covers the minimum version in go.mod
       - name: Build
-        run: |
-          git clone --depth=1 https://github.com/${GITHUB_REPOSITORY}
-          cd $(basename ${GITHUB_REPOSITORY})
-          go build -v -race
+        run: go build -v ./...
 
   test:
     name: Go test
@@ -35,8 +33,8 @@ jobs:
     outputs:
       coverage: ${{ steps.coverage.outputs.total-coverage }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: Test

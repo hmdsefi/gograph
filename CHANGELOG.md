@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI builds the commit that was pushed instead of the default branch, also
+  builds with the latest Go release, and uses current versions of the GitHub
+  Actions. ([#106], [#176])
+
 ## [0.8.1] - 2026-09-30
 
 ### Fixed
@@ -206,6 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#98]: https://github.com/hmdsefi/gograph/issues/98
 [#99]: https://github.com/hmdsefi/gograph/issues/99
 [#100]: https://github.com/hmdsefi/gograph/issues/100
+[#106]: https://github.com/hmdsefi/gograph/issues/106
 [#114]: https://github.com/hmdsefi/gograph/issues/114
 [#117]: https://github.com/hmdsefi/gograph/issues/117
 [#122]: https://github.com/hmdsefi/gograph/issues/122
@@ -239,3 +246,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#172]: https://github.com/hmdsefi/gograph/pull/172
 [#173]: https://github.com/hmdsefi/gograph/pull/173
 [#174]: https://github.com/hmdsefi/gograph/pull/174
+[#176]: https://github.com/hmdsefi/gograph/pull/176
