@@ -3,6 +3,7 @@ package connectivity
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"runtime/debug"
 	"sort"
 	"testing"
@@ -124,6 +125,69 @@ func TestSCCs_RandomGraphs(t *testing.T) {
 					t.Fatalf("run %d, %s: component %d comes before component %d", run, name, from, to)
 				}
 			}
+		}
+	}
+}
+
+func TestGabow_SameAsTarjan(t *testing.T) {
+	// Both algorithms keep the unassigned vertices on a stack in the order the
+	// search reaches them, and emit a component when its root is done, so
+	// they return the same components in the same order.
+	rng := rand.New(rand.NewSource(2)) //nolint:gosec // seeded so failures are reproducible
+	for run := 0; run < 300; run++ {
+		n := 1 + rng.Intn(15)
+		g := gograph.New[int](gograph.Directed())
+		for i := 0; i < n; i++ {
+			g.AddVertexByLabel(i)
+		}
+		for i := 0; i < n; i++ {
+			for j := 0; j < n; j++ {
+				if rng.Intn(6) == 0 {
+					_, _ = g.AddEdge(g.GetVertexByID(i), g.GetVertexByID(j))
+				}
+			}
+		}
+
+		want := sccLabels(Tarjan(g))
+		if got := sccLabels(Gabow(g)); !reflect.DeepEqual(got, want) {
+			t.Fatalf("run %d: Gabow() = %v, Tarjan() = %v", run, got, want)
+		}
+	}
+}
+
+func TestSCCs_DisconnectedWithSelfLoops(t *testing.T) {
+	g := gograph.New[int](gograph.Directed())
+	for i := 1; i <= 6; i++ {
+		g.AddVertexByLabel(i)
+	}
+	edges := [][2]int{{1, 2}, {2, 1}, {4, 4}, {5, 4}, {6, 6}, {6, 1}}
+	for _, e := range edges {
+		_, _ = g.AddEdge(g.GetVertexByID(e[0]), g.GetVertexByID(e[1]))
+	}
+
+	// 3 is isolated, and 4 and 6 have self-loops but no cycle with another vertex
+	want := "[[1 2] [3] [4] [5] [6]]"
+	for name, scc := range sccFuncs {
+		if got := partitionKey(scc(g)); got != want {
+			t.Errorf("%s: expected %s, got %s", name, want, got)
+		}
+	}
+}
+
+func TestSCCs_UndirectedGraph(t *testing.T) {
+	g := gograph.New[int]()
+	for i := 1; i <= 5; i++ {
+		g.AddVertexByLabel(i)
+	}
+	_, _ = g.AddEdge(g.GetVertexByID(1), g.GetVertexByID(2))
+	_, _ = g.AddEdge(g.GetVertexByID(2), g.GetVertexByID(3))
+	_, _ = g.AddEdge(g.GetVertexByID(4), g.GetVertexByID(5))
+
+	// every undirected edge goes both ways, so the components are the connected components
+	want := "[[1 2 3] [4 5]]"
+	for name, scc := range sccFuncs {
+		if got := partitionKey(scc(g)); got != want {
+			t.Errorf("%s: expected %s, got %s", name, want, got)
 		}
 	}
 }

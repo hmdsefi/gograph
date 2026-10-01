@@ -100,7 +100,7 @@ It returns a slice of strongly connected component.
 ### Kosaraju's Algorithm
 
 Kosaraju's algorithm is another popular algorithm in graph theory used to find strongly connected
-components in a directed graph. The algorithm is named after its inventor, Sharadha Sharma Kosaraju.
+components in a directed graph. The algorithm is named after its inventor, S. Rao Kosaraju.
 The algorithm is also based on depth-first search (DFS), but it performs two DFS passes over the graph.
 
 The main usage of Kosaraju's algorithm is to find strongly connected components in a directed graph.
@@ -146,8 +146,9 @@ It returns a slice of strongly connected component.
 ### Gabow's Algorithm
 
 Gabow's algorithm is another algorithm used to find strongly connected components (SCCs) in a directed graph.
-The algorithm was invented by Harold N. Gabow in 1985 and is based on a combination of breadth-first search (BFS)
-and depth-first search (DFS).
+It's the path-based algorithm published by Harold N. Gabow in 2000. Like Tarjan's algorithm it runs a single
+depth-first search (DFS), but instead of a low-link value per vertex it keeps a second stack with the vertices
+on the search path that can still be the root of a component.
 
 The main usage of Gabow's algorithm is to find strongly connected components in a directed graph. It can be used
 in many applications, such as detecting cycles in a graph, solving problems related to synchronization,

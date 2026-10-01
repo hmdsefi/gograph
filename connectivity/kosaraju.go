@@ -6,10 +6,6 @@ import "github.com/hmdsefi/gograph"
 // and is used to find strongly connected components in a graph. The algorithm
 // has a time complexity of O(V+E) and is considered to be one of the most
 // efficient algorithms for finding strongly connected components.
-//
-// Note that this implementation assumes that the graph is connected, and
-// may not work correctly for disconnected graphs. It also does not handle
-// cases where the graph contains self-loops or parallel edges.
 
 // kosarajuDFS exposes two different depth-first search methods.
 type kosarajuDFS[T comparable] struct {
