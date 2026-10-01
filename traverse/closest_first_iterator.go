@@ -10,7 +10,8 @@ import (
 //
 // Closest-first traversal visits the next reachable vertex with the
 // smallest total distance from the start vertex. The distance is the
-// sum of edge weights along the shortest path found so far.
+// sum of edge weights along the shortest path found so far. Edge
+// weights are expected to be non-negative.
 type closestFirstIterator[T comparable] struct {
 	graph    gograph.Graph[T]             // the graph that being traversed.
 	start    T                            // the label of starting point of the traversal.
