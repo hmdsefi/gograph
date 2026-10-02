@@ -20,8 +20,9 @@ API before you write the code.
 
 ## Development setup
 
-You need Go 1.24.2 or newer (see `go.mod`) and, for linting,
-[golangci-lint](https://golangci-lint.run/) v2.
+You need Go 1.26 or newer (see `go.mod`) and, for linting,
+[golangci-lint](https://golangci-lint.run/) v2.14 or newer.
+gograph supports the two most recent Go releases.
 
 ```shell
 git clone https://github.com/<your-username>/gograph.git
