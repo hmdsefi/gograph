@@ -5,6 +5,9 @@ features are all welcome.
 
 ## Finding something to work on
 
+- The [open milestones](https://github.com/hmdsefi/gograph/milestones?state=open&sort=due_date&direction=asc)
+  group the issues by release, the next release first. Please start with an issue from
+  the earliest one, since that's the work needed soonest.
 - The [roadmap](https://github.com/hmdsefi/gograph/issues/136) lists planned work in the order it's likely to land.
 - Issues labeled [good first issue](https://github.com/hmdsefi/gograph/labels/good%20first%20issue)
   are small and well described.
