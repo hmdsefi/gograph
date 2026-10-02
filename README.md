@@ -24,6 +24,9 @@ the standard library.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown.
 
+See every algorithm run step by step on example graphs, with its result, the Go code and
+benchmarks, at [gograph.dev](https://gograph.dev).
+
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby).
 
 ## Quick start
@@ -238,6 +241,9 @@ Available iterators:
 - [Random walk](https://github.com/hmdsefi/gograph/tree/master/traverse#random-walk)
 
 ## Algorithms
+
+To watch these algorithms run step by step on example graphs, see
+[gograph.dev](https://gograph.dev).
 
 - **Ordering:** `gograph.TopologySort` (Kahn's algorithm) and `gograph.StableTopologySort`
   (smallest ready vertex first).
