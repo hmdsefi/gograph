@@ -7,11 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-02
+
+### Fixed
+
+- `GirvanNewman` removed every edge tied for the highest betweenness at once, so
+  it could split the graph into more than k communities. It now removes one edge
+  per step, the first tied one in the order of `AllEdges()`, and returns exactly
+  k communities when the graph has at least k vertices and at most k connected
+  components. The communities also keep the vertex and edge weights, and are
+  weighted when the input graph is. ([#101], [#178])
+- `RandomizedKCut` kept only one cut edge between two supernodes, and returned no
+  cut edges when k was the number of vertices. It now returns every edge between
+  two different supernodes, with each edge of an undirected graph listed once.
+  The supernodes follow the order of `GetAllVertices()` instead of a random
+  order. ([#102], [#179])
+- `Gabow` ran the same search as `Tarjan`. It now runs Gabow's path-based
+  algorithm, and the result is the same as before, including the order of the
+  components. ([#105], [#180])
+- `TransitiveReduction` returned a graph without `Acyclic()` even when the input
+  was created with it, so `AddEdge` on the result accepted edges that create a
+  cycle. The result is now acyclic when the input is. ([#148], [#197])
+
 ### Changed
 
 - CI builds the commit that was pushed instead of the default branch, also
   builds with the latest Go release, and uses current versions of the GitHub
   Actions. ([#106], [#176])
+- Fixed doc comments that were out of date or copied from other functions,
+  including the closest-first iterator, which was described as a random walk,
+  and the note on using a graph from more than one goroutine. The note on
+  `Kosaraju` that said it needs a connected graph and doesn't handle self-loops
+  is removed, because neither is true. ([#150], [#180], [#184])
 
 ## [0.8.1] - 2026-09-30
 
@@ -189,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/hmdsefi/gograph/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/hmdsefi/gograph/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/hmdsefi/gograph/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/hmdsefi/gograph/compare/v0.7.1...v0.7.2
@@ -212,6 +240,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#98]: https://github.com/hmdsefi/gograph/issues/98
 [#99]: https://github.com/hmdsefi/gograph/issues/99
 [#100]: https://github.com/hmdsefi/gograph/issues/100
+[#101]: https://github.com/hmdsefi/gograph/issues/101
+[#102]: https://github.com/hmdsefi/gograph/issues/102
+[#105]: https://github.com/hmdsefi/gograph/issues/105
 [#106]: https://github.com/hmdsefi/gograph/issues/106
 [#114]: https://github.com/hmdsefi/gograph/issues/114
 [#117]: https://github.com/hmdsefi/gograph/issues/117
@@ -230,6 +261,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#147]: https://github.com/hmdsefi/gograph/issues/147
 [#148]: https://github.com/hmdsefi/gograph/issues/148
 [#149]: https://github.com/hmdsefi/gograph/issues/149
+[#150]: https://github.com/hmdsefi/gograph/issues/150
 [#151]: https://github.com/hmdsefi/gograph/pull/151
 [#152]: https://github.com/hmdsefi/gograph/pull/152
 [#153]: https://github.com/hmdsefi/gograph/pull/153
@@ -247,3 +279,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#173]: https://github.com/hmdsefi/gograph/pull/173
 [#174]: https://github.com/hmdsefi/gograph/pull/174
 [#176]: https://github.com/hmdsefi/gograph/pull/176
+[#178]: https://github.com/hmdsefi/gograph/pull/178
+[#179]: https://github.com/hmdsefi/gograph/pull/179
+[#180]: https://github.com/hmdsefi/gograph/pull/180
+[#184]: https://github.com/hmdsefi/gograph/pull/184
+[#197]: https://github.com/hmdsefi/gograph/pull/197
