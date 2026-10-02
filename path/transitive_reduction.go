@@ -23,8 +23,8 @@ var (
 // without needing to build the full transitive closure matrix.
 //
 // The result keeps the vertex weights and the weights of the remaining edges, and is
-// weighted if g is weighted. If g was created with Acyclic, the result is too, so
-// AddEdge on the result rejects edges that would create a cycle.
+// weighted if g is weighted. It is created with Acyclic when g is, so AddEdge on the
+// result rejects edges that would create a cycle, matching the input.
 //
 // It returns an error if the graph is not directed or if the graph contains cycles.
 func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], error) {
@@ -43,14 +43,14 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 	}
 
 	// Create a new graph for the transitive reduction with the same properties as the input.
-	// Acyclic is preserved only when the input was created with that option. A directed
-	// graph that happens to have no cycles is not marked acyclic.
+	// Acyclic already implies directed; keep Directed explicit so a weighted acyclic input
+	// still gets both flags.
 	options := []gograph.GraphOptionFunc{gograph.Directed()}
-	if g.IsAcyclic() {
-		options = []gograph.GraphOptionFunc{gograph.Acyclic()}
-	}
 	if g.IsWeighted() {
 		options = append(options, gograph.Weighted())
+	}
+	if g.IsAcyclic() {
+		options = append(options, gograph.Acyclic())
 	}
 	reducedGraph := gograph.New[T](options...)
 
