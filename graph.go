@@ -170,6 +170,12 @@ func (e *Edge[T]) Weight() float64 {
 	return e.properties.weight
 }
 
+// Label returns the edge label. It returns an empty string when no label was
+// set.
+func (e *Edge[T]) Label() string {
+	return e.properties.label
+}
+
 // OtherVertex accepts the label of one the vertices of the edge
 // and returns the other one. If the input label doesn't match to
 // either of the vertices, returns nil.

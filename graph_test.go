@@ -1,6 +1,7 @@
 package gograph
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -96,5 +97,32 @@ func TestEdge_OtherVertex(t *testing.T) {
 
 	if edge.OtherVertex(2).label != edge.Source().Label() {
 		t.Errorf("Expect OtherVertex return 1, but get %+v", edge.OtherVertex(2))
+	}
+}
+
+func TestEdge_Label(t *testing.T) {
+	if got := NewEdge(NewVertex("A"), NewVertex("B")).Label(); got != "" {
+		t.Errorf("default label: got %q, want empty", got)
+	}
+
+	edge := NewEdge(NewVertex("A"), NewVertex("B"), WithEdgeLabel("calls"))
+	if got := edge.Label(); got != "calls" {
+		t.Errorf("label: got %q, want %q", got, "calls")
+	}
+
+	g := New[string]()
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	if _, err := g.AddEdge(a, b, WithEdgeLabel("imports")); err != nil {
+		t.Fatalf("AddEdge: %v", err)
+	}
+	if got := g.GetEdge(a, b).Label(); got != "imports" {
+		t.Errorf("forward label: got %q, want %q", got, "imports")
+	}
+	if got := g.GetEdge(b, a).Label(); got != "imports" {
+		t.Errorf("reverse label: got %q, want %q", got, "imports")
+	}
+	if _, err := g.AddEdge(a, b, WithEdgeLabel("duplicate")); !errors.Is(err, ErrEdgeAlreadyExists) {
+		t.Errorf("duplicate edge: got %v, want %v", err, ErrEdgeAlreadyExists)
 	}
 }
