@@ -71,7 +71,8 @@ func WithVertexLabel[T comparable](fn func(*gograph.Vertex[T]) string) Option[T]
 }
 
 // WithEdgeLabel sets the text shown on each edge. An empty string means no
-// text. The default is the weight on weighted graphs, and no text otherwise.
+// text. By default, an edge's label is shown when set; otherwise its weight is
+// shown on weighted graphs.
 func WithEdgeLabel[T comparable](fn func(*gograph.Edge[T]) string) Option[T] {
 	return func(o *options[T]) {
 		o.edgeLabel = fn
@@ -121,11 +122,15 @@ func Write[T comparable](w io.Writer, g gograph.Graph[T], opts ...Option[T]) err
 		vertexLabel: func(v *gograph.Vertex[T]) string {
 			return fmt.Sprint(v.Label())
 		},
-	}
-	if g.IsWeighted() {
-		o.edgeLabel = func(e *gograph.Edge[T]) string {
-			return strconv.FormatFloat(e.Weight(), 'g', -1, 64)
-		}
+		edgeLabel: func(e *gograph.Edge[T]) string {
+			if e.Label() != "" {
+				return e.Label()
+			}
+			if g.IsWeighted() {
+				return strconv.FormatFloat(e.Weight(), 'g', -1, 64)
+			}
+			return ""
+		},
 	}
 	for _, opt := range opts {
 		opt(&o)
