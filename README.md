@@ -20,7 +20,7 @@ the standard library.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what.
 - **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
 - **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
-- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow.
+- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown.
 
@@ -256,7 +256,8 @@ To watch these algorithms run step by step on example graphs, see
 - **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
   (what it depends on) and `Affected` (what a change reaches).
 - **Strongly connected components** (`connectivity` package):
-  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity).
+  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity),
+  and [condensation](https://github.com/hmdsefi/gograph/tree/master/connectivity#condensation) into a DAG.
 - **Partitioning** (`partition` package):
   [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
   [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),
