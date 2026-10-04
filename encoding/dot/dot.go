@@ -11,10 +11,11 @@
 // Directed graphs are written as a digraph with -> for edges, and
 // undirected graphs as a graph with --. Each undirected edge is written
 // once, even though the graph stores it in both directions. Vertices
-// without edges are still declared, so they appear in the drawing. On
-// weighted graphs, edges show their weight in the label attribute. The
-// weight attribute of Graphviz isn't set, since it changes the layout and
-// dot only accepts non-negative integers for it.
+// without edges are still declared, so they appear in the drawing. Edges
+// show their label in the label attribute when one is set, and otherwise
+// their weight on weighted graphs. The weight attribute of Graphviz isn't
+// set, since it changes the layout and dot only accepts non-negative
+// integers for it.
 //
 // The output is stable: a graph built the same way gives the same text on
 // every run, so it can be checked into a repository or compared in tests.
@@ -74,10 +75,10 @@ func WithVertexAttributes[T comparable](fn func(*gograph.Vertex[T]) map[string]s
 }
 
 // WithEdgeAttributes sets attributes for each edge, for example its color
-// or style. By default an edge of a weighted graph has a label attribute
-// with its weight, and fn can replace it by setting label too. For an
-// undirected edge, fn gets the direction that starts at the vertex that is
-// written first.
+// or style. By default an edge's label attribute is its label when one is
+// set, or its weight on a weighted graph, and fn can replace it by setting
+// label too. For an undirected edge, fn gets the direction that starts at
+// the vertex that is written first.
 func WithEdgeAttributes[T comparable](fn func(*gograph.Edge[T]) map[string]string) Option[T] {
 	return func(o *options[T]) {
 		o.edgeAttrs = fn
@@ -206,7 +207,10 @@ func writeEdges[T comparable](
 
 			e := g.GetEdge(v, neighbor)
 			var defaults, custom map[string]string
-			if g.IsWeighted() {
+			switch {
+			case e.Label() != "":
+				defaults = map[string]string{"label": e.Label()}
+			case g.IsWeighted():
 				defaults = map[string]string{"label": strconv.FormatFloat(e.Weight(), 'g', -1, 64)}
 			}
 			if edgeAttrs != nil {

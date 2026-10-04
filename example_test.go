@@ -149,3 +149,18 @@ func ExampleWithVertexWeight() {
 	// Output:
 	// 3 2 4
 }
+
+func ExampleWithEdgeLabel() {
+	g := gograph.New[string](gograph.Directed())
+
+	edge, _ := g.AddEdge(
+		gograph.NewVertex("service"),
+		gograph.NewVertex("database"),
+		gograph.WithEdgeLabel("queries"),
+	)
+
+	fmt.Println(edge.Label())
+
+	// Output:
+	// queries
+}
