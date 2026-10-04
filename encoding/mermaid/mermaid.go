@@ -10,7 +10,8 @@
 // Directed graphs use --> for edges and undirected graphs use ---. Each
 // undirected edge is written once, even though the graph stores it in both
 // directions. Vertices without edges are still declared, so they appear in
-// the diagram. On weighted graphs, edges show their weight by default.
+// the diagram. Edges show their label by default when one is set, otherwise
+// weighted graphs show the edge weight.
 //
 // The output is stable: a graph built the same way gives the same text on
 // every run, so it can be checked into a repository or compared in tests.
