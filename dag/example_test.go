@@ -143,3 +143,46 @@ func ExampleTracker_workers() {
 	// Output:
 	// [build checkout docs lint test]
 }
+
+func ExampleCriticalPath() {
+	// the weight of a vertex is how long the task takes
+	g := gograph.New[string](gograph.Directed())
+	checkout := g.AddVertexByLabel("checkout", gograph.WithVertexWeight(1))
+	build := g.AddVertexByLabel("build", gograph.WithVertexWeight(10))
+	test := g.AddVertexByLabel("test", gograph.WithVertexWeight(20))
+	lint := g.AddVertexByLabel("lint", gograph.WithVertexWeight(2))
+
+	_, _ = g.AddEdge(checkout, build)
+	_, _ = g.AddEdge(build, test)
+	_, _ = g.AddEdge(build, lint)
+
+	path, cost, err := dag.CriticalPath(g)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(labels(path), cost)
+
+	// Output:
+	// [checkout build test] 31
+}
+
+func ExampleCriticalPathFunc() {
+	// durations kept outside the graph
+	duration := map[string]float64{"checkout": 1, "build": 10, "test": 20, "lint": 2}
+
+	path, cost, err := dag.CriticalPathFunc(pipeline(),
+		func(v *gograph.Vertex[string]) float64 { return duration[v.Label()] },
+		nil,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(labels(path), cost)
+
+	// Output:
+	// [checkout build test] 31
+}

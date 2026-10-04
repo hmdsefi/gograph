@@ -36,12 +36,21 @@
 //     done, so a slow vertex doesn't hold up the ones that don't depend
 //     on it.
 //
+// # Critical path
+//
+// CriticalPath finds the chain of dependent vertices with the largest total
+// cost, which is what sets the total time when everything else runs in
+// parallel. It adds up vertex and edge weights, and CriticalPathFunc takes
+// the costs from functions, for durations kept outside the graph. In the
+// example above, with checkout, build, test and lint taking 1, 10, 20 and 2,
+// the critical path is checkout, build, test.
+//
 // # Behavior
 //
 // Descendants, Ancestors and Affected work on any directed graph, including
-// graphs with cycles. Levels and NewTracker return gograph.ErrDAGHasCycle
-// for a graph with a cycle, since its vertices can't run in dependency
-// order. All functions return gograph.ErrNotDirected for undirected graphs,
+// graphs with cycles. Levels, NewTracker and CriticalPath return
+// gograph.ErrDAGHasCycle for a graph with a cycle, since its vertices can't
+// run in dependency order. All functions return gograph.ErrNotDirected for undirected graphs,
 // and an error that matches gograph.ErrVertexDoesNotExist with errors.Is if
 // a label is not in the graph.
 //
