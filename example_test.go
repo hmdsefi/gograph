@@ -44,15 +44,24 @@ func ExampleNew_directed() {
 
 	_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
 	_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(3))
-	_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(2))
+	_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(4))
 	_, _ = g.AddEdge(gograph.NewVertex(3), gograph.NewVertex(4))
 	_, _ = g.AddEdge(gograph.NewVertex(4), gograph.NewVertex(5))
 	_, _ = g.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
 
 	fmt.Println(g.Order(), g.Size())
+	for _, e := range g.AllEdges() {
+		fmt.Println(e.Source().Label(), "->", e.Destination().Label())
+	}
 
 	// Output:
 	// 6 6
+	// 1 -> 2
+	// 1 -> 3
+	// 2 -> 4
+	// 3 -> 4
+	// 4 -> 5
+	// 5 -> 6
 }
 
 func ExampleNew_acyclic() {
