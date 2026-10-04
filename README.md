@@ -17,12 +17,12 @@ strongly connected components and graph partitioning, with no dependencies outsi
 the standard library.
 
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
-- **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what.
+- **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
 - **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
 - **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
-- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow.
+- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
-- **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown.
+- **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 
 See every algorithm run step by step on example graphs, with its result, the Go code and
 benchmarks, at [gograph.dev](https://gograph.dev).
@@ -254,9 +254,11 @@ To watch these algorithms run step by step on example graphs, see
 - **Transitive reduction** (`path` package):
   [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
 - **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
-  (what it depends on) and `Affected` (what a change reaches).
+  (what it depends on), `Affected` (what a change reaches), and `Levels` and `Tracker`
+  (what can run at the same time).
 - **Strongly connected components** (`connectivity` package):
-  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity).
+  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity),
+  and [condensation](https://github.com/hmdsefi/gograph/tree/master/connectivity#condensation) into a DAG.
 - **Partitioning** (`partition` package):
   [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
   [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),

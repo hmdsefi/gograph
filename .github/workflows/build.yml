@@ -14,7 +14,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: v2.14.0
 
   build:
     name: Go build
@@ -37,6 +37,8 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - name: Install Graphviz # the encoding/dot tests check their golden files with dot
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends graphviz
       - name: Test
         run: go test -race -covermode=atomic -coverprofile=cover.out ./...
 

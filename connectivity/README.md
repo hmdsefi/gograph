@@ -188,3 +188,36 @@ func main() {
 ```
 
 It returns a slice of strongly connected component.
+
+### Condensation
+
+Functions that need a directed acyclic graph, such as `gograph.TopologySort`, refuse graphs with cycles.
+The condensation of a graph replaces each strongly connected component with a single vertex, so it never
+has a cycle. A component with more than one member is a group of vertices that depend on each other, for
+example modules that have to be upgraded in one step.
+
+`Condense` runs Tarjan's algorithm once, in O(V + E) time. The components are labeled 0 to n-1 in
+topological order, and there is an edge between two components if an edge of the graph crosses between
+them:
+
+```go
+c, err := connectivity.Condense(g)
+if err != nil {
+  return err
+}
+
+order, err := gograph.TopologySort(c.Graph) // never fails with ErrDAGHasCycle
+if err != nil {
+  return err
+}
+for _, comp := range order {
+  members := c.Members[comp.Label()]
+  if len(members) > 1 {
+    // these vertices depend on each other and have to be handled together
+  }
+}
+```
+
+`c.ComponentOf` maps each vertex label to its component. `WithComponentWeight` sets the weight of each
+component, for example the sum of its members' weights, and `WithCrossingWeight` sets the weight of each
+edge from the edges that cross between the two components.
