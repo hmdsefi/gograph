@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Raise the minimum Go version to 1.26 and update golangci-lint to v2.14.0.
+  Projects using an older local toolchain can stay on v0.8.x. ([#177], [#216])
+
 ## [0.8.2] - 2026-10-02
 
 ### Fixed
@@ -279,6 +284,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#173]: https://github.com/hmdsefi/gograph/pull/173
 [#174]: https://github.com/hmdsefi/gograph/pull/174
 [#176]: https://github.com/hmdsefi/gograph/pull/176
+[#177]: https://github.com/hmdsefi/gograph/issues/177
+[#216]: https://github.com/hmdsefi/gograph/pull/216
 [#178]: https://github.com/hmdsefi/gograph/pull/178
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
