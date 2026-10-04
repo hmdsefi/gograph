@@ -37,6 +37,8 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - name: Install Graphviz # the encoding/dot tests check their golden files with dot
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends graphviz
       - name: Test
         run: go test -race -covermode=atomic -coverprofile=cover.out ./...
 

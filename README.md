@@ -22,7 +22,7 @@ the standard library.
 - **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
 - **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
-- **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown.
+- **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 
 See every algorithm run step by step on example graphs, with its result, the Go code and
 benchmarks, at [gograph.dev](https://gograph.dev).
