@@ -163,6 +163,13 @@ func TestCriticalPath_TiesAreStable(t *testing.T) {
 			t.Fatalf("run %d returned %v, first run returned %v", i, labels(again), labels(first))
 		}
 	}
+
+	// two vertices with no outgoing edges and the same cost: b comes first
+	// in topological order, so the path ends there
+	g := buildWeighted([]string{"a", "b", "c"},
+		map[string]float64{"a": 1, "b": 2, "c": 2},
+		wEdge{"a", "b", 0}, wEdge{"a", "c", 0})
+	assertCriticalPath(t, g, []string{"a", "b"}, 3)
 }
 
 func TestCriticalPath_ReturnsGraphVertices(t *testing.T) {
