@@ -120,7 +120,7 @@ g := gograph.New[int](gograph.Directed())
 
 _, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
 _, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(3))
-_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(2))
+_, _ = g.AddEdge(gograph.NewVertex(2), gograph.NewVertex(4))
 _, _ = g.AddEdge(gograph.NewVertex(3), gograph.NewVertex(4))
 _, _ = g.AddEdge(gograph.NewVertex(4), gograph.NewVertex(5))
 _, _ = g.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
