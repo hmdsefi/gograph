@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `WithEdgeLabel` and `Edge.Label()` to give an edge a short label, such as
   "imports" or "calls". The Mermaid and DOT output show it by default, and
   `TransitiveReduction` and `GirvanNewman` keep it. ([#191], [#217])
+- `dag.CriticalPath` and `dag.CriticalPathFunc` to find the most expensive chain
+  of dependent vertices, such as the steps that set how long a build takes. The
+  path runs from a vertex with no incoming edges to one with no outgoing edges,
+  and its cost is the sum of the vertex and edge weights. ([#121], [#228])
 
 ### Changed
 
@@ -257,6 +261,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#106]: https://github.com/hmdsefi/gograph/issues/106
 [#114]: https://github.com/hmdsefi/gograph/issues/114
 [#117]: https://github.com/hmdsefi/gograph/issues/117
+[#121]: https://github.com/hmdsefi/gograph/issues/121
 [#122]: https://github.com/hmdsefi/gograph/issues/122
 [#127]: https://github.com/hmdsefi/gograph/issues/127
 [#137]: https://github.com/hmdsefi/gograph/pull/137
@@ -299,3 +304,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
+[#228]: https://github.com/hmdsefi/gograph/pull/228
