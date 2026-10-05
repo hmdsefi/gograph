@@ -75,6 +75,25 @@ func TestMarshal_Weighted(t *testing.T) {
 	assertGolden(t, "weighted", mustMarshal(t, g))
 }
 
+func TestMarshal_EdgePropertyLabels(t *testing.T) {
+	g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	c := g.AddVertexByLabel("C")
+	_, _ = g.AddEdge(a, b,
+		gograph.WithEdgeWeight(1),
+		gograph.WithEdgeLabel("calls \"service\"\nnow"),
+	)
+	_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(2))
+
+	assertGolden(t, "edge_property_labels", mustMarshal(t, g))
+	assertGolden(t, "edge_property_labels_custom", mustMarshal(t, g,
+		WithEdgeAttributes(func(*gograph.Edge[string]) map[string]string {
+			return map[string]string{"label": "custom"}
+		}),
+	))
+}
+
 func TestMarshal_IsolatedVertex(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
 	addEdges(t, g, [2]string{"A", "B"})

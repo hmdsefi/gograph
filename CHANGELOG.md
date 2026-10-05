@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `WithEdgeLabel` and `Edge.Label()` to give an edge a short label, such as
+  "imports" or "calls". The Mermaid and DOT output show it by default, and
+  `TransitiveReduction` and `GirvanNewman` keep it. ([#191], [#217])
+
 ### Changed
 
 - Raise the minimum Go version to 1.26 and update golangci-lint to v2.14.0.
@@ -290,4 +296,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
+[#217]: https://github.com/hmdsefi/gograph/pull/217
