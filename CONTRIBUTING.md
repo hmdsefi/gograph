@@ -70,6 +70,8 @@ practice:
 
 - Keep each pull request to one change. Several small pull requests are easier to
   review than one large one.
+- Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) in the
+  description, including the checklist.
 - Reference the issue in the description, for example `Fixes #123`.
 - Describe how you tested the change.
 - Make sure `go test -race ./...` and `golangci-lint run ./...` pass locally.
