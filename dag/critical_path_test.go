@@ -55,6 +55,20 @@ func TestCriticalPath_DiamondUnequalBranches(t *testing.T) {
 	assertCriticalPath(t, g, []string{"start", "slow", "end"}, 12)
 }
 
+func TestCriticalPath_ZeroWeightEnds(t *testing.T) {
+	// start and end are milestones without a weight, and stay on the path
+	g := buildWeighted([]string{"start", "build", "test", "end"},
+		map[string]float64{"build": 10, "test": 20},
+		wEdge{"start", "build", 0}, wEdge{"build", "test", 0}, wEdge{"test", "end", 0})
+	assertCriticalPath(t, g, []string{"start", "build", "test", "end"}, 30)
+
+	// a stays on the path, even though b alone costs the same
+	g = buildWeighted([]string{"a", "b"},
+		map[string]float64{"b": 1},
+		wEdge{"a", "b", 0})
+	assertCriticalPath(t, g, []string{"a", "b"}, 1)
+}
+
 func TestCriticalPath_VertexWeightsOnly(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
 	a := g.AddVertexByLabel("a", gograph.WithVertexWeight(2))
@@ -85,17 +99,18 @@ func TestCriticalPath_VertexAndEdgeWeights(t *testing.T) {
 }
 
 func TestCriticalPath_NegativeWeights(t *testing.T) {
-	// the path may start and end anywhere, so the costly tail of the chain wins
+	// the path runs from a vertex with no incoming edges to one with no
+	// outgoing edges, so the negative head of the chain stays on it
 	g := buildWeighted([]string{"a", "b", "c"},
 		map[string]float64{"a": -5, "b": -1, "c": 4},
 		wEdge{"a", "b", -2}, wEdge{"b", "c", 0})
-	assertCriticalPath(t, g, []string{"c"}, 4)
+	assertCriticalPath(t, g, []string{"a", "b", "c"}, -4)
 
-	// all weights negative: the best path is the cheapest single vertex
+	// all weights negative: the whole chain is still the path
 	g = buildWeighted([]string{"a", "b"},
 		map[string]float64{"a": -3, "b": -7},
 		wEdge{"a", "b", -1})
-	assertCriticalPath(t, g, []string{"a"}, -3)
+	assertCriticalPath(t, g, []string{"a", "b"}, -11)
 }
 
 func TestCriticalPath_NoEdges(t *testing.T) {
@@ -241,7 +256,8 @@ func TestCriticalPathFunc_Errors(t *testing.T) {
 	}
 }
 
-// bruteForceCriticalPath returns the largest cost over every path in a DAG.
+// bruteForceCriticalPath returns the largest cost over every path from a
+// vertex with no incoming edges to one with no outgoing edges.
 func bruteForceCriticalPath(g gograph.Graph[int]) float64 {
 	next := map[int][]*gograph.Edge[int]{}
 	for _, e := range g.AllEdges() {
@@ -252,13 +268,17 @@ func bruteForceCriticalPath(g gograph.Graph[int]) float64 {
 	var walk func(v *gograph.Vertex[int], cost float64)
 	walk = func(v *gograph.Vertex[int], cost float64) {
 		cost += v.Weight()
-		best = math.Max(best, cost)
+		if len(next[v.Label()]) == 0 {
+			best = math.Max(best, cost)
+		}
 		for _, e := range next[v.Label()] {
 			walk(g.GetVertexByID(e.Destination().Label()), cost+e.Weight())
 		}
 	}
 	for _, v := range g.GetAllVertices() {
-		walk(v, 0)
+		if v.InDegree() == 0 {
+			walk(v, 0)
+		}
 	}
 	return best
 }
@@ -321,5 +341,26 @@ func TestCriticalPath_LongChain(t *testing.T) {
 	}
 	if len(path) != n || cost != n {
 		t.Fatalf("len(path) = %d, cost = %v; want %d, %d", len(path), cost, n, n)
+	}
+}
+
+func BenchmarkCriticalPath(b *testing.B) {
+	// the same binary tree as BenchmarkTopologySort, so the numbers compare
+	const n = 100_000
+	g := gograph.New[int](gograph.Directed())
+	for i := range n {
+		g.AddVertexByLabel(i, gograph.WithVertexWeight(float64(i%10)))
+	}
+	for i := range n {
+		for _, child := range []int{2*i + 1, 2*i + 2} {
+			if child < n {
+				_, _ = g.AddEdge(g.GetVertexByID(i), g.GetVertexByID(child), gograph.WithEdgeWeight(1))
+			}
+		}
+	}
+
+	b.ResetTimer()
+	for range b.N {
+		_, _, _ = CriticalPath(g)
 	}
 }

@@ -11,10 +11,12 @@ import "github.com/hmdsefi/gograph"
 // 0. The graph doesn't have to be created with Weighted(). Negative weights
 // are allowed.
 //
-// A path can start and end at any vertex. An empty graph returns a nil path
-// and a cost of 0. If several paths have the same cost, the one found first
-// in topological order wins, so the same graph gives the same path on every
-// run. The returned vertices are the graph's own pointers.
+// The path starts at a vertex with no incoming edges and ends at one with no
+// outgoing edges, so a vertex without a weight, like a start or finish
+// milestone, stays on it. An empty graph returns a nil path and a cost of 0.
+// If several paths have the same cost, the one found first in topological
+// order wins, so the same graph gives the same path on every run. The
+// returned vertices are the graph's own pointers.
 //
 // It runs in O(V + E) time.
 //
@@ -52,38 +54,44 @@ func CriticalPathFunc[T comparable](
 		return nil, 0, nil
 	}
 
-	out := make(map[T][]*gograph.Edge[T], len(vertices))
+	index := make(map[T]int, len(vertices))
+	for i, v := range vertices {
+		index[v.Label()] = i
+	}
+	out := make([][]*gograph.Edge[T], len(vertices))
 	for _, e := range g.AllEdges() {
-		label := e.Source().Label()
-		out[label] = append(out[label], e)
+		i := index[e.Source().Label()]
+		out[i] = append(out[i], e)
 	}
 
-	// best is the cost of the most expensive path that ends at a vertex, and
-	// prev is the vertex before it on that path. A path may start anywhere,
-	// so every vertex begins with just its own cost.
-	best := make(map[T]float64, len(vertices))
-	prev := make(map[T]*gograph.Vertex[T], len(vertices))
-	waiting := make(map[T]int, len(vertices))
-	var queue []*gograph.Vertex[T]
-	for _, v := range vertices {
-		best[v.Label()] = vertexCost(v)
-		waiting[v.Label()] = v.InDegree()
-		if v.InDegree() == 0 {
-			queue = append(queue, v)
+	// best[i] is the cost of the most expensive path to vertices[i] from a
+	// vertex with no incoming edges, and prev[i] is the index of the vertex
+	// before it on that path, or -1. Until a vertex leaves the queue, best
+	// holds the cost up to its incoming edge.
+	best := make([]float64, len(vertices))
+	prev := make([]int, len(vertices))
+	waiting := make([]int, len(vertices))
+	queue := make([]int, 0, len(vertices))
+	for i, v := range vertices {
+		prev[i] = -1
+		waiting[i] = v.InDegree()
+		if waiting[i] == 0 {
+			queue = append(queue, i)
 		}
 	}
 
 	for i := 0; i < len(queue); i++ {
 		from := queue[i]
-		for _, e := range out[from.Label()] {
-			to := g.GetVertexByID(e.Destination().Label())
-			if cost := best[from.Label()] + edgeCost(e) + vertexCost(to); cost > best[to.Label()] {
-				best[to.Label()] = cost
-				prev[to.Label()] = from
+		best[from] += vertexCost(vertices[from])
+		for _, e := range out[from] {
+			to := index[e.Destination().Label()]
+			if cost := best[from] + edgeCost(e); prev[to] == -1 || cost > best[to] {
+				best[to] = cost
+				prev[to] = from
 			}
 
-			waiting[to.Label()]--
-			if waiting[to.Label()] == 0 {
+			waiting[to]--
+			if waiting[to] == 0 {
 				queue = append(queue, to)
 			}
 		}
@@ -93,20 +101,20 @@ func CriticalPathFunc[T comparable](
 		return nil, 0, gograph.ErrDAGHasCycle
 	}
 
-	end := queue[0]
-	for _, v := range queue[1:] {
-		if best[v.Label()] > best[end.Label()] {
-			end = v
+	end := -1
+	for _, i := range queue {
+		if vertices[i].OutDegree() == 0 && (end == -1 || best[i] > best[end]) {
+			end = i
 		}
 	}
 
 	var path []*gograph.Vertex[T]
-	for v := end; v != nil; v = prev[v.Label()] {
-		path = append(path, v)
+	for i := end; i != -1; i = prev[i] {
+		path = append(path, vertices[i])
 	}
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
 
-	return path, best[end.Label()], nil
+	return path, best[end], nil
 }

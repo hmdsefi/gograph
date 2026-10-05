@@ -50,9 +50,9 @@
 // Descendants, Ancestors and Affected work on any directed graph, including
 // graphs with cycles. Levels, NewTracker and CriticalPath return
 // gograph.ErrDAGHasCycle for a graph with a cycle, since its vertices can't
-// run in dependency order. All functions return gograph.ErrNotDirected for undirected graphs,
-// and an error that matches gograph.ErrVertexDoesNotExist with errors.Is if
-// a label is not in the graph.
+// run in dependency order. All functions return gograph.ErrNotDirected for
+// undirected graphs, and an error that matches gograph.ErrVertexDoesNotExist
+// with errors.Is if a label is not in the graph.
 //
 // Every function returns each vertex once, as the graph's own vertex
 // pointers. The results of Descendants, Ancestors and Affected are in
