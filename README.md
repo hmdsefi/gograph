@@ -254,8 +254,8 @@ To watch these algorithms run step by step on example graphs, see
 - **Transitive reduction** (`path` package):
   [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
 - **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
-  (what it depends on), `Affected` (what a change reaches), and `Levels` and `Tracker`
-  (what can run at the same time).
+  (what it depends on), `Affected` (what a change reaches), `Levels` and `Tracker`
+  (what can run at the same time), and `CriticalPath` (the longest chain of dependent tasks).
 - **Strongly connected components** (`connectivity` package):
   [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity),
   and [condensation](https://github.com/hmdsefi/gograph/tree/master/connectivity#condensation) into a DAG.
