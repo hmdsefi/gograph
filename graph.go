@@ -172,8 +172,10 @@ func (e *Edge[T]) Weight() float64 {
 }
 
 // InsertionIndex reports the order in which this edge was added to its
-// graph. The first edge added returns 1. An edge created with NewEdge and
-// not added to a graph returns 0.
+// graph. Edges are numbered from 1 in the order they are stored. On an
+// undirected graph each AddEdge stores the opposite direction first, so
+// the edge AddEdge returns is not always number 1. An edge created with
+// NewEdge and not added to a graph returns 0.
 func (e *Edge[T]) InsertionIndex() int {
 	return e.added
 }
