@@ -250,7 +250,8 @@ To watch these algorithms run step by step on example graphs, see
 - **Shortest paths** (`path` package):
   [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md),
   [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md),
-  [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md).
+  [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md),
+  and `DijkstraMultiSource`, which finds each vertex's nearest source in one search.
 - **Transitive reduction** (`path` package):
   [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
 - **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
