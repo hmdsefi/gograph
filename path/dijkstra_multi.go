@@ -86,10 +86,11 @@ func (n *NearestSources[T]) reached(v T) (int, bool) {
 // When two sources are equally close, the one earlier in sources wins. A
 // source is at distance 0 from itself, so it is its own nearest source,
 // unless a zero-weight path from an earlier source reaches it. Equal paths
-// from the same source take the vertex added earlier, and the edges from a
-// vertex are relaxed in the order they were added, so the same graph and
-// the same sources give the same paths on every run. Returned vertices are
-// the graph's own pointers.
+// from the same source follow the edge added earlier. Edges from a vertex
+// are relaxed in the order they were added, and a vertex reached by an
+// earlier edge is taken before one reached by a later edge, so the same
+// graph and the same sources give the same paths on every run. Returned
+// vertices are the graph's own pointers.
 //
 // Time is O((V+E) log V) however many sources there are. Extra space is
 // O(V+E). Each vertex is extracted from the heap at most once.
@@ -213,12 +214,17 @@ func newSourceState(n, worseRank int) ([]float64, []int, []int, []int) {
 // new pair (distance, source position) is strictly better, so a later call
 // can add one source and leave anything already closer untouched.
 //
-// The heap is ordered by that pair, then by vertex index. A vertex already
-// in the heap is moved rather than pushed again, so the heap holds at most
-// one entry per vertex.
+// The heap is ordered by that pair, then by the edge that reached the
+// vertex, earlier first. A vertex already in the heap is moved rather than
+// pushed again, so the heap holds at most one entry per vertex.
 func continueNearest(adj sourceAdj, dist []float64, rank, origin, pred []int, starts []int) {
-	h := newSourceHeap(dist, rank)
+	edge := make([]int, len(dist))
+	for i := range edge {
+		edge[i] = math.MaxInt
+	}
+	h := newSourceHeap(dist, rank, edge)
 	for _, s := range starts {
+		edge[s] = -1
 		h.push(s)
 	}
 	for h.len() > 0 {
@@ -233,6 +239,7 @@ func continueNearest(adj sourceAdj, dist []float64, rank, origin, pred []int, st
 			rank[to] = rank[v]
 			origin[to] = origin[v]
 			pred[to] = v
+			edge[to] = e
 			h.improve(to)
 		}
 	}
@@ -248,17 +255,20 @@ func closerSource(next float64, nextRank int, dist float64, rank int) bool {
 	return next == dist && nextRank < rank
 }
 
-// sourceHeap is a binary heap of vertex indexes. The key lives in dist and
-// rank, so improving a vertex updates those slices and then moves its one
-// heap entry. loc[v] is the entry's index, or -1 when v is not in the heap.
+// sourceHeap is a binary heap of vertex indexes. The key lives in dist,
+// rank and edge, so improving a vertex updates those slices and then moves
+// its one heap entry. loc[v] is the entry's index, or -1 when v is not in
+// the heap. edge[v] is the index of the edge that reached v, or -1 for a
+// source.
 type sourceHeap struct {
 	v    []int
 	loc  []int
 	dist []float64
 	rank []int
+	edge []int
 }
 
-func newSourceHeap(dist []float64, rank []int) *sourceHeap {
+func newSourceHeap(dist []float64, rank, edge []int) *sourceHeap {
 	loc := make([]int, len(dist))
 	for i := range loc {
 		loc[i] = -1
@@ -268,6 +278,7 @@ func newSourceHeap(dist []float64, rank []int) *sourceHeap {
 		loc:  loc,
 		dist: dist,
 		rank: rank,
+		edge: edge,
 	}
 }
 
@@ -281,7 +292,7 @@ func (h *sourceHeap) before(i, j int) bool {
 	if h.rank[vi] != h.rank[vj] {
 		return h.rank[vi] < h.rank[vj]
 	}
-	return vi < vj
+	return h.edge[vi] < h.edge[vj]
 }
 
 func (h *sourceHeap) push(v int) {
