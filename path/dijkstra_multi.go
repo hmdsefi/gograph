@@ -86,11 +86,10 @@ func (n *NearestSources[T]) reached(v T) (int, bool) {
 // When two sources are equally close, the one earlier in sources wins. A
 // source is at distance 0 from itself, so it is its own nearest source,
 // unless a zero-weight path from an earlier source reaches it. Equal paths
-// from the same source follow the edge added earlier. Edges from a vertex
-// are relaxed in the order they were added, and a vertex reached by an
-// earlier edge is taken before one reached by a later edge, so the same
-// graph and the same sources give the same paths on every run. Returned
-// vertices are the graph's own pointers.
+// from the same source follow the edge that was added to the graph earlier.
+// A vertex reached by an earlier edge is taken before one reached by a
+// later edge, so the same graph and the same sources give the same paths
+// on every run. Returned vertices are the graph's own pointers.
 //
 // Time is O((V+E) log V) however many sources there are. Extra space is
 // O(V+E). Each vertex is extracted from the heap at most once.
@@ -132,6 +131,7 @@ type sourceAdj struct {
 	off    []int
 	to     []int
 	weight []float64
+	added  []int
 }
 
 // buildSourceAdj copies the edges into arrays the search can walk without
@@ -161,6 +161,7 @@ func buildSourceAdj[T comparable](g gograph.Graph[T]) (sourceAdj, []*gograph.Ver
 		off:    off,
 		to:     make([]int, len(edges)),
 		weight: make([]float64, len(edges)),
+		added:  make([]int, len(edges)),
 	}
 	cursor := make([]int, n)
 	copy(cursor, off)
@@ -169,6 +170,7 @@ func buildSourceAdj[T comparable](g gograph.Graph[T]) (sourceAdj, []*gograph.Ver
 		at := cursor[from]
 		adj.to[at] = index[e.Destination().Label()]
 		adj.weight[at] = e.Weight()
+		adj.added[at] = e.InsertionIndex()
 		cursor[from]++
 	}
 	return adj, vertices, index, nil
@@ -239,7 +241,7 @@ func continueNearest(adj sourceAdj, dist []float64, rank, origin, pred []int, st
 			rank[to] = rank[v]
 			origin[to] = origin[v]
 			pred[to] = v
-			edge[to] = e
+			edge[to] = adj.added[e]
 			h.improve(to)
 		}
 	}
@@ -258,8 +260,8 @@ func closerSource(next float64, nextRank int, dist float64, rank int) bool {
 // sourceHeap is a binary heap of vertex indexes. The key lives in dist,
 // rank and edge, so improving a vertex updates those slices and then moves
 // its one heap entry. loc[v] is the entry's index, or -1 when v is not in
-// the heap. edge[v] is the index of the edge that reached v, or -1 for a
-// source.
+// the heap. edge[v] is the insertion index of the edge that reached v, or
+// -1 for a source.
 type sourceHeap struct {
 	v    []int
 	loc  []int

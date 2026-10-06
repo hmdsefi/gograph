@@ -93,6 +93,36 @@ func TestDijkstraMultiSourceEqualPathFollowsEarlierEdge(t *testing.T) {
 	}
 }
 
+// Letting an earlier vertex's later edge win fails this. The edges were
+// added along S, A, U, T before the edges along S, B, V, T.
+func TestDijkstraMultiSourceEqualPathFollowsAddOrder(t *testing.T) {
+	g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	b := g.AddVertexByLabel("B")
+	a := g.AddVertexByLabel("A")
+	s := g.AddVertexByLabel("S")
+	u := g.AddVertexByLabel("U")
+	v := g.AddVertexByLabel("V")
+	goal := g.AddVertexByLabel("T")
+	addWeighted(t, g, s, a, 1)
+	addWeighted(t, g, s, b, 1)
+	addWeighted(t, g, a, u, 1)
+	addWeighted(t, g, b, v, 1)
+	addWeighted(t, g, u, goal, 1)
+	addWeighted(t, g, v, goal, 1)
+
+	got, err := DijkstraMultiSource(g, "S")
+	if err != nil {
+		t.Fatalf("DijkstraMultiSource: %v", err)
+	}
+	path, ok := got.PathTo("T")
+	if !ok {
+		t.Fatal("PathTo(T) missing")
+	}
+	if fmt.Sprint(labelsOf(path)) != "[S A U T]" {
+		t.Fatalf("path to T: got %v, want [S A U T]", labelsOf(path))
+	}
+}
+
 // A path that starts at the wrong vertex, or whose weights do not add up
 // to the distance, fails this.
 func TestDijkstraMultiSourcePathTo(t *testing.T) {
