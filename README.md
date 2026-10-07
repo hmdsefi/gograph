@@ -247,6 +247,8 @@ To watch these algorithms run step by step on example graphs, see
 
 - **Ordering:** `gograph.TopologySort` (Kahn's algorithm) and `gograph.StableTopologySort`
   (smallest ready vertex first).
+- **Subgraphs:** `gograph.InducedSubgraph` keeps a chosen set of vertices and the edges
+  between them.
 - **Shortest paths** (`path` package):
   [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md),
   [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md),
