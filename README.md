@@ -271,7 +271,8 @@ To watch these algorithms run step by step on example graphs, see
 
 - [gomodgraph](examples/gomodgraph): loads `go mod graph` output and finds requirement
   cycles, the modules that depend on a module, why a module is needed, what changed
-  between two versions of `go.mod`, and a diagram of a module's direct requirements.
+  between two versions of `go.mod`, and a diagram of a module with its direct
+  dependencies and dependents.
 
 ## Roadmap
 
