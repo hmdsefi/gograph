@@ -1,15 +1,10 @@
 package path
 
 import (
-	"errors"
 	"math"
 
 	"github.com/hmdsefi/gograph"
 )
-
-// ErrNegativeWeight is returned when an edge weight is negative.
-// The searches that use it refuse the graph before they start.
-var ErrNegativeWeight = errors.New("edge weight is negative")
 
 // NearestSources holds, for every vertex, the nearest of a set of sources
 // and the distance from it.

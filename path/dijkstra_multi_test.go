@@ -568,11 +568,3 @@ func pathWeight[T comparable](t *testing.T, g gograph.Graph[T], path []*gograph.
 	}
 	return sum
 }
-
-func labelsOf[T comparable](path []*gograph.Vertex[T]) []T {
-	out := make([]T, len(path))
-	for i, v := range path {
-		out[i] = v.Label()
-	}
-	return out
-}
