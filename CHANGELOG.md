@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of dependent vertices, such as the steps that set how long a build takes. The
   path runs from a vertex with no incoming edges to one with no outgoing edges,
   and its cost is the sum of the vertex and edge weights. ([#121], [#228])
+- `connectivity.Bridges` and `connectivity.ArticulationPoints` to find the edges
+  and vertices whose removal disconnects an undirected graph. Bridges are
+  oriented from the vertex found first to the one found from it, and
+  articulation points follow `GetAllVertices` order. ([#113], [#235])
 
 ### Changed
 
@@ -259,6 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#102]: https://github.com/hmdsefi/gograph/issues/102
 [#105]: https://github.com/hmdsefi/gograph/issues/105
 [#106]: https://github.com/hmdsefi/gograph/issues/106
+[#113]: https://github.com/hmdsefi/gograph/issues/113
 [#114]: https://github.com/hmdsefi/gograph/issues/114
 [#117]: https://github.com/hmdsefi/gograph/issues/117
 [#121]: https://github.com/hmdsefi/gograph/issues/121
@@ -305,3 +310,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
 [#228]: https://github.com/hmdsefi/gograph/pull/228
+[#235]: https://github.com/hmdsefi/gograph/pull/235
