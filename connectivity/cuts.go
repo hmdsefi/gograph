@@ -1,19 +1,12 @@
 package connectivity
 
-import (
-	"errors"
-
-	"github.com/hmdsefi/gograph"
-)
-
-// ErrNotUndirected indicates that an undirected graph is required.
-var ErrNotUndirected = errors.New("graph is not undirected")
+import "github.com/hmdsefi/gograph"
 
 // Bridges returns the edges whose removal increases the number of connected
 // components of an undirected graph. Each bridge appears once, oriented from its
 // DFS parent to its child, in DFS completion order. The edges belong to g.
 // Self-loops are never bridges; empty graphs return an empty slice.
-// Directed graphs return ErrNotUndirected. It runs in O(V+E) time and space.
+// Directed graphs return gograph.ErrNotUndirected. It runs in O(V+E) time and space.
 func Bridges[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], error) {
 	bridges, _, err := cuts(g)
 	return bridges, err
@@ -23,14 +16,14 @@ func Bridges[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], error) {
 // connected components of an undirected graph, in GetAllVertices order.
 // The vertices belong to g. Empty graphs return an empty slice; isolated vertices
 // and self-loops are not articulation points. Directed graphs return
-// ErrNotUndirected. It runs in O(V+E) time and space.
+// gograph.ErrNotUndirected. It runs in O(V+E) time and space.
 func ArticulationPoints[T comparable](g gograph.Graph[T]) ([]*gograph.Vertex[T], error) {
 	_, points, err := cuts(g)
 	return points, err
 }
 
 type cutFrame[T comparable] struct {
-	vertex    *gograph.Vertex[T]
+	vertex    int
 	neighbors []*gograph.Vertex[T]
 	next      int
 	children  int
@@ -38,62 +31,66 @@ type cutFrame[T comparable] struct {
 
 func cuts[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], []*gograph.Vertex[T], error) {
 	if g.IsDirected() {
-		return nil, nil, ErrNotUndirected
+		return nil, nil, gograph.ErrNotUndirected
 	}
 	vertices := g.GetAllVertices()
 	index := make(map[T]int, len(vertices))
-	low := make(map[T]int, len(vertices))
-	isPoint := make(map[T]bool)
+	for i, v := range vertices {
+		index[v.Label()] = i
+	}
+	// Discovery times start at 1, leaving 0 for vertices not visited yet.
+	disc := make([]int, len(vertices))
+	low := make([]int, len(vertices))
+	isPoint := make([]bool, len(vertices))
 	bridges := make([]*gograph.Edge[T], 0)
 	points := make([]*gograph.Vertex[T], 0)
 	clock := 0
 	var stack []cutFrame[T]
-	enter := func(v *gograph.Vertex[T]) {
+	enter := func(i int) {
 		clock++
-		index[v.Label()], low[v.Label()] = clock, clock
-		stack = append(stack, cutFrame[T]{vertex: v, neighbors: v.Neighbors()})
+		disc[i], low[i] = clock, clock
+		stack = append(stack, cutFrame[T]{vertex: i, neighbors: vertices[i].Neighbors()})
 	}
-	for _, root := range vertices {
-		if index[root.Label()] != 0 {
+	for root := range vertices {
+		if disc[root] != 0 {
 			continue
 		}
 		enter(root)
 		for len(stack) > 0 {
 			frame := &stack[len(stack)-1]
-			label := frame.vertex.Label()
+			v := frame.vertex
 			if frame.next < len(frame.neighbors) {
-				neighbor := frame.neighbors[frame.next].Label()
+				w := index[frame.neighbors[frame.next].Label()]
 				frame.next++
-				if len(stack) > 1 && neighbor == stack[len(stack)-2].vertex.Label() {
+				if len(stack) > 1 && w == stack[len(stack)-2].vertex {
 					continue
 				}
-				if index[neighbor] == 0 {
+				if disc[w] == 0 {
 					frame.children++
-					enter(g.GetVertexByID(neighbor))
+					enter(w)
 				} else {
-					low[label] = min(low[label], index[neighbor])
+					low[v] = min(low[v], disc[w])
 				}
 				continue
 			}
-			vertex, children := frame.vertex, frame.children
+			children := frame.children
 			stack = stack[:len(stack)-1]
 			if len(stack) == 0 {
-				isPoint[label] = children > 1
+				isPoint[v] = children > 1
 				continue
 			}
-			parent := stack[len(stack)-1].vertex
-			pl := parent.Label()
-			low[pl] = min(low[pl], low[label])
-			if low[label] > index[pl] {
-				bridges = append(bridges, g.GetEdge(parent, vertex))
+			p := stack[len(stack)-1].vertex
+			low[p] = min(low[p], low[v])
+			if low[v] > disc[p] {
+				bridges = append(bridges, g.GetEdge(vertices[p], vertices[v]))
 			}
-			if len(stack) > 1 && low[label] >= index[pl] {
-				isPoint[pl] = true
+			if len(stack) > 1 && low[v] >= disc[p] {
+				isPoint[p] = true
 			}
 		}
 	}
-	for _, v := range vertices {
-		if isPoint[v.Label()] {
+	for i, v := range vertices {
+		if isPoint[i] {
 			points = append(points, v)
 		}
 	}

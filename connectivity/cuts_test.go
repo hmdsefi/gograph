@@ -1,36 +1,12 @@
 package connectivity
 
 import (
-	"fmt"
+	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
 )
-
-func ExampleBridges() {
-	g := gograph.New[string]()
-	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
-	_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("C"))
-	edges, _ := Bridges(g)
-	for _, e := range edges {
-		fmt.Println(e.Source().Label(), e.Destination().Label())
-	}
-	// Output:
-	// B C
-	// A B
-}
-
-func ExampleArticulationPoints() {
-	g := gograph.New[string]()
-	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
-	_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("C"))
-	vertices, _ := ArticulationPoints(g)
-	for _, v := range vertices {
-		fmt.Println(v.Label())
-	}
-	// Output: B
-}
 
 func TestCutsLongChain(t *testing.T) {
 	g := gograph.New[int]()
@@ -63,6 +39,7 @@ func TestCuts(t *testing.T) {
 		{"isolated", 3, nil, [][2]int{}, []int{}},
 		{"chain", 4, [][2]int{{0, 1}, {1, 2}, {2, 3}}, [][2]int{{2, 3}, {1, 2}, {0, 1}}, []int{1, 2}},
 		{"cycle with tail", 4, [][2]int{{0, 1}, {1, 2}, {2, 0}, {2, 3}}, [][2]int{{2, 3}}, []int{2}},
+		{"two cycles sharing a vertex", 5, [][2]int{{0, 1}, {0, 2}, {1, 2}, {1, 3}, {1, 4}, {3, 4}}, [][2]int{}, []int{1}},
 		{"root and disconnected", 6, [][2]int{{0, 1}, {0, 2}, {3, 4}, {4, 5}, {5, 3}}, [][2]int{{0, 1}, {0, 2}}, []int{0}},
 		{"self loops", 2, [][2]int{{0, 0}, {0, 1}, {1, 1}}, [][2]int{{0, 1}}, []int{}},
 	} {
@@ -110,10 +87,10 @@ func TestCuts(t *testing.T) {
 
 func TestCutsDirected(t *testing.T) {
 	g := gograph.New[int](gograph.Directed())
-	if _, err := Bridges(g); err != ErrNotUndirected {
+	if _, err := Bridges(g); !errors.Is(err, gograph.ErrNotUndirected) {
 		t.Fatalf("Bridges error: %v", err)
 	}
-	if _, err := ArticulationPoints(g); err != ErrNotUndirected {
+	if _, err := ArticulationPoints(g); !errors.Is(err, gograph.ErrNotUndirected) {
 		t.Fatalf("ArticulationPoints error: %v", err)
 	}
 }
@@ -191,4 +168,24 @@ func countCutComponents(edges [][2]int, removedVertex, removedEdge int) int {
 		}
 	}
 	return count
+}
+
+func BenchmarkBridges(b *testing.B) {
+	const side = 300
+	g := gograph.New[int]()
+	for i := range side * side {
+		g.AddVertexByLabel(i)
+	}
+	for i := range side * side {
+		if i%side+1 < side {
+			_, _ = g.AddEdge(g.GetVertexByID(i), g.GetVertexByID(i+1))
+		}
+		if i+side < side*side {
+			_, _ = g.AddEdge(g.GetVertexByID(i), g.GetVertexByID(i+side))
+		}
+	}
+	b.ResetTimer()
+	for range b.N {
+		_, _ = Bridges(g)
+	}
 }

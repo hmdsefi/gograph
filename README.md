@@ -259,8 +259,8 @@ To watch these algorithms run step by step on example graphs, see
 - **Strongly connected components** (`connectivity` package):
   [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity),
   and [condensation](https://github.com/hmdsefi/gograph/tree/master/connectivity#condensation) into a DAG.
-- **Undirected connectivity** (`connectivity` package): `Bridges` finds edges
-  whose removal disconnects a component; `ArticulationPoints` finds such vertices.
+- **Bridges and articulation points** (`connectivity` package):
+  [the edges and vertices whose removal disconnects an undirected graph](https://github.com/hmdsefi/gograph/tree/master/connectivity#bridges-and-articulation-points).
 - **Partitioning** (`partition` package):
   [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
   [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),
