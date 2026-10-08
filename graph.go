@@ -150,6 +150,7 @@ type Edge[T comparable] struct {
 	dest       *Vertex[T] // destination or end point of the edges
 	properties EdgeProperties
 	metadata   any // optional metadata associated with the edge
+	added      int // 1-based order among edges added to a graph, or 0
 }
 
 func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
@@ -168,6 +169,15 @@ func NewEdge[T comparable](source *Vertex[T], dest *Vertex[T], options ...EdgeOp
 // Weight returns the weight of the edge.
 func (e *Edge[T]) Weight() float64 {
 	return e.properties.weight
+}
+
+// InsertionIndex reports the order in which this edge was added to its
+// graph. Edges are numbered from 1 in the order they are stored. On an
+// undirected graph each AddEdge stores the opposite direction first, so
+// the edge AddEdge returns is not always number 1. An edge created with
+// NewEdge and not added to a graph returns 0.
+func (e *Edge[T]) InsertionIndex() int {
+	return e.added
 }
 
 // Label returns the edge label. It returns an empty string when no label was

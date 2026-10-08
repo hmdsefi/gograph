@@ -28,6 +28,7 @@ type baseGraph[T comparable] struct {
 
 	verticesCount uint32
 	edgesCount    uint32
+	nextEdge      int
 }
 
 func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
@@ -44,6 +45,8 @@ func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
 // It returns the created edge.
 func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
 	edge := NewEdge(from, to, options...)
+	g.nextEdge++
+	edge.added = g.nextEdge
 	if _, ok := g.edges[from.label]; !ok {
 		g.edges[from.label] = map[T]*Edge[T]{to.label: edge}
 	} else {
