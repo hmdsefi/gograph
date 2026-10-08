@@ -2,6 +2,7 @@
 // and answers a few questions about the module requirements:
 //
 //	go mod graph | go run github.com/hmdsefi/gograph/examples/gomodgraph cycles
+//	go mod graph | go run github.com/hmdsefi/gograph/examples/gomodgraph mermaid example.com/lib
 //
 // Each line of "go mod graph" is "from to", meaning that from requires to.
 // The main module has no version, and the other modules are written as
@@ -24,6 +25,8 @@ import (
 
 	"github.com/hmdsefi/gograph"
 	"github.com/hmdsefi/gograph/connectivity"
+	"github.com/hmdsefi/gograph/dag"
+	"github.com/hmdsefi/gograph/encoding/mermaid"
 	"github.com/hmdsefi/gograph/traverse"
 )
 
@@ -36,6 +39,7 @@ Commands:
   dependents <module>  print every module that requires <module>, directly or indirectly
   why <module>         print the shortest requirement path from the main module to <module>
   diff <old> <new>     compare two saved "go mod graph" outputs
+  mermaid <module>     draw <module> with its direct dependencies and dependents
 
 <module> is either a module path, which matches every version, or path@version.`
 
@@ -60,7 +64,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 	}
 
 	command, args := args[0], args[1:]
-	wantArgs := map[string]int{"cycles": 0, "dependents": 1, "why": 1, "diff": 2}
+	wantArgs := map[string]int{"cycles": 0, "dependents": 1, "why": 1, "diff": 2, "mermaid": 1}
 	n, ok := wantArgs[command]
 	if !ok {
 		return fmt.Errorf("unknown command %q\n\n%s", command, usage)
@@ -94,6 +98,8 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 		return nil
 	case "dependents":
 		return printDependents(stdout, g, args[0])
+	case "mermaid":
+		return printMermaid(stdout, g, args[0])
 	default:
 		printWhy(stdout, g, mains, args[0])
 		return nil
@@ -150,6 +156,69 @@ func matches(label, module string) bool {
 	return label == module || path == module
 }
 
+// matching returns the labels of every version of module, in vertex order.
+func matching(g gograph.Graph[string], module string) []string {
+	var labels []string
+	for _, v := range g.GetAllVertices() {
+		if matches(v.Label(), module) {
+			labels = append(labels, v.Label())
+		}
+	}
+	return labels
+}
+
+func notInGraph(module string) error {
+	return fmt.Errorf("module %s is not in the graph", module)
+}
+
+// printMermaid writes a flowchart of module, the modules it requires
+// directly, the modules that require it directly, and the requirement
+// edges between those vertices.
+func printMermaid(w io.Writer, g gograph.Graph[string], module string) error {
+	sub, err := neighborhood(g, module)
+	if err != nil {
+		return err
+	}
+	return mermaid.Write(w, sub)
+}
+
+// neighborhood is the induced subgraph on the module and the modules one
+// requirement away from it: the ones it requires, and the ones that require it.
+func neighborhood(g gograph.Graph[string], module string) (gograph.Graph[string], error) {
+	chosen := matching(g, module)
+	if len(chosen) == 0 {
+		return nil, notInGraph(module)
+	}
+
+	keep := make(map[string]bool, len(chosen))
+	for _, label := range chosen {
+		keep[label] = true
+	}
+	for _, e := range g.AllEdges() {
+		from, to := e.Source().Label(), e.Destination().Label()
+		if matches(from, module) {
+			keep[to] = true
+		}
+		if matches(to, module) {
+			keep[from] = true
+		}
+	}
+
+	sub := gograph.New[string](gograph.Directed())
+	for _, v := range g.GetAllVertices() {
+		if keep[v.Label()] {
+			sub.AddVertexByLabel(v.Label())
+		}
+	}
+	for _, e := range g.AllEdges() {
+		from, to := e.Source().Label(), e.Destination().Label()
+		if keep[from] && keep[to] {
+			_, _ = sub.AddEdge(sub.GetVertexByID(from), sub.GetVertexByID(to))
+		}
+	}
+	return sub, nil
+}
+
 // printCycles prints each strongly connected component with more than one
 // module version, one per line.
 func printCycles(w io.Writer, g gograph.Graph[string]) {
@@ -173,33 +242,27 @@ func printCycles(w io.Writer, g gograph.Graph[string]) {
 }
 
 // printDependents prints every module that requires a version of module,
-// directly or indirectly. It walks a reversed copy of the graph, where the
-// dependents are reachable from the module.
+// directly or indirectly. Ancestors are the modules that can reach it.
 func printDependents(w io.Writer, g gograph.Graph[string], module string) error {
-	reversed := gograph.New[string](gograph.Directed())
-	for _, e := range g.AllEdges() {
-		_, _ = reversed.AddEdge(vertex(reversed, e.Destination().Label()), vertex(reversed, e.Source().Label()))
+	targets := matching(g, module)
+	if len(targets) == 0 {
+		return notInGraph(module)
 	}
 
-	targets := make(map[string]bool)
-	for _, v := range g.GetAllVertices() {
-		if matches(v.Label(), module) {
-			targets[v.Label()] = true
-		}
-	}
-	if len(targets) == 0 {
-		return fmt.Errorf("module %s is not in the graph", module)
+	isTarget := make(map[string]bool, len(targets))
+	for _, label := range targets {
+		isTarget[label] = true
 	}
 
 	dependents := make(map[string]bool)
-	for target := range targets {
-		it, err := traverse.NewBreadthFirstIterator(reversed, target)
+	for _, label := range targets {
+		ancestors, err := dag.Ancestors(g, label)
 		if err != nil {
 			return err
 		}
-		for it.HasNext() {
-			if label := it.Next().Label(); !targets[label] {
-				dependents[label] = true
+		for _, v := range ancestors {
+			if !isTarget[v.Label()] {
+				dependents[v.Label()] = true
 			}
 		}
 	}

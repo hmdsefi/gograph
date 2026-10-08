@@ -98,6 +98,38 @@ func TestCommands(t *testing.T) {
 			args: []string{"diff", graphFile, graphFile},
 			want: "",
 		},
+		{
+			name: "mermaid keeps direct dependencies and dependents",
+			args: []string{"mermaid", "example.com/util"},
+			want: "flowchart TD\n" +
+				"    n0[\"example.com/codec@v0.5.0\"]\n" +
+				"    n1[\"example.com/lib@v1.4.0\"]\n" +
+				"    n2[\"example.com/log@v1.1.0\"]\n" +
+				"    n3[\"example.com/util@v0.2.0\"]\n" +
+				"    n4[\"example.com/util@v0.3.1\"]\n" +
+				"    n0 --> n4\n" +
+				"    n1 --> n4\n" +
+				"    n2 --> n3\n" +
+				"    n4 --> n0\n",
+		},
+		{
+			name: "mermaid of one version stays on its direct edges",
+			args: []string{"mermaid", "example.com/util@v0.2.0"},
+			want: "flowchart TD\n" +
+				"    n0[\"example.com/log@v1.1.0\"]\n" +
+				"    n1[\"example.com/util@v0.2.0\"]\n" +
+				"    n0 --> n1\n",
+		},
+		{
+			name: "mermaid of the main module",
+			args: []string{"mermaid", "example.com/app"},
+			want: "flowchart TD\n" +
+				"    n0[\"example.com/app\"]\n" +
+				"    n1[\"example.com/lib@v1.4.0\"]\n" +
+				"    n2[\"example.com/log@v1.1.0\"]\n" +
+				"    n0 --> n1\n" +
+				"    n0 --> n2\n",
+		},
 	}
 
 	stdin := readFile(t, graphFile)
@@ -128,6 +160,33 @@ func TestReadFromFile(t *testing.T) {
 	}
 }
 
+func TestDependentsOfOneVersionIncludesAnother(t *testing.T) {
+	got, err := runCommand(t, "example.com/lib@v1.5.0 example.com/lib@v1.4.0\n", "dependents", "example.com/lib@v1.4.0")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "example.com/lib@v1.5.0\n" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestMermaidKeepsEdgesBetweenNeighbors(t *testing.T) {
+	got, err := runCommand(t, "mid target\ntarget leaf\nmid leaf\n", "mermaid", "target")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := "flowchart TD\n" +
+		"    n0[\"leaf\"]\n" +
+		"    n1[\"mid\"]\n" +
+		"    n2[\"target\"]\n" +
+		"    n1 --> n2\n" +
+		"    n1 --> n0\n" +
+		"    n2 --> n0\n"
+	if got != want {
+		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
 func TestNoCycles(t *testing.T) {
 	got, err := runCommand(t, "a b@v1\nb@v1 c@v1\n", "cycles")
 	if err != nil || got != "" {
@@ -137,8 +196,9 @@ func TestNoCycles(t *testing.T) {
 
 func TestErrors(t *testing.T) {
 	tests := map[string]struct {
-		stdin string
-		args  []string
+		stdin    string
+		args     []string
+		contains string
 	}{
 		"no command":        {args: nil},
 		"unknown command":   {args: []string{"graph"}},
@@ -151,12 +211,18 @@ func TestErrors(t *testing.T) {
 		"no such new file":  {args: []string{"diff", graphFile, "testdata/missing.txt"}},
 		"malformed line":    {stdin: "a b\nonly-one-field\n", args: []string{"cycles"}},
 		"unknown module":    {stdin: "a b@v1\n", args: []string{"dependents", "c"}},
+		"mermaid no module": {args: []string{"mermaid"}, contains: "takes 1 arguments"},
+		"mermaid missing":   {stdin: "a b@v1\n", args: []string{"mermaid", "c"}, contains: "not in the graph"},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if _, err := runCommand(t, tt.stdin, tt.args...); err == nil {
+			_, err := runCommand(t, tt.stdin, tt.args...)
+			if err == nil {
 				t.Fatal("expected an error")
+			}
+			if tt.contains != "" && !strings.Contains(err.Error(), tt.contains) {
+				t.Fatalf("error %q, want it to contain %q", err, tt.contains)
 			}
 		})
 	}

@@ -27,7 +27,8 @@ example.com/codec@v0.5.0 example.com/util@v0.3.1
 ```
 
 `dependents <module>` prints every module that requires a version of `<module>`, directly
-or indirectly. It walks a reversed copy of the graph with the breadth-first iterator:
+or indirectly. It uses `dag.Ancestors`: the modules that can reach a module are the ones
+that require it.
 
 ```text
 $ gomodgraph -f testdata/modgraph.txt dependents example.com/util@v0.2.0
@@ -59,6 +60,30 @@ $ gomodgraph diff testdata/modgraph.txt testdata/modgraph_new.txt
 + module example.com/metrics@v0.1.0
 - require example.com/app example.com/lib@v1.4.0
 ...
+```
+
+`mermaid <module>` draws the module, the modules it requires directly, and the modules
+that require it directly. `encoding/mermaid` writes the picture as a flowchart, so it can
+sit in a pull request or a doc. The command leaves out the rest of the graph, which is
+usually too large for a diagram.
+
+```text
+$ gomodgraph -f testdata/modgraph.txt mermaid example.com/app
+flowchart TD
+    n0["example.com/app"]
+    n1["example.com/lib@v1.4.0"]
+    n2["example.com/log@v1.1.0"]
+    n0 --> n1
+    n0 --> n2
+```
+
+```mermaid
+flowchart TD
+    n0["example.com/app"]
+    n1["example.com/lib@v1.4.0"]
+    n2["example.com/log@v1.1.0"]
+    n0 --> n1
+    n0 --> n2
 ```
 
 ## Comment on pull requests that change go.mod
