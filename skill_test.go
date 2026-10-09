@@ -7,7 +7,7 @@ import (
 )
 
 func TestSkillRows(t *testing.T) {
-	data, err := os.ReadFile(".cursor/skills/gograph/SKILL.md")
+	data, err := os.ReadFile(".agents/skills/gograph/SKILL.md")
 	if err != nil {
 		t.Fatal(err)
 	}
