@@ -388,7 +388,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
-| [`MaximalCliques`](partition/bron_kerbosch.md) | Every group where all vertices connect to each other (Bron-Kerbosch) | O(3^(V/3)) worst case | [watch](https://gograph.dev/algorithms/maximal-cliques/friend-groups) |
+| [`MaximalCliques`](partition/bron_kerbosch.md) | Every group where all vertices connect to each other (Bron-Kerbosch) | O(V·3^(V/3)) worst case, including the output | [watch](https://gograph.dev/algorithms/maximal-cliques/friend-groups) |
 | [`GirvanNewman`](partition/girvan-newman.md) | Communities, by removing the most central edges | O(E·V·(V+E)) | [watch](https://gograph.dev/algorithms/girvan-newman/friend-groups) |
 | [`RandomizedKCut`](partition/k-cut.md) | A split into k groups with few edges between them | O(V·E) per run | [watch](https://gograph.dev/algorithms/randomized-k-cut/friend-groups) |
 
