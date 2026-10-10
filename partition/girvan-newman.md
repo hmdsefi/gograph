@@ -75,16 +75,19 @@ Let V be the number of vertices and E the number of edges:
 4. **Repeat**
     - Recompute edge betweenness in the modified graph.
     - Continue removing edges until the desired number of communities k is reached, or until no edges remain.
+    - The check runs before the first removal too, so a graph that already has k or more connected components is
+      returned as those components.
+    - With k <= 0, the algorithm removes every edge, and each vertex ends up in its own community.
 
 ```mermaid
 flowchart TD
-    start["Start with input graph"] --> compute["Compute edge betweenness"]
+    start["Start with input graph"] --> components["Find connected components using BFS"]
+    components --> check{"Fewer than k communities, and edges left?"}
+    check -- Yes --> compute["Compute edge betweenness"]
     compute --> identify["Identify the edge with the highest betweenness"]
     identify --> remove["Remove that edge"]
-    remove --> update["Update connected components using BFS"]
-    update --> check{"Number of communities >= k?"}
-    check -- No --> compute
-    check -- Yes --> done["Return connected components as communities"]
+    remove --> components
+    check -- No --> done["Return connected components as communities"]
 ```
 
 ### Example

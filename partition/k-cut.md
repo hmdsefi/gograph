@@ -48,11 +48,11 @@ flowchart TD
     C --- EG
     C --- F
     D --- EG
-    EG --- F
+    EG ---|"2 edges"| F
 ```
 
 **Nodes:** A, B, C, D, F, EG
-**Edges:** A-B, A-C, B-D, B-EG, C-EG, C-F, D-EG, EG-F
+**Edges:** A-B, A-C, B-D, B-EG, C-EG, C-F, D-EG, EG-F (2 edges: E-F and F-G)
 
 ##### Step 2: Contracting Edge (C, F) into node CF
 
@@ -70,7 +70,7 @@ flowchart TD
 
     The edge **C-F is removed** as a self-loop.
 
-    The new edges are: **A-CF**, **CF-EG**. The edge between CF and EG has multiplicity from C-EG and F-EG.
+    The new edges are: **A-CF**, **CF-EG**. CF and EG are joined by 3 edges: C-E, E-F and F-G.
 
 **There is no original edge that would create a connection from B or D to CF.**
 
@@ -83,11 +83,11 @@ flowchart TD
     B --- D
     B --- EG
     D --- EG
-    CF --- EG
+    CF ---|"3 edges"| EG
 ```
 
 **Nodes:** A, B, D, EG, CF
-**Edges:** A-B, A-CF, B-D, B-EG, D-EG, CF-EG
+**Edges:** A-B, A-CF, B-D, B-EG, D-EG, CF-EG (3 edges)
 
 ##### Step 3: Contracting Edge (B, D) into node BD
 
@@ -105,7 +105,7 @@ flowchart TD
 
     The edges **B-D and D-B are removed** as self-loops.
 
-    The new edges are: **A-BD, BD-EG**. The edge between BD and EG has multiplicity from B-EG and D-EG.
+    The new edges are: **A-BD, BD-EG**. BD and EG are joined by 2 edges: B-E and D-G.
 
     **There is still no edge between BD and CF.**
 
@@ -116,12 +116,12 @@ flowchart TD
     BD["BD (B, D)"]
     A --- BD
     A --- CF
-    BD --- EG
-    CF --- EG
+    BD ---|"2 edges"| EG
+    CF ---|"3 edges"| EG
 ```
 
 **Nodes:** A, BD, EG, CF
-**Edges:** A-BD, A-CF, BD-EG, CF-EG
+**Edges:** A-BD, A-CF, BD-EG (2 edges), CF-EG (3 edges)
 
 ##### Step 4: Final Contraction to reach k=3
 
@@ -151,7 +151,7 @@ flowchart TD
     BD["BD (B, D)"]
     A --- BD
     A --- EGCF
-    BD --- EGCF
+    BD ---|"2 edges"| EGCF
 ```
 
 **Final Clusters (The 3-Cut):**
