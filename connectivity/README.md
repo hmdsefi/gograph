@@ -57,6 +57,12 @@ Tarjan's algorithm is a popular algorithm in graph theory used to find strongly 
 in a directed graph. The algorithm is named after its inventor, Robert Tarjan. The algorithm is based
 on depth-first search (DFS) and is very efficient in both time and space complexity.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/tarjan/service-calls"><img alt="connectivity.Tarjan finding the strongly connected components of a set of microservice calls" src="../.github/images/tarjan-service-calls.gif" width="760"></a>
+  <br>
+  <sub><code>connectivity.Tarjan</code> finding the strongly connected components of a set of microservice calls. <a href="https://gograph.dev/algorithms/tarjan/service-calls">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 The main usage of the Tarjan algorithm is to find strongly connected components in a directed graph.
 Strongly connected components are used in many applications, such as finding the shortest path between
 two nodes in a graph, identifying the critical paths in a project schedule, and solving problems related
@@ -112,6 +118,8 @@ The time complexity of Kosaraju's algorithm is O(V + E), where V is the number o
 and E is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is
 the number of vertices in the graph.
 
+[Run Kosaraju's algorithm step by step on gograph.dev](https://gograph.dev/algorithms/kosaraju/service-calls).
+
 To use Kosaraju algorithm, you can call the 'Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
 and path your graph to it:
 
@@ -157,6 +165,8 @@ and analyzing network traffic.
 The time complexity of Gabow's algorithm is O(V + E), where V is the number of vertices in the graph and E
 is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is the number
 of vertices in the graph.
+
+[Run Gabow's algorithm step by step on gograph.dev](https://gograph.dev/algorithms/gabow/service-calls).
 
 To use Gabow algorithm, you can call the 'Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
 and path your graph to it:

@@ -7,6 +7,12 @@ Communities (or clusters) are groups of nodes that are more densely connected in
 graph. The algorithm identifies edges that are likely “bridges” between communities and removes them iteratively to
 reveal clusters.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/girvan-newman/friend-groups"><img alt="partition.GirvanNewman splitting a small social graph into three communities" src="../.github/images/girvan-newman-friend-groups.gif" width="760"></a>
+  <br>
+  <sub><code>partition.GirvanNewman</code> splitting a small social graph into three communities. <a href="https://gograph.dev/algorithms/girvan-newman/friend-groups">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 ### Graph Algorithm Type
 
 - **Type:** Community detection / Partitioning algorithm
@@ -70,9 +76,16 @@ Let V be the number of vertices and E the number of edges:
     - Recompute edge betweenness in the modified graph.
     - Continue removing edges until the desired number of communities k is reached, or until no edges remain.
 
-<div align="center">
-<img width="345" height="959" alt="Image" src="https://github.com/user-attachments/assets/438a87b9-9c30-46a9-9734-a70cc1f15300" />
-</div>
+```mermaid
+flowchart TD
+    start["Start with input graph"] --> compute["Compute edge betweenness"]
+    compute --> identify["Identify the edge with the highest betweenness"]
+    identify --> remove["Remove that edge"]
+    remove --> update["Update connected components using BFS"]
+    update --> check{"Number of communities >= k?"}
+    check -- No --> compute
+    check -- Yes --> done["Return connected components as communities"]
+```
 
 ### Example
 
@@ -81,9 +94,18 @@ Let V be the number of vertices and E the number of edges:
 
 #### Step 0: Initial Graph
 
-<div align="center">
-<img width="781" height="121" alt="Image" src="https://github.com/user-attachments/assets/198549ac-c8e7-4618-bfa7-7a517a445913" />
-</div>
+```mermaid
+flowchart LR
+    A --- B
+    A --- C
+    B --- C
+    C --- D
+    D --- E
+    E --- F
+    F --- G
+    G --- H
+    E --- H
+```
 
 - Action: clone graph to avoid mutating original.
 - No traversal yet.
@@ -117,9 +139,17 @@ Resulting approximate edge betweenness values:
 
 #### Step 2: Remove Maximum Betweenness Edge (C-D)
 
-<div align="center">
-<img width="501" height="211" alt="Image" src="https://github.com/user-attachments/assets/aeb372fc-3d8b-48f7-9e9e-fcb66534f6ea" />
-</div>
+```mermaid
+flowchart LR
+    A --- B
+    A --- C
+    B --- C
+    D --- E
+    E --- F
+    F --- G
+    G --- H
+    E --- H
+```
 
 **Connected Components:** computed using non-recursive BFS:
 
@@ -149,18 +179,32 @@ New betweenness values (approx):
 
 #### Step 4: Remove E-H
 
-<div align="center">
-<img width="501" height="191" alt="Image" src="https://github.com/user-attachments/assets/22127f8c-0cc8-4826-8801-0eb9de0203ee" />
-</div>
+```mermaid
+flowchart LR
+    A --- B
+    A --- C
+    B --- C
+    D --- E
+    E --- F
+    F --- G
+    G --- H
+```
 
 `Components:` computed using **BFS** again.
 Still connected: `{D, E, F, G, H}`
 
 #### Step 5: Remove D-E
 
-<div align="center">
-<img width="396" height="291" alt="Image" src="https://github.com/user-attachments/assets/e6064007-4115-4363-959b-d41abb02cc64" />
-</div>
+```mermaid
+flowchart LR
+    A --- B
+    A --- C
+    B --- C
+    D
+    E --- F
+    F --- G
+    G --- H
+```
 
 **Components:**
 
@@ -178,9 +222,22 @@ Components = 3 → stop (k=3).
 2. `{D}`
 3. `{E, F, G, H}`
 
-<div align="center">
-<img width="551" height="411" alt="Image" src="https://github.com/user-attachments/assets/54380914-3f8c-4b6e-9dfd-e4ac15a51877" />
-</div>
+```mermaid
+flowchart LR
+    subgraph c1["Community 1"]
+        A --- B
+        A --- C
+        B --- C
+    end
+    subgraph c2["Community 2"]
+        D
+    end
+    subgraph c3["Community 3"]
+        E --- F
+        F --- G
+        G --- H
+    end
+```
 
 #### Step 7: Summary of Traversals
 
