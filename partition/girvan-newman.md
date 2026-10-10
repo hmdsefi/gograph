@@ -223,19 +223,19 @@ Components = 3 → stop (k=3).
 3. `{E, F, G, H}`
 
 ```mermaid
-flowchart LR
-    subgraph c1["Community 1"]
-        A --- B
-        A --- C
-        B --- C
-    end
-    subgraph c2["Community 2"]
-        D
-    end
+flowchart TB
     subgraph c3["Community 3"]
         E --- F
         F --- G
         G --- H
+    end
+    subgraph c2["Community 2"]
+        D
+    end
+    subgraph c1["Community 1"]
+        A --- B
+        A --- C
+        B --- C
     end
 ```
 
