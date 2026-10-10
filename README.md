@@ -1,43 +1,92 @@
-![build](https://github.com/hmdsefi/gograph/actions/workflows/build.yml/badge.svg)
-[![coverage](https://img.shields.io/github/issues/detail/title/hmdsefi/gograph/162?label=coverage&color=brightgreen)](https://github.com/hmdsefi/gograph/actions/workflows/build.yml?query=branch%3Amaster)
-[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/hmdsefi/gograph?utm_source=oss&utm_medium=github&utm_campaign=hmdsefi%2Fgograph&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
-[![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
-[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
-[![Sponsor](https://img.shields.io/badge/sponsor-hmdsefi-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/hmdsefi)
-[![GitHub stars](https://img.shields.io/github/stars/hmdsefi/gograph?style=social)](https://github.com/hmdsefi/gograph)
-
 <p align="center">
-  <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" width="480" title="gograph"/>
+  <img alt="gograph, a generic graph library for Go" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" width="420" title="gograph"/>
 </p>
 
-# GoGraph
+<p align="center">
+  <b>Dependency graphs and graph algorithms for Go, with no dependencies outside the standard library.</b>
+</p>
 
-GoGraph is a generic graph library for Go with first-class support for dependency
+<p align="center">
+  <a href="https://github.com/hmdsefi/gograph/actions/workflows/build.yml"><img alt="build" src="https://github.com/hmdsefi/gograph/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/hmdsefi/gograph/actions/workflows/build.yml?query=branch%3Amaster"><img alt="coverage" src="https://img.shields.io/github/issues/detail/title/hmdsefi/gograph/162?label=coverage&color=brightgreen"></a>
+  <a href="https://pkg.go.dev/github.com/hmdsefi/gograph"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg"></a>
+  <a href="https://github.com/hmdsefi/gograph/releases"><img alt="release" src="https://img.shields.io/github/v/release/hmdsefi/gograph"></a>
+  <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/hmdsefi/gograph"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/hmdsefi/gograph"></a>
+  <a href="https://github.com/avelino/awesome-go#science-and-data-analysis"><img alt="Mentioned in Awesome Go" src="https://awesome.re/mentioned-badge.svg"></a>
+  <a href="https://coderabbit.ai"><img alt="CodeRabbit Pull Request Reviews" src="https://img.shields.io/coderabbit/prs/github/hmdsefi/gograph?utm_source=oss&utm_medium=github&utm_campaign=hmdsefi%2Fgograph&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews"></a>
+  <a href="https://github.com/sponsors/hmdsefi"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-hmdsefi-ea4aaa?logo=githubsponsors"></a>
+  <a href="https://github.com/hmdsefi/gograph"><img alt="GitHub stars" src="https://img.shields.io/github/stars/hmdsefi/gograph?style=social"></a>
+</p>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/hmdsefi/gograph"><b>Documentation</b></a> ·
+  <a href="https://gograph.dev"><b>Interactive demos</b></a> ·
+  <a href="examples"><b>Examples</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a> ·
+  <a href="https://github.com/hmdsefi/gograph/issues/136"><b>Roadmap</b></a>
+</p>
+
+<p align="center">
+  <a href="https://gograph.dev/algorithms/dijkstra/new-york">
+    <img alt="Dijkstra finding the quickest drive from Manhattan to Brooklyn on a New York street map, on gograph.dev" src=".github/images/dijkstra-new-york.gif" width="860">
+  </a>
+  <br>
+  <sub><code>path.Dijkstra</code> finding the quickest drive from Canal St in Manhattan to Court St in Brooklyn on <a href="https://gograph.dev">gograph.dev</a>, where every algorithm runs step by step on example graphs.</sub>
+</p>
+
+gograph is a generic graph library for Go with first-class support for dependency
 graphs. Acyclic graphs refuse edges that would create a cycle, and `TopologySort`
 gives you an order to run things in. It also covers traversal, shortest paths,
-strongly connected components and graph partitioning, with no dependencies outside
-the standard library.
+strongly connected components and graph partitioning.
 
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
 - **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
-- **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall and transitive reduction.
+- **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
 - **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
+- **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
 
-See every algorithm run step by step on example graphs, with its result, the Go code and
-benchmarks, at [gograph.dev](https://gograph.dev).
-
-Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby).
+Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby),
+including the Cilium project's [ariane](https://github.com/cilium/ariane),
+BoostSecurity's [smokedmeat](https://github.com/boostsecurityio/smokedmeat) and
+[simplecontainer](https://github.com/simplecontainer/smr).
 
 <h3 align="center">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</h3>
 
-## Quick start
+## Table of contents
+
+* [Installation](#installation)
+* [Quick start](#quick-start)
+* [Use cases](#use-cases)
+* [Graphs](#graphs)
+    * [Directed](#directed)
+    * [Acyclic](#acyclic)
+    * [Undirected](#undirected)
+    * [Weighted](#weighted)
+* [Traversal](#traversal)
+* [Algorithms](#algorithms)
+* [Diagrams](#diagrams)
+* [Determinism](#determinism)
+* [Performance](#performance)
+* [Examples](#examples)
+* [Stability](#stability)
+* [Roadmap](#roadmap)
+* [Contributing](#contributing)
+* [Sponsoring](#sponsoring)
+* [License](#license)
+
+## Installation
 
 ```shell
 go get github.com/hmdsefi/gograph
 ```
+
+gograph requires Go 1.26 or later and uses only the standard library.
+
+## Quick start
 
 ```go
 package main
@@ -73,29 +122,24 @@ func main() {
 }
 ```
 
-When several orders are valid, `TopologySort` follows the order the vertices and edges
-were added, so the same graph gives the same result on every run. To choose the order
-yourself, `StableTopologySort` takes a compare function such as `cmp.Compare` and always
-picks the smallest vertex that is ready.
+## Use cases
 
-`GetAllVertices` returns vertices in the order they were added, and `AllEdges` and
-`EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
-`GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
-built the same way.
-
-## Table of contents
-
-* [Graphs](#graphs)
-    * [Directed](#directed)
-    * [Acyclic](#acyclic)
-    * [Undirected](#undirected)
-    * [Weighted](#weighted)
-* [Traversal](#traversal)
-* [Algorithms](#algorithms)
-* [Examples](#examples)
-* [Roadmap](#roadmap)
-* [Contributing](#contributing)
-* [License](#license)
+- **Build and CI pipelines:** order the steps with `TopologySort`, run independent
+  steps together with `dag.Levels` or `dag.Tracker`, and find the chain of steps that
+  sets the total time with `dag.CriticalPath`.
+- **Task schedulers and workflow engines:** `dag.Tracker` hands out tasks as their
+  dependencies finish.
+- **Incremental builds and spreadsheets:** `dag.Affected` lists everything a change
+  reaches, so you recompute only that.
+- **Module and package dependencies:** find requirement cycles with
+  `connectivity.Tarjan` and collapse them with `connectivity.Condense`. The
+  [gomodgraph](examples/gomodgraph) example does this for `go mod graph` output.
+- **Routing and placement:** shortest routes with `path.Dijkstra`, the nearest depot
+  for every address with `path.DijkstraMultiSource`, and where to put k facilities
+  with `path.KCenter`.
+- **Networks and communities:** loops in service calls with strongly connected
+  components, and groups in a social graph with `partition.MaximalCliques` and
+  `partition.GirvanNewman`.
 
 ## Graphs
 
@@ -115,9 +159,26 @@ of methods.
 examples. To keep a reference to a vertex, use `AddVertexByLabel`, which adds the
 vertex and returns it.
 
+The diagrams in this section are the output of [`encoding/mermaid`](#diagrams) for
+each example graph.
+
 ### Directed
 
-![directed-graph](https://user-images.githubusercontent.com/11541936/221904292-face2083-16da-491f-a339-2164b7040264.png)
+```mermaid
+flowchart LR
+    n0["1"]
+    n1["2"]
+    n2["3"]
+    n3["4"]
+    n4["5"]
+    n5["6"]
+    n0 --> n1
+    n0 --> n2
+    n1 --> n3
+    n2 --> n3
+    n3 --> n4
+    n4 --> n5
+```
 
 ```go
 g := gograph.New[int](gograph.Directed())
@@ -132,7 +193,14 @@ _, _ = g.AddEdge(gograph.NewVertex(5), gograph.NewVertex(6))
 
 ### Acyclic
 
-![acyclic-graph](https://user-images.githubusercontent.com/11541936/221911652-ce2dfb5f-5547-4f26-8412-94ad9124d4fa.png)
+```mermaid
+flowchart LR
+    n0["1"]
+    n1["2"]
+    n2["3"]
+    n0 --> n1
+    n1 --> n2
+```
 
 ```go
 g := gograph.New[int](gograph.Acyclic())
@@ -146,7 +214,17 @@ fmt.Println(err) // edges would create cycle
 
 ### Undirected
 
-![undirected-graph](https://user-images.githubusercontent.com/11541936/221908261-a009049d-2b71-46c3-9026-faa4dcc2a693.png)
+```mermaid
+flowchart LR
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n0 --- n1
+    n0 --- n3
+    n1 --- n2
+    n1 --- n3
+```
 
 ```go
 // Graphs are undirected by default.
@@ -168,7 +246,18 @@ fmt.Println(g.ContainsEdge(a, b), g.ContainsEdge(b, a)) // true true
 
 ### Weighted
 
-![weighted-edge](https://user-images.githubusercontent.com/11541936/221908269-b6db15fb-6104-49d9-b9b9-acc062d94e4a.png)
+```mermaid
+flowchart LR
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n0 ---|"4"| n1
+    n0 ---|"3"| n3
+    n1 ---|"3"| n2
+    n1 ---|"1"| n3
+    n2 ---|"2"| n3
+```
 
 ```go
 g := gograph.New[string](gograph.Weighted())
@@ -190,7 +279,14 @@ fmt.Println(dist["C"]) // 5
 
 Vertices can have weights too:
 
-![weighted-vertex](https://user-images.githubusercontent.com/11541936/221908278-83f3138d-8b28-4c38-825a-627a46d65294.png)
+```mermaid
+flowchart LR
+    n0["A, weight 3"]
+    n1["B, weight 2"]
+    n2["C, weight 4"]
+    n0 --> n1
+    n1 --> n2
+```
 
 ```go
 g := gograph.New[string](gograph.Directed(), gograph.Weighted())
@@ -236,42 +332,133 @@ for it.HasNext() {
 }
 ```
 
-Available iterators:
-
-- [Breadth-first](https://github.com/hmdsefi/gograph/tree/master/traverse#bfs)
-- [Depth-first](https://github.com/hmdsefi/gograph/tree/master/traverse#dfs)
-- [Topological](https://github.com/hmdsefi/gograph/tree/master/traverse#topological-sort)
-- [Closest-first](https://github.com/hmdsefi/gograph/tree/master/traverse#closest-first)
-- [Random walk](https://github.com/hmdsefi/gograph/tree/master/traverse#random-walk)
+| Iterator | Order | Demo |
+|---|---|---|
+| [`NewBreadthFirstIterator`](traverse#bfs) | Nearest vertices first, level by level | [watch](https://gograph.dev/algorithms/bfs/office-network) |
+| [`NewDepthFirstIterator`](traverse#dfs) | Each branch as deep as it goes before the next | [watch](https://gograph.dev/algorithms/dfs/office-network) |
+| [`NewTopologicalIterator`](traverse#topological-sort) | Topological order, one vertex at a time | [watch](https://gograph.dev/algorithms/topological-sort/build-pipeline) |
+| [`NewClosestFirstIterator`](traverse#closest-first) | By shortest weighted distance from the start | [watch](https://gograph.dev/algorithms/closest-first/school-run) |
+| [`NewRandomWalkIterator`](traverse#random-walk) | A random walk that picks each edge in proportion to its weight in a weighted graph | [watch](https://gograph.dev/algorithms/random-walk/service-calls) |
 
 ## Algorithms
 
-To watch these algorithms run step by step on example graphs, see
-[gograph.dev](https://gograph.dev).
+V is the number of vertices and E the number of edges. Every link in the Demo column
+runs the algorithm step by step on example graphs at [gograph.dev](https://gograph.dev).
 
-- **Ordering:** `gograph.TopologySort` (Kahn's algorithm) and `gograph.StableTopologySort`
-  (smallest ready vertex first).
-- **Subgraphs:** `gograph.InducedSubgraph` keeps a chosen set of vertices and the edges
-  between them.
-- **Shortest paths** (`path` package):
-  [Dijkstra](https://github.com/hmdsefi/gograph/blob/master/path/dijkstra.md),
-  [Bellman-Ford](https://github.com/hmdsefi/gograph/blob/master/path/bellman-ford.md),
-  [Floyd-Warshall](https://github.com/hmdsefi/gograph/blob/master/path/floyd-warshall.md),
-  `DijkstraMultiSource`, which finds each vertex's nearest source in one search,
-  and `KCenter`, which places k centers so the farthest vertex is as close as the
-  method can make it.
-- **Transitive reduction** (`path` package):
-  [TransitiveReduction](https://github.com/hmdsefi/gograph/blob/master/path/transitive-reduction.md).
-- **Dependencies** (`dag` package): `Descendants` (what depends on a vertex), `Ancestors`
-  (what it depends on), `Affected` (what a change reaches), `Levels` and `Tracker`
-  (what can run at the same time), and `CriticalPath` (the longest chain of dependent tasks).
-- **Strongly connected components** (`connectivity` package):
-  [Tarjan, Kosaraju and Gabow](https://github.com/hmdsefi/gograph/tree/master/connectivity#gograph---connectivity),
-  and [condensation](https://github.com/hmdsefi/gograph/tree/master/connectivity#condensation) into a DAG.
-- **Partitioning** (`partition` package):
-  [maximal cliques (Bron-Kerbosch)](https://github.com/hmdsefi/gograph/blob/master/partition/bron_kerbosch.md),
-  [Girvan-Newman](https://github.com/hmdsefi/gograph/blob/master/partition/girvan-newman.md),
-  [randomized k-cut](https://github.com/hmdsefi/gograph/blob/master/partition/k-cut.md).
+**Ordering and subgraphs** (`gograph` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `TopologySort` | An order where every edge points forward (Kahn's algorithm) | O(V+E) | [watch](https://gograph.dev/algorithms/topological-sort/build-pipeline) |
+| `StableTopologySort` | The same, picking the smallest ready vertex by your compare function | O((V+E) log V) | [watch](https://gograph.dev/algorithms/stable-topological-sort/build-pipeline) |
+| `InducedSubgraph` | A chosen set of vertices and the edges between them | O(k+D) for k labels with D outgoing edges | |
+
+**Dependencies** (`dag` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `Descendants` | What depends on a vertex | O(V+E) | [watch](https://gograph.dev/algorithms/descendants/build-pipeline) |
+| `Ancestors` | What a vertex depends on | O(V+E) | [watch](https://gograph.dev/algorithms/ancestors/build-pipeline) |
+| `Affected` | Everything a change to some vertices reaches | O(V+E) | [watch](https://gograph.dev/algorithms/affected/build-pipeline) |
+| `Levels` | Which vertices can run at the same time | O(V+E) | |
+| `NewTracker` | Which vertices are ready as others finish | O(V+E) in total | |
+| `CriticalPath` | The most expensive chain of dependent vertices | O(V+E) | |
+
+**Shortest paths** (`path` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| [`Dijkstra`](path/dijkstra.md) | Distances from one vertex, no negative weights | O((V+E) log V) | [watch](https://gograph.dev/algorithms/dijkstra/new-york) |
+| [`BellmanFord`](path/bellman-ford.md) | Distances from one vertex, negative weights allowed | O(V·E) | [watch](https://gograph.dev/algorithms/bellman-ford/school-run) |
+| [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
+| `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
+| `KCenter` | k centers that keep every vertex close to one, within twice the best radius on undirected graphs | O(k (V+E) log V) | |
+| [`TransitiveReduction`](path/transitive-reduction.md) | The fewest edges that keep every path | O(V·(V+E)) | [watch](https://gograph.dev/algorithms/transitive-reduction/build-pipeline) |
+
+**Connectivity** (`connectivity` package, [notes](connectivity#gograph---connectivity))
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `Tarjan` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/tarjan/service-calls) |
+| `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
+| `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
+| [`Condense`](connectivity#condensation) | The DAG of components, one vertex per component | O(V+E) | |
+
+**Partitioning** (`partition` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| [`MaximalCliques`](partition/bron_kerbosch.md) | Every group where all vertices connect to each other (Bron-Kerbosch) | O(V·3^(V/3)) worst case, including the output | [watch](https://gograph.dev/algorithms/maximal-cliques/friend-groups) |
+| [`GirvanNewman`](partition/girvan-newman.md) | Communities, by removing the most central edges | O(E·V·(V+E)) | [watch](https://gograph.dev/algorithms/girvan-newman/friend-groups) |
+| [`RandomizedKCut`](partition/k-cut.md) | A split into k groups with few edges between them | O(V·E) per run | [watch](https://gograph.dev/algorithms/randomized-k-cut/friend-groups) |
+
+## Diagrams
+
+`encoding/mermaid` writes a graph as a Mermaid flowchart, which GitHub and GitLab render
+in Markdown. Options set the direction, the vertex and edge text, and classes for
+highlighting:
+
+```go
+g := gograph.New[string](gograph.Directed())
+
+_, _ = g.AddEdge(gograph.NewVertex("checkout"), gograph.NewVertex("build"))
+_, _ = g.AddEdge(g.GetVertexByID("build"), gograph.NewVertex("test"))
+
+// highlight the vertices that failed
+failed := map[string]bool{"test": true}
+
+err := mermaid.Write(os.Stdout, g,
+	mermaid.WithVertexClass(func(v *gograph.Vertex[string]) string {
+		if failed[v.Label()] {
+			return "failed"
+		}
+		return ""
+	}),
+	mermaid.WithClassDef[string]("failed", "fill:#f96"),
+)
+```
+
+```mermaid
+flowchart TD
+    n0["build"]
+    n1["checkout"]
+    n2["test"]
+    n0 --> n2
+    n1 --> n0
+    classDef failed fill:#f96
+    class n2 failed
+```
+
+For graphs too large for a Mermaid diagram, `encoding/dot` writes the Graphviz DOT
+language, which `dot -Tsvg` turns into an image.
+
+## Determinism
+
+When several orders are valid, `TopologySort` follows the order the vertices and edges
+were added, so the same graph gives the same result on every run. To choose the order
+yourself, `StableTopologySort` takes a compare function such as `cmp.Compare` and always
+picks the smallest vertex that is ready.
+
+`GetAllVertices` returns vertices in the order they were added, and `AllEdges` and
+`EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
+`GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
+built the same way.
+
+## Performance
+
+Measured with `go test -run '^$' -bench . -benchmem ./...` on an Apple M4 Max with Go 1.27:
+
+| Benchmark | Graph | Time per run |
+|---|---|---|
+| `TopologySort` | Binary tree, 100,000 vertices | 7.0 ms |
+| `StableTopologySort` | Binary tree, 100,000 vertices | 15.9 ms |
+| `dag.CriticalPath` | Binary tree, 100,000 vertices | 10.8 ms |
+| `path.DijkstraMultiSource` | Path of 2,000 vertices, 32 sources | 0.19 ms |
+| `path.KCenter` | Path of 2,000 vertices, k = 32 | 0.31 ms |
+| `InducedSubgraph` | 256 vertices out of 4,000 | 0.05 ms |
+
+Each algorithm page on [gograph.dev](https://gograph.dev) also has a performance card
+that times the algorithm on that page's example graphs.
 
 ## Examples
 
@@ -279,6 +466,15 @@ To watch these algorithms run step by step on example graphs, see
   cycles, the modules that depend on a module, why a module is needed, what changed
   between two versions of `go.mod`, and a diagram of a module with its direct
   dependencies and dependents.
+
+## Stability
+
+gograph follows [semantic versioning](https://semver.org) and is used by other
+projects, so changes keep existing code working: exported interfaces keep their
+method sets, exported functions keep their signatures, and sentinel errors stay
+comparable with `==`. The rules are in
+[CONTRIBUTING.md](CONTRIBUTING.md#backward-compatibility), and every release is listed
+in the [changelog](CHANGELOG.md).
 
 ## Roadmap
 
@@ -293,6 +489,8 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 opening a pull request. The README examples are also Go examples in
 [`example_test.go`](example_test.go), so `go test ./...` checks that they still compile
 and print what they claim.
+
+To report a security problem, follow [SECURITY.md](SECURITY.md).
 
 ## Sponsoring
 
