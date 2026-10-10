@@ -31,6 +31,8 @@ benchmarks, at [gograph.dev](https://gograph.dev).
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby).
 
+<h3 align="center">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</h3>
+
 ## Quick start
 
 ```shell
@@ -292,10 +294,9 @@ opening a pull request. The README examples are also Go examples in
 [`example_test.go`](example_test.go), so `go test ./...` checks that they still compile
 and print what they claim.
 
-## Supporting gograph
+## Sponsoring
 
-If gograph is useful to you, a star on GitHub helps other Go developers find it.
-You can also support its development through
+If gograph saves you time, you can support its development through
 [GitHub Sponsors](https://github.com/sponsors/hmdsefi).
 
 ## License
