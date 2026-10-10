@@ -28,11 +28,11 @@
 </p>
 
 <p align="center">
-  <a href="https://gograph.dev/algorithms/topological-sort/build-pipeline">
-    <img alt="Topological sort of a build pipeline, step by step on gograph.dev" src=".github/images/gograph-dev.gif" width="860">
+  <a href="https://gograph.dev/algorithms/dijkstra/new-york">
+    <img alt="Dijkstra finding the quickest drive from Manhattan to Brooklyn on a New York street map, on gograph.dev" src=".github/images/dijkstra-new-york.gif" width="860">
   </a>
   <br>
-  <sub>Topological sort of a build pipeline on <a href="https://gograph.dev">gograph.dev</a>, where every algorithm runs step by step on example graphs.</sub>
+  <sub><code>path.Dijkstra</code> finding the quickest drive from Canal St in Manhattan to Court St in Brooklyn on <a href="https://gograph.dev">gograph.dev</a>, where every algorithm runs step by step on example graphs.</sub>
 </p>
 
 gograph is a generic graph library for Go with first-class support for dependency
@@ -54,7 +54,7 @@ including the Cilium project's [ariane](https://github.com/cilium/ariane),
 BoostSecurity's [smokedmeat](https://github.com/boostsecurityio/smokedmeat) and
 [simplecontainer](https://github.com/simplecontainer/smr).
 
-<h3 align="center">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</h3>
+<h3 align="center"><a href="https://github.com/hmdsefi/gograph">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</a></h3>
 
 ## Table of contents
 
