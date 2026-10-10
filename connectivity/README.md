@@ -189,6 +189,29 @@ func main() {
 
 It returns a slice of strongly connected component.
 
+### Bridges and articulation points
+
+For an undirected graph, `Bridges` returns the edges whose removal increases the
+number of connected components. `ArticulationPoints` returns the vertices with
+the same property. Both run an iterative DFS in O(V + E) time and space, including
+disconnected graphs. Self-loops are not bridges or articulation points; empty
+graphs return empty slices. Directed graphs return `gograph.ErrNotUndirected`.
+
+```go
+bridges, err := connectivity.Bridges(g)
+if err != nil {
+  return err
+}
+points, err := connectivity.ArticulationPoints(g)
+if err != nil {
+  return err
+}
+```
+
+The returned objects belong to the input graph. Bridges appear once, oriented
+from DFS parent to child, in DFS completion order; articulation points follow
+`GetAllVertices` order.
+
 ### Condensation
 
 Functions that need a directed acyclic graph, such as `gograph.TopologySort`, refuse graphs with cycles.
