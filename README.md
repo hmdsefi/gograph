@@ -4,6 +4,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/hmdsefi/gograph.svg)](https://pkg.go.dev/github.com/hmdsefi/gograph)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#science-and-data-analysis)
 [![Sponsor](https://img.shields.io/badge/sponsor-hmdsefi-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/hmdsefi)
+[![GitHub stars](https://img.shields.io/github/stars/hmdsefi/gograph?style=social)](https://github.com/hmdsefi/gograph)
 
 <p align="center">
   <img alt="golang generic graph package" src="https://github.com/user-attachments/assets/b5728572-9c17-47e8-aa32-28aeeedf1e25" width="480" title="gograph"/>
@@ -291,9 +292,10 @@ opening a pull request. The README examples are also Go examples in
 [`example_test.go`](example_test.go), so `go test ./...` checks that they still compile
 and print what they claim.
 
-## Sponsoring
+## Supporting gograph
 
-If gograph saves you time, you can support its development through
+If gograph is useful to you, a star on GitHub helps other Go developers find it.
+You can also support its development through
 [GitHub Sponsors](https://github.com/sponsors/hmdsefi).
 
 ## License
