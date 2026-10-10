@@ -54,7 +54,7 @@ including the Cilium project's [ariane](https://github.com/cilium/ariane),
 BoostSecurity's [smokedmeat](https://github.com/boostsecurityio/smokedmeat) and
 [simplecontainer](https://github.com/simplecontainer/smr).
 
-<h3 align="center"><a href="https://github.com/hmdsefi/gograph">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</a></h3>
+<h3 align="center">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</h3>
 
 ## Table of contents
 
