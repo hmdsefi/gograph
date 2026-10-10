@@ -35,15 +35,16 @@
   <sub><code>path.Dijkstra</code> finding the quickest drive from Canal St in Manhattan to Court St in Brooklyn on <a href="https://gograph.dev">gograph.dev</a>, where every algorithm runs step by step on example graphs.</sub>
 </p>
 
-gograph is a generic graph library for Go with first-class support for dependency
+gograph is a generic graph library for Go (Golang) with first-class support for dependency
 graphs. Acyclic graphs refuse edges that would create a cycle, and `TopologySort`
 gives you an order to run things in. It also covers traversal, shortest paths,
 strongly connected components and graph partitioning.
 
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
+- **Graph data structures:** directed, undirected, acyclic (DAG) and weighted graphs, with weights on vertices and edges.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
-- **Traversal:** BFS, DFS, topological, closest-first and random-walk iterators.
-- **Paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
+- **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators.
+- **Shortest paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
 - **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
