@@ -127,29 +127,32 @@ vertex**.
     - Keep track of the number of shortest paths reaching each vertex.
     - Accumulate dependency scores backward (like a reverse BFS) to compute contribution to each edge.
 
-Resulting approximate edge betweenness values:
+Edge betweenness counts the pairs of vertices whose shortest path crosses the edge. When a pair has two shortest
+paths, each one counts as half.
+
 | Edge | Betweenness |
 | ---- | ----------- |
 | A-B | 1.0 |
-| A-C | 1.0 |
-| B-C | 1.0 |
-| C-D | 7.0 |
-| D-E | 5.0 |
-| E-F | 4.0 |
-| F-G | 3.0 |
-| G-H | 2.0 |
-| E-H | 3.5 |
+| A-C | 6.0 |
+| B-C | 6.0 |
+| C-D | 15.0 |
+| D-E | 16.0 |
+| E-F | 8.0 |
+| F-G | 4.0 |
+| G-H | 4.0 |
+| E-H | 8.0 |
 
-**Observation:** C-D has highest betweenness → bridge between triangle A-B-C and linear chain.
+**Observation:** D-E has the highest betweenness. Every shortest path between `{A, B, C, D}` and the cycle E-F-G-H
+crosses it.
 
-#### Step 2: Remove Maximum Betweenness Edge (C-D)
+#### Step 2: Remove Maximum Betweenness Edge (D-E)
 
 ```mermaid
 flowchart LR
     A --- B
     A --- C
     B --- C
-    D --- E
+    C --- D
     E --- F
     F --- G
     G --- H
@@ -164,41 +167,30 @@ flowchart LR
 
 **Components:**
 
-1. `{A, B, C}`
-2. `{D, E, F, G, H}`
+1. `{A, B, C, D}`
+2. `{E, F, G, H}`
+
+Two components, fewer than k=3, so the algorithm continues.
 
 #### Step 3: Recompute Betweenness in Remaining Graphs
 
 **Traversal:** again BFS from each node inside the working graph, recompute shortest paths and edge betweenness.
 
-New betweenness values (approx):
+New betweenness values:
 | Edge | Betweenness |
 | ---- | ----------- |
-| D-E | 5.0 |
-| E-F | 4.0 |
-| F-G | 3.0 |
+| A-B | 1.0 |
+| A-C | 2.0 |
+| B-C | 2.0 |
+| C-D | 3.0 |
+| E-F | 2.0 |
+| F-G | 2.0 |
 | G-H | 2.0 |
-| E-H | 5.0 |
+| E-H | 2.0 |
 
-**Max edges:** `D-E` and `E-H` → remove one (let’s choose E-H).
+**Max edge:** C-D, the only path from D to A, B and C.
 
-#### Step 4: Remove E-H
-
-```mermaid
-flowchart LR
-    A --- B
-    A --- C
-    B --- C
-    D --- E
-    E --- F
-    F --- G
-    G --- H
-```
-
-`Components:` computed using **BFS** again.
-Still connected: `{D, E, F, G, H}`
-
-#### Step 5: Remove D-E
+#### Step 4: Remove C-D
 
 ```mermaid
 flowchart LR
@@ -209,6 +201,7 @@ flowchart LR
     E --- F
     F --- G
     G --- H
+    E --- H
 ```
 
 **Components:**
@@ -217,9 +210,9 @@ flowchart LR
 2. `{D}`
 3. `{E, F, G, H}`
 
-Components = 3 → stop (k=3).
+Three components, which is k=3, so the algorithm stops.
 
-#### Step 6: Final Partition
+#### Step 5: Final Partition
 
 **Components:**
 
@@ -233,6 +226,7 @@ flowchart TB
         E --- F
         F --- G
         G --- H
+        E --- H
     end
     subgraph c2["Community 2"]
         D
@@ -244,19 +238,20 @@ flowchart TB
     end
 ```
 
-#### Step 7: Summary of Traversals
+#### Step 6: Summary of Traversals
 
 | Step | Purpose                                | Traversal                              |
 |------|----------------------------------------|----------------------------------------|
 | 1    | Compute edge betweenness               | BFS (Brandes) from each node           |
 | 2    | Identify components                    | Non-recursive BFS from unvisited nodes |
 | 3    | Recompute betweenness                  | BFS in each component                  |
-| 4–5  | Remove max edges and update components | BFS for components                     |
+| 4    | Remove max edge and update components  | BFS for components                     |
 
 **Key Points for `k=3`:**
 - Stop removing edges as soon as the number of connected components reaches k.
 - BFS ensures no recursion and no stack overflow, even with larger graphs. 
-- High-betweenness edges (C-D, E-H, D-E) are removed first → separates weakly connected communities.
+- The edges with the highest betweenness (D-E, then C-D) go first, which separates the weakly connected communities.
+- Each community keeps every edge of the input graph between its vertices, including any edge removed along the way.
 
 ### References
 
