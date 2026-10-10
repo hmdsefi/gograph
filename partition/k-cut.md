@@ -7,6 +7,12 @@ The Randomized K-Cut algorithm is a probabilistic graph partitioning algorithm. 
 
 The core idea is simple: repeatedly contract randomly chosen edges until exactly k "super-nodes" remain. Each super-node represents a cluster of the original graph's vertices. The set of edges that were not contracted and that connect these final `k` super-nodes is the candidate k-cut.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/randomized-k-cut/friend-groups"><img alt="partition.RandomizedKCut splitting a small social graph into three groups" src="../.github/images/randomized-k-cut-friend-groups.gif" width="760"></a>
+  <br>
+  <sub><code>partition.RandomizedKCut</code> splitting a small social graph into three groups. <a href="https://gograph.dev/algorithms/randomized-k-cut/friend-groups">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 **Time Complexity:** O(n * m) per run, where n is the number of vertices and m is the number of edges in the graph.
 **Space Complexity:** O(n + m) for storing vertex sets and edge lists.
 
@@ -15,19 +21,38 @@ The core idea is simple: repeatedly contract randomly chosen edges until exactly
 
 We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true minimum 3-cut for this graph is 4 edges.
 
-<div align="center">
-<img width="241" height="461" alt="Image" src="https://github.com/user-attachments/assets/caba43a0-ace1-4482-a3af-91f49aeb13a7" />
-</div>
+```mermaid
+flowchart TD
+    A --- B
+    A --- C
+    B --- D
+    B --- E
+    C --- E
+    C --- F
+    D --- G
+    E --- F
+    E --- G
+    F --- G
+```
 
 **Step 1: Contracting Edge (E, G) into node EG**
 **Correction:** The edge between F and G becomes an edge between F and EG.
 
-<div align="center">
-<img width="266" height="621" alt="Image" src="https://github.com/user-attachments/assets/09c89ee0-d320-4e06-bdc3-8e055cffd756" />
-</div>
+```mermaid
+flowchart TD
+    EG["EG (E, G)"]
+    A --- B
+    A --- C
+    B --- D
+    B --- EG
+    C --- EG
+    C --- F
+    D --- EG
+    EG ---|"2 edges"| F
+```
 
 **Nodes:** A, B, C, D, F, EG
-**Edges:** A-B, A-C, B-D, B-EG, C-EG, C-F, D-EG, EG-F
+**Edges:** A-B, A-C, B-D, B-EG, C-EG, C-F, D-EG, EG-F (2 edges: E-F and F-G)
 
 ##### Step 2: Contracting Edge (C, F) into node CF
 
@@ -45,16 +70,24 @@ We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true mini
 
     The edge **C-F is removed** as a self-loop.
 
-    The new edges are: **A-CF**, **CF-EG**. The edge between CF and EG has multiplicity from C-EG and F-EG.
+    The new edges are: **A-CF**, **CF-EG**. CF and EG are joined by 3 edges: C-E, E-F and F-G.
 
 **There is no original edge that would create a connection from B or D to CF.**
 
-<div align="center">
-<img width="506" height="515" alt="Image" src="https://github.com/user-attachments/assets/7ddd78ac-d2b9-4b23-916a-3f75b6ed9461" />
-</div>
+```mermaid
+flowchart TD
+    EG["EG (E, G)"]
+    CF["CF (C, F)"]
+    A --- B
+    A --- CF
+    B --- D
+    B --- EG
+    D --- EG
+    CF ---|"3 edges"| EG
+```
 
 **Nodes:** A, B, D, EG, CF
-**Edges:** A-B, A-CF, B-D, B-EG, D-EG, CF-EG
+**Edges:** A-B, A-CF, B-D, B-EG, D-EG, CF-EG (3 edges)
 
 ##### Step 3: Contracting Edge (B, D) into node BD
 
@@ -72,16 +105,23 @@ We begin with the original graph of 7 nodes (A, B, C, D, E, F, G). The true mini
 
     The edges **B-D and D-B are removed** as self-loops.
 
-    The new edges are: **A-BD, BD-EG**. The edge between BD and EG has multiplicity from B-EG and D-EG.
+    The new edges are: **A-BD, BD-EG**. BD and EG are joined by 2 edges: B-E and D-G.
 
     **There is still no edge between BD and CF.**
 
-<div align="center">
-<img width="774" height="451" alt="Image" src="https://github.com/user-attachments/assets/31f3148f-f46d-4f7c-a5e2-e1dabe6bb9a3" />
-</div>
+```mermaid
+flowchart TD
+    EG["EG (E, G)"]
+    CF["CF (C, F)"]
+    BD["BD (B, D)"]
+    A --- BD
+    A --- CF
+    BD ---|"2 edges"| EG
+    CF ---|"3 edges"| EG
+```
 
 **Nodes:** A, BD, EG, CF
-**Edges:** A-BD, A-CF, BD-EG, CF-EG
+**Edges:** A-BD, A-CF, BD-EG (2 edges), CF-EG (3 edges)
 
 ##### Step 4: Final Contraction to reach k=3
 
@@ -105,9 +145,14 @@ Let's choose to contract **(CF, EG)** into a new super-node **EGCF**.
 
     The new edges are: **A-EGCF, BD-EGCF**.
 
-<div align="center">
-<img width="945" height="311" alt="Image" src="https://github.com/user-attachments/assets/334cd87b-9de1-4826-8c30-f30669b11381" />
-</div>
+```mermaid
+flowchart TD
+    EGCF["EGCF (E, G, C, F)"]
+    BD["BD (B, D)"]
+    A --- BD
+    A --- EGCF
+    BD ---|"2 edges"| EGCF
+```
 
 **Final Clusters (The 3-Cut):**
 

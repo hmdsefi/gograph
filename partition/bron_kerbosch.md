@@ -2,6 +2,12 @@
 
 ## Clique Bron–Kerbosch Algorithm with Pivot + Degeneracy
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/maximal-cliques/friend-groups"><img alt="partition.MaximalCliques finding the six friend groups in a small social graph" src="../.github/images/maximal-cliques-friend-groups.gif" width="760"></a>
+  <br>
+  <sub><code>partition.MaximalCliques</code> finding the six friend groups in a small social graph. <a href="https://gograph.dev/algorithms/maximal-cliques/friend-groups">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 ### What is a Clique?
 
 A clique in a graph is a subset of vertices such that every pair of vertices is connected by an edge.

@@ -6,6 +6,12 @@
 
 "An algorithm for finding a minimal equivalent graph of a digraph." — Harry Hsu, Journal of the ACM, 22(1):11–16, Jan. 1975.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/transitive-reduction/build-pipeline"><img alt="path.TransitiveReduction dropping the build pipeline edge that a longer path already implies" src="../.github/images/transitive-reduction-build-pipeline.gif" width="760"></a>
+  <br>
+  <sub><code>path.TransitiveReduction</code> dropping the build pipeline edge that a longer path already implies. <a href="https://gograph.dev/algorithms/transitive-reduction/build-pipeline">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 Here's a step-by-step explanation of how the transitive reduction algorithm works:
 
 1. **Verify the graph is a DAG:** Transitive reduction as implemented here applies only to directed acyclic

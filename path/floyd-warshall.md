@@ -8,6 +8,12 @@ The Floyd-Warshall algorithm is a dynamic programming algorithm used to find the
 all pairs of vertices in a weighted graph, even in the presence of negative weight edges (as long as there
 are no negative weight cycles). It was proposed by Robert Floyd and Stephen Warshall.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/floyd-warshall/fx-majors"><img alt="path.FloydWarshall computing the distance between every pair of six major currencies" src="../.github/images/floyd-warshall-fx-majors.gif" width="760"></a>
+  <br>
+  <sub><code>path.FloydWarshall</code> computing the distance between every pair of six major currencies. <a href="https://gograph.dev/algorithms/floyd-warshall/fx-majors">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 Here's a step-by-step explanation of how the Floyd-Warshall algorithm works:
 
 1. **Initialization:** Create a distance matrix `D[][]` where `D[i][j]` represents the shortest distance between
