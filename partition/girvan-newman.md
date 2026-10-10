@@ -82,12 +82,14 @@ Let V be the number of vertices and E the number of edges:
 ```mermaid
 flowchart TD
     start["Start with input graph"] --> components["Find connected components using BFS"]
-    components --> check{"Fewer than k communities, and edges left?"}
-    check -- Yes --> compute["Compute edge betweenness"]
+    components --> edges{"Edges left?"}
+    edges -- No --> done["Return connected components as communities"]
+    edges -- Yes --> target{"k <= 0, or fewer than k communities?"}
+    target -- No --> done
+    target -- Yes --> compute["Compute edge betweenness"]
     compute --> identify["Identify the edge with the highest betweenness"]
     identify --> remove["Remove that edge"]
     remove --> components
-    check -- No --> done["Return connected components as communities"]
 ```
 
 ### Example
