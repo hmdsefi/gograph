@@ -52,8 +52,10 @@ strongly connected components and graph partitioning.
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby),
 including the Cilium project's [ariane](https://github.com/cilium/ariane),
-BoostSecurity's [smokedmeat](https://github.com/boostsecurityio/smokedmeat) and
-[simplecontainer](https://github.com/simplecontainer/smr).
+BoostSecurity's [smokedmeat](https://github.com/boostsecurityio/smokedmeat),
+[simplecontainer](https://github.com/simplecontainer/smr) and
+[faultline](https://github.com/hmdsefi/faultline), deterministic simulation testing for Go by the
+same author.
 
 <h3 align="center">⭐ If gograph is useful to you, a star on GitHub helps other Go developers find it.</h3>
 
