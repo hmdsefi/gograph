@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of dependent vertices, such as the steps that set how long a build takes. The
   path runs from a vertex with no incoming edges to one with no outgoing edges,
   and its cost is the sum of the vertex and edge weights. ([#121], [#228])
+- `dag.Sources` and `dag.Sinks` to find the vertices with no incoming edges and
+  no outgoing edges, in `GetAllVertices()` order. ([#116])
 
 ### Changed
 
@@ -304,4 +306,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
+[#116]: https://github.com/hmdsefi/gograph/issues/116
 [#228]: https://github.com/hmdsefi/gograph/pull/228

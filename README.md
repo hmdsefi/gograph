@@ -363,6 +363,8 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `Descendants` | What depends on a vertex | O(V+E) | [watch](https://gograph.dev/algorithms/descendants/build-pipeline) |
 | `Ancestors` | What a vertex depends on | O(V+E) | [watch](https://gograph.dev/algorithms/ancestors/build-pipeline) |
 | `Affected` | Everything a change to some vertices reaches | O(V+E) | [watch](https://gograph.dev/algorithms/affected/build-pipeline) |
+| `Sources` | Which vertices have no incoming edges | O(V) | |
+| `Sinks` | Which vertices have no outgoing edges | O(V) | |
 | `Levels` | Which vertices can run at the same time | O(V+E) | |
 | `NewTracker` | Which vertices are ready as others finish | O(V+E) in total | |
 | `CriticalPath` | The most expensive chain of dependent vertices | O(V+E) | |

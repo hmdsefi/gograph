@@ -186,3 +186,33 @@ func ExampleCriticalPathFunc() {
 	// Output:
 	// [checkout build test] 31
 }
+
+func ExampleSources() {
+	g := pipeline()
+
+	sources, err := dag.Sources(g)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("sources:", labels(sources))
+
+	// Output:
+	// sources: [checkout]
+}
+
+func ExampleSinks() {
+	g := pipeline()
+
+	sinks, err := dag.Sinks(g)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("sinks:", labels(sinks))
+
+	// Output:
+	// sinks: [docs test lint]
+}
