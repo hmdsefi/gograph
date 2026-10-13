@@ -15,7 +15,7 @@ func TestSourcesAndSinks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Sources(empty): unexpected error: %v", err)
 		}
-		if len(sources) != 0 {
+		if sources == nil || len(sources) != 0 {
 			t.Fatalf("Sources(empty) = %v, want empty slice", labels(sources))
 		}
 
@@ -23,7 +23,7 @@ func TestSourcesAndSinks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Sinks(empty): unexpected error: %v", err)
 		}
-		if len(sinks) != 0 {
+		if sinks == nil || len(sinks) != 0 {
 			t.Fatalf("Sinks(empty) = %v, want empty slice", labels(sinks))
 		}
 	})
@@ -269,13 +269,19 @@ func TestSourcesAndSinks(t *testing.T) {
 		vA := g.GetVertexByID("A")
 		vB := g.GetVertexByID("B")
 
-		sources, _ := Sources(g)
-		if len(sources) != 1 || sources[0] != vA {
+		sources, err := Sources(g)
+		if err != nil || len(sources) != 1 {
+			t.Fatalf("Sources = %v, %v; want [A]", labels(sources), err)
+		}
+		if sources[0] != vA {
 			t.Fatalf("Sources returned %p, want %p", sources[0], vA)
 		}
 
-		sinks, _ := Sinks(g)
-		if len(sinks) != 1 || sinks[0] != vB {
+		sinks, err := Sinks(g)
+		if err != nil || len(sinks) != 1 {
+			t.Fatalf("Sinks = %v, %v; want [B]", labels(sinks), err)
+		}
+		if sinks[0] != vB {
 			t.Fatalf("Sinks returned %p, want %p", sinks[0], vB)
 		}
 	})
