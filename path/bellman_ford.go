@@ -17,6 +17,10 @@ var (
 // in a weighted graph, even in the presence of negative weight edges, as long as
 // there are no negative weight cycle.
 //
+// The graph must have the Weighted option or ErrNotWeighted is returned.
+// Unreachable vertices have distance math.Inf(1). Only negative cycles
+// reachable from the source produce ErrNegativeWeightCycle.
+//
 // Steps:
 //
 //		1.Initialization: Start by setting the distance of the source vertex to itself

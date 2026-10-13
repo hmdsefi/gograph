@@ -125,6 +125,38 @@ func main() {
 }
 ```
 
+
+## Edge counts and path contracts
+
+An undirected edge between distinct vertices is stored in both directions.
+For two undirected edges `A - B` and `A - C`:
+
+| Call | Result |
+| --- | --- |
+| `g.Size()` / `len(g.AllEdges())` | 4 |
+| `a.Degree()` | 4 |
+| `a.InDegree()` / `a.OutDegree()` | 2 |
+| `len(g.EdgesOf(a))` | 4 |
+| `len(g.GetAllEdges(a, b))` | 2 |
+
+Use `OutDegree()` to count neighbors in an undirected graph. A self-loop has the
+same source and destination, so it has only one stored direction.
+
+`Weighted()` is a graph flag, separate from the weights supplied with
+`WithEdgeWeight`. Dijkstra uses those weights even without the flag.
+Bellman-Ford and Floyd-Warshall require `Weighted()` or return `ErrNotWeighted`;
+the random walk uses edge weights only when that flag is set.
+
+| Shortest-path algorithm | Unreachable distance | Weight requirement |
+| --- | --- | --- |
+| `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
+| `path.BellmanFord` | `math.Inf(1)` | `Weighted()`; negative weights allowed, reachable negative cycles rejected |
+| `path.FloydWarshall` | `math.Inf(1)` | `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
+
+These are the current behaviors, not conversions between the sentinel values.
+Check the sentinel for the algorithm you called before treating a distance as a
+reachable route.
+
 ## Use cases
 
 - **Build and CI pipelines:** order the steps with `TopologySort`, run independent

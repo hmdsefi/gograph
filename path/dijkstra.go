@@ -14,7 +14,9 @@ import (
 // The time complexity of the simple Dijkstra's algorithm implementation is O(V^2).
 //
 // It returns the shortest distances from the starting vertex to all other vertices
-// in the graph.
+// in the graph. Unreachable vertices have distance math.MaxFloat64.
+// Edge weights must be non-negative; this is not checked. Edge weights are
+// used whether or not the graph has the Weighted option.
 func DijkstraSimple[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	dist := make(map[T]float64)
 
@@ -72,7 +74,9 @@ func newDVertex[T comparable](label T) *dVertex[T] {
 // The time complexity of the standard Dijkstra's algorithm with a min heap is O((E+V)logV).
 //
 // It returns the shortest distances from the starting vertex to all other vertices
-// in the graph.
+// in the graph. Unreachable vertices have distance math.MaxFloat64.
+// Edge weights must be non-negative; this is not checked. Edge weights are
+// used whether or not the graph has the Weighted option.
 func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	startVertex := g.GetVertexByID(start)
 	if startVertex == nil {
