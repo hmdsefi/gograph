@@ -45,14 +45,30 @@
 // example above, with checkout, build, test and lint taking 1, 10, 20 and 2,
 // the critical path is checkout, build, test.
 //
+// # Sources and sinks
+//
+// Sources and Sinks answer which vertices have no prerequisites (where to
+// start) and which have no dependents (final outputs or leftovers):
+//
+//   - Sources returns the vertices with no incoming edges (InDegree == 0).
+//   - Sinks returns the vertices with no outgoing edges (OutDegree == 0).
+//
+// In the example above, Sources(g) returns checkout, and Sinks(g) returns test
+// and lint.
+//
 // # Behavior
 //
-// Descendants, Ancestors and Affected work on any directed graph, including
-// graphs with cycles. Levels, NewTracker and CriticalPath return
-// gograph.ErrDAGHasCycle for a graph with a cycle, since its vertices can't
-// run in dependency order. All functions return gograph.ErrNotDirected for
-// undirected graphs, and an error that matches gograph.ErrVertexDoesNotExist
-// with errors.Is if a label is not in the graph.
+// Descendants, Ancestors, Affected, Sources and Sinks work on any directed
+// graph, including graphs with cycles. Levels, NewTracker and CriticalPath
+// return gograph.ErrDAGHasCycle for a graph with a cycle, since its vertices
+// can't run in dependency order. All functions return gograph.ErrNotDirected
+// for undirected graphs, and an error that matches
+// gograph.ErrVertexDoesNotExist with errors.Is if a label is not in the graph.
+//
+// Sources and Sinks follow the order of GetAllVertices. Vertices on a cycle
+// are never sources or sinks, a self-loop counts as an incoming and an
+// outgoing edge, and isolated vertices are both. An empty graph returns an
+// empty slice and no error.
 //
 // Every function returns each vertex once, as the graph's own vertex
 // pointers. The results of Descendants, Ancestors and Affected are in
