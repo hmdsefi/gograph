@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and its cost is the sum of the vertex and edge weights. ([#121], [#228])
 - `dag.Sources` and `dag.Sinks` to find the vertices with no incoming edges and
   no outgoing edges, in `GetAllVertices()` order. ([#116], [#247])
+- `versions` and `diff -selected` in `examples/gomodgraph`. `versions` groups
+  the module versions by path and marks the one that builds, and `diff -selected`
+  compares the version of each module that builds, like `go list -m all` on
+  both commits. ([#246], [#249])
 
 ### Changed
 
@@ -309,3 +313,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#217]: https://github.com/hmdsefi/gograph/pull/217
 [#228]: https://github.com/hmdsefi/gograph/pull/228
 [#247]: https://github.com/hmdsefi/gograph/pull/247
+[#246]: https://github.com/hmdsefi/gograph/issues/246
+[#249]: https://github.com/hmdsefi/gograph/pull/249
