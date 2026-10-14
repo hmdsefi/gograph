@@ -68,7 +68,7 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	}
 
 	// Clone graph
-	working := cloneGraph(g)
+	working := gograph.Clone(g)
 
 	components := getConnectedComponents(working)
 	for (k > 0 && len(components) < k) || (k <= 0 && working.Size() > 0) {
@@ -133,25 +133,6 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	}
 
 	return result, nil
-}
-
-// cloneGraph deep-copies the graph
-func cloneGraph[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
-	clone := gograph.New[T]()
-	vertexMap := make(map[T]*gograph.Vertex[T])
-	for _, v := range g.GetAllVertices() {
-		vClone := clone.AddVertexByLabel(v.Label(), gograph.WithVertexWeight(v.Weight()))
-		vertexMap[v.Label()] = vClone
-	}
-	for _, e := range g.AllEdges() {
-		_, _ = clone.AddEdge(
-			vertexMap[e.Source().Label()],
-			vertexMap[e.Destination().Label()],
-			gograph.WithEdgeWeight(e.Weight()),
-			gograph.WithEdgeLabel(e.Label()),
-		)
-	}
-	return clone
 }
 
 // getConnectedComponents returns slices of vertices representing each connected component (non-recursive)
