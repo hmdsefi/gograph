@@ -2,7 +2,9 @@ package gograph
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -76,6 +78,63 @@ func TestClone(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestCloneChangesLikeOriginal(t *testing.T) {
+	r := rand.New(rand.NewPCG(108, 1)) //nolint:gosec // seeded so failures are reproducible
+	for trial := range 500 {
+		options := [][]GraphOptionFunc{nil, {Directed()}, {Directed(), Weighted()}}[trial%3]
+		g := New[int](options...)
+		for v := range 8 {
+			g.AddVertexByLabel(v)
+		}
+		for range 16 {
+			_, _ = g.AddEdge(g.GetVertexByID(r.IntN(8)), g.GetVertexByID(r.IntN(8)), WithEdgeWeight(float64(r.IntN(5))))
+		}
+		g.RemoveVertices(g.GetVertexByID(r.IntN(8)))
+
+		wrapped := trial%2 == 1
+		source := g
+		if wrapped {
+			source = cloneWrapper[int]{g}
+		}
+		clone := Clone(source)
+		for step := range 20 {
+			from, to, removeVertex := r.IntN(9), r.IntN(9), r.IntN(4) == 0
+			for _, h := range []Graph[int]{g, clone} {
+				switch step % 4 {
+				case 0, 1:
+					_, _ = h.AddEdge(NewVertex(from), NewVertex(to))
+				case 2:
+					if e := h.GetEdge(h.GetVertexByID(from), h.GetVertexByID(to)); e != nil {
+						h.RemoveEdges(e)
+					}
+				default:
+					if v := h.GetVertexByID(from); v != nil && removeVertex {
+						h.RemoveVertices(v)
+					}
+				}
+			}
+			if got, want := graphState(clone, wrapped), graphState(g, wrapped); got != want {
+				t.Fatalf("trial %d step %d: copy\n%s\nwant\n%s", trial, step, got, want)
+			}
+		}
+	}
+}
+
+func graphState(g Graph[int], skipIndexes bool) string {
+	var b strings.Builder
+	for _, v := range g.GetAllVertices() {
+		fmt.Fprintf(&b, "%d in=%d out=%d;", v.Label(), v.InDegree(), v.OutDegree())
+	}
+	for _, e := range g.AllEdges() {
+		index := e.InsertionIndex()
+		if skipIndexes {
+			index = 0
+		}
+		fmt.Fprintf(&b, " %d>%d w=%g i=%d", e.Source().Label(), e.Destination().Label(), e.Weight(), index)
+	}
+	return b.String()
 }
 
 func TestCloneNewEdgeInsertionIndex(t *testing.T) {
