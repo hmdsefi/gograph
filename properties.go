@@ -53,6 +53,7 @@ type EdgeOptionFunc func(properties *EdgeProperties)
 // EdgeProperties represents the properties of an edge.
 type EdgeProperties struct {
 	weight float64
+	label  string
 }
 
 // WithEdgeWeight sets the edge weight for the specified edge
@@ -60,6 +61,14 @@ type EdgeProperties struct {
 func WithEdgeWeight(weight float64) EdgeOptionFunc {
 	return func(properties *EdgeProperties) {
 		properties.weight = weight
+	}
+}
+
+// WithEdgeLabel sets a label on the edge. An empty label means the edge has
+// no label.
+func WithEdgeLabel(label string) EdgeOptionFunc {
+	return func(properties *EdgeProperties) {
+		properties.label = label
 	}
 }
 

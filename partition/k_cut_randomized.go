@@ -93,7 +93,7 @@ func RandomizedKCut[T comparable](g gograph.Graph[T], k int) (*KCutResult[T], er
 
 	// 2. Collect all edges
 	edges := g.AllEdges()
-	rand.Shuffle(len(edges), func(i, j int) { edges[i], edges[j] = edges[j], edges[i] })
+	rand.Shuffle(len(edges), func(i, j int) { edges[i], edges[j] = edges[j], edges[i] }) //nolint:gosec // Algorithmic randomness, not a security boundary.
 
 	// 3. Contract edges randomly until number of supernodes == k
 	for len(supernodes) > k {

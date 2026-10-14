@@ -22,9 +22,9 @@ var (
 // For directed acyclic graphs (DAGs), the transitive reduction can be computed efficiently
 // without needing to build the full transitive closure matrix.
 //
-// The result keeps the vertex weights and the weights of the remaining edges, and is
-// weighted if g is weighted. It is created with Acyclic when g is, so AddEdge on the
-// result rejects edges that would create a cycle, matching the input.
+// The result keeps the vertex weights, edge weights, and labels of the remaining edges,
+// and is weighted if g is weighted. It is created with Acyclic when g is, so AddEdge
+// on the result rejects edges that would create a cycle, matching the input.
 //
 // It returns an error if the graph is not directed or if the graph contains cycles.
 func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], error) {
@@ -102,7 +102,12 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 			vVertex := reducedGraph.GetVertexByID(neighbor.Label())
 			originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor.Label()))
 
-			_, err := reducedGraph.AddEdge(uVertex, vVertex, gograph.WithEdgeWeight(originalEdge.Weight()))
+			_, err := reducedGraph.AddEdge(
+				uVertex,
+				vVertex,
+				gograph.WithEdgeWeight(originalEdge.Weight()),
+				gograph.WithEdgeLabel(originalEdge.Label()),
+			)
 			if err != nil {
 				return nil, err
 			}

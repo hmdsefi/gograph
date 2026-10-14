@@ -230,9 +230,9 @@ func TestTransitiveReduction_KeepsWeights(t *testing.T) {
 			vA := g.AddVertexByLabel("A", gograph.WithVertexWeight(5))
 			vB := g.AddVertexByLabel("B", gograph.WithVertexWeight(7))
 			vC := g.AddVertexByLabel("C")
-			_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(3))
-			_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(4))
-			_, _ = g.AddEdge(vA, vC, gograph.WithEdgeWeight(10))
+			_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(3), gograph.WithEdgeLabel("A to B"))
+			_, _ = g.AddEdge(vB, vC, gograph.WithEdgeWeight(4), gograph.WithEdgeLabel("B to C"))
+			_, _ = g.AddEdge(vA, vC, gograph.WithEdgeWeight(10), gograph.WithEdgeLabel("redundant"))
 
 			reduced, err := TransitiveReduction(g)
 			if err != nil {
@@ -263,7 +263,11 @@ func TestTransitiveReduction_KeepsWeights(t *testing.T) {
 			for _, e := range []struct {
 				from, to *gograph.Vertex[string]
 				weight   float64
-			}{{vAReduced, vBReduced, 3}, {vBReduced, vCReduced, 4}} {
+				label    string
+			}{
+				{vAReduced, vBReduced, 3, "A to B"},
+				{vBReduced, vCReduced, 4, "B to C"},
+			} {
 				edge := reduced.GetEdge(e.from, e.to)
 				if edge == nil {
 					t.Errorf("Edge %s->%s should exist in reduced graph", e.from.Label(), e.to.Label())
@@ -273,6 +277,10 @@ func TestTransitiveReduction_KeepsWeights(t *testing.T) {
 				if edge.Weight() != e.weight {
 					t.Errorf("Edge %s->%s should have weight %v, got %v",
 						e.from.Label(), e.to.Label(), e.weight, edge.Weight())
+				}
+				if edge.Label() != e.label {
+					t.Errorf("Edge %s->%s should have label %q, got %q",
+						e.from.Label(), e.to.Label(), e.label, edge.Label())
 				}
 			}
 		})

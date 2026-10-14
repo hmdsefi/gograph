@@ -20,8 +20,9 @@ API before you write the code.
 
 ## Development setup
 
-You need Go 1.24.2 or newer (see `go.mod`) and, for linting,
-[golangci-lint](https://golangci-lint.run/) v2.
+You need Go 1.26 or newer (see `go.mod`) and, for linting,
+[golangci-lint](https://golangci-lint.run/) v2.14 or newer.
+gograph supports the two most recent Go releases.
 
 ```shell
 git clone https://github.com/<your-username>/gograph.git
@@ -69,6 +70,8 @@ practice:
 
 - Keep each pull request to one change. Several small pull requests are easier to
   review than one large one.
+- Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) in the
+  description, including the checklist.
 - Reference the issue in the description, for example `Fixes #123`.
 - Describe how you tested the change.
 - Make sure `go test -race ./...` and `golangci-lint run ./...` pass locally.

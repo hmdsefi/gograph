@@ -12,6 +12,12 @@ of five of these algorithms:
 * [Closest First](#Closest-First)
 * [Random Walk](#Random-Walk)
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/bfs/maze"><img alt="traverse.NewBreadthFirstIterator exploring a maze level by level" src="../.github/images/bfs-maze.gif" width="760"></a>
+  <br>
+  <sub><code>traverse.NewBreadthFirstIterator</code> exploring a maze level by level. <a href="https://gograph.dev/algorithms/bfs/maze">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 All the traversal algorithms in the 'traverse' package are implemented the following
 iterator interface:
 
@@ -68,8 +74,28 @@ because the algorithm uses a queue to store the vertices to be visited. The
 maximum size of the queue is equal to the number of vertices at the maximum
 depth of the BFS traversal.
 
-Here you can see how BFS iterator works:
-<img alt="golang generic graph package - BFS traversal" src="https://user-images.githubusercontent.com/11541936/222957305-912411f0-00fe-419e-97f7-5e3fbdab62af.png" title="bfs-traversal"/>
+For example, on this undirected graph:
+
+```mermaid
+flowchart LR
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n4["E"]
+    n5["F"]
+    n0 --- n1
+    n0 --- n3
+    n1 --- n2
+    n1 --- n4
+    n2 --- n5
+    n3 --- n4
+    n4 --- n5
+```
+
+the BFS iterator that starts from A returns A, B, D, C, E, F.
+[Run BFS step by step on gograph.dev](https://gograph.dev/algorithms/bfs/home-network), with the queue
+and the visited vertices at each step.
 
 ## DFS
 
@@ -94,8 +120,10 @@ the graph. This is because the algorithm uses a stack to store the vertices
 to be visited, and the maximum size of the stack is equal to the maximum
 depth of the DFS traversal.
 
-Here you can see how DFS iterator works:
-<img alt="golang generic graph package - DFS traversal" src="https://user-images.githubusercontent.com/11541936/222957232-2046faab-1f16-4639-87df-140916ab2fac.png" title="dfs-traversal"/>
+On the same graph as the BFS example, the DFS iterator that starts from A returns
+A, D, E, F, C, B.
+[Run DFS step by step on gograph.dev](https://gograph.dev/algorithms/dfs/home-network), with the stack
+and the visited vertices at each step.
 
 ## Topological Sort
 
@@ -122,8 +150,27 @@ of vertices in the graph. This is because the algorithm uses a queue to store
 the vertices to be visited, and the maximum size of the queue is equal to
 the number of vertices in the graph.
 
-Here you can see how topological ordering iterator works:
-<img alt="golang generic graph package - Topological ordering traversal" src="https://user-images.githubusercontent.com/11541936/222963908-4d9ae8ff-c760-4af4-b0bd-7a404fa66aa0.png" title="topological-traversal"/>
+For example, on this directed acyclic graph:
+
+```mermaid
+flowchart LR
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n4["E"]
+    n5["F"]
+    n0 --> n1
+    n0 --> n3
+    n1 --> n4
+    n3 --> n4
+    n4 --> n5
+    n5 --> n2
+```
+
+the topological iterator returns A, B, D, E, F, C.
+[Run the topological sort step by step on gograph.dev](https://gograph.dev/algorithms/topological-sort/build-pipeline),
+with the queue and the in-degree of each vertex at each step.
 
 ## Closest First
 
@@ -149,8 +196,28 @@ is represented as an adjacency list, the time complexity of closest-first iterat
 O(E log V), where E is the number of edges in the graph. The space complexity of
 closest-first iterator is also O(V) for storing the distances and the visited vertices.
 
-Here you can see how topological ordering iterator works:
-<img alt="golang generic graph package - Closest-First traversal" src="https://user-images.githubusercontent.com/11541936/222966179-05256ff0-0563-4662-824a-966da667244d.png" title="closest-first-traversal"/>
+For example, on this weighted graph:
+
+```mermaid
+flowchart LR
+    n0["A"]
+    n1["B"]
+    n2["C"]
+    n3["D"]
+    n4["E"]
+    n5["F"]
+    n0 ---|"2"| n1
+    n0 ---|"3"| n3
+    n1 ---|"3"| n2
+    n1 ---|"5"| n4
+    n2 ---|"4"| n5
+    n3 ---|"1"| n4
+    n4 ---|"3"| n5
+```
+
+the closest-first iterator that starts from A returns A, B, D, E, C, F.
+[Run closest-first step by step on gograph.dev](https://gograph.dev/algorithms/closest-first/school-run),
+with the priority queue at each step.
 
 ## Random Walk
 
@@ -179,3 +246,5 @@ of the graph, the number of vertices visited, and the type of random walk iterat
 In general, the time complexity of random walk iterator is proportional to the number
 of edges in the graph, while the space complexity is proportional to the number of visited
 vertices.
+
+[Run a random walk step by step on gograph.dev](https://gograph.dev/algorithms/random-walk/service-calls).

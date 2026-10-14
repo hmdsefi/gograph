@@ -1,6 +1,7 @@
 package gograph
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -96,5 +97,66 @@ func TestEdge_OtherVertex(t *testing.T) {
 
 	if edge.OtherVertex(2).label != edge.Source().Label() {
 		t.Errorf("Expect OtherVertex return 1, but get %+v", edge.OtherVertex(2))
+	}
+}
+
+func TestEdge_Label(t *testing.T) {
+	if got := NewEdge(NewVertex("A"), NewVertex("B")).Label(); got != "" {
+		t.Errorf("default label: got %q, want empty", got)
+	}
+
+	edge := NewEdge(NewVertex("A"), NewVertex("B"), WithEdgeLabel("calls"))
+	if got := edge.Label(); got != "calls" {
+		t.Errorf("label: got %q, want %q", got, "calls")
+	}
+
+	g := New[string]()
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	if _, err := g.AddEdge(a, b, WithEdgeLabel("imports")); err != nil {
+		t.Fatalf("AddEdge: %v", err)
+	}
+	if got := g.GetEdge(a, b).Label(); got != "imports" {
+		t.Errorf("forward label: got %q, want %q", got, "imports")
+	}
+	if got := g.GetEdge(b, a).Label(); got != "imports" {
+		t.Errorf("reverse label: got %q, want %q", got, "imports")
+	}
+	if _, err := g.AddEdge(a, b, WithEdgeLabel("duplicate")); !errors.Is(err, ErrEdgeAlreadyExists) {
+		t.Errorf("duplicate edge: got %v, want %v", err, ErrEdgeAlreadyExists)
+	}
+}
+
+func TestEdge_InsertionIndex(t *testing.T) {
+	if got := NewEdge(NewVertex("A"), NewVertex("B")).InsertionIndex(); got != 0 {
+		t.Fatalf("edge not in a graph: got %d, want 0", got)
+	}
+
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	c := g.AddVertexByLabel("C")
+	first, err := g.AddEdge(a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := g.AddEdge(b, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.InsertionIndex() == 0 || first.InsertionIndex() >= second.InsertionIndex() {
+		t.Fatalf("indexes: first %d, second %d", first.InsertionIndex(), second.InsertionIndex())
+	}
+
+	u := New[string]()
+	ua := u.AddVertexByLabel("A")
+	ub := u.AddVertexByLabel("B")
+	forward, err := u.AddEdge(ua, ub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reverse := u.GetEdge(ub, ua)
+	if reverse.InsertionIndex() == 0 || reverse.InsertionIndex() >= forward.InsertionIndex() {
+		t.Fatalf("undirected indexes: reverse %d, forward %d", reverse.InsertionIndex(), forward.InsertionIndex())
 	}
 }

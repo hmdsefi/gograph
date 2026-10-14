@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `WithEdgeLabel` and `Edge.Label()` to give an edge a short label, such as
+  "imports" or "calls". The Mermaid and DOT output show it by default, and
+  `TransitiveReduction` and `GirvanNewman` keep it. ([#191], [#217])
+- `dag.CriticalPath` and `dag.CriticalPathFunc` to find the most expensive chain
+  of dependent vertices, such as the steps that set how long a build takes. The
+  path runs from a vertex with no incoming edges to one with no outgoing edges,
+  and its cost is the sum of the vertex and edge weights. ([#121], [#228])
+- `dag.Sources` and `dag.Sinks` to find the vertices with no incoming edges and
+  no outgoing edges, in `GetAllVertices()` order. ([#116], [#247])
+- `versions` and `diff -selected` in `examples/gomodgraph`. `versions` groups
+  the module versions by path and marks the one that builds, and `diff -selected`
+  compares the version of each module that builds, like `go list -m all` on
+  both commits. ([#246], [#249])
+
+### Changed
+
+- Raise the minimum Go version to 1.26 and update golangci-lint to v2.14.0.
+  Projects using an older local toolchain can stay on v0.8.x. ([#177], [#216])
+
 ## [0.8.2] - 2026-10-02
 
 ### Fixed
@@ -245,7 +266,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#105]: https://github.com/hmdsefi/gograph/issues/105
 [#106]: https://github.com/hmdsefi/gograph/issues/106
 [#114]: https://github.com/hmdsefi/gograph/issues/114
+[#116]: https://github.com/hmdsefi/gograph/issues/116
 [#117]: https://github.com/hmdsefi/gograph/issues/117
+[#121]: https://github.com/hmdsefi/gograph/issues/121
 [#122]: https://github.com/hmdsefi/gograph/issues/122
 [#127]: https://github.com/hmdsefi/gograph/issues/127
 [#137]: https://github.com/hmdsefi/gograph/pull/137
@@ -279,8 +302,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#173]: https://github.com/hmdsefi/gograph/pull/173
 [#174]: https://github.com/hmdsefi/gograph/pull/174
 [#176]: https://github.com/hmdsefi/gograph/pull/176
+[#177]: https://github.com/hmdsefi/gograph/issues/177
+[#216]: https://github.com/hmdsefi/gograph/pull/216
 [#178]: https://github.com/hmdsefi/gograph/pull/178
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
+[#217]: https://github.com/hmdsefi/gograph/pull/217
+[#228]: https://github.com/hmdsefi/gograph/pull/228
+[#247]: https://github.com/hmdsefi/gograph/pull/247
+[#246]: https://github.com/hmdsefi/gograph/issues/246
+[#249]: https://github.com/hmdsefi/gograph/pull/249

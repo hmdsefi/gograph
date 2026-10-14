@@ -57,6 +57,12 @@ Tarjan's algorithm is a popular algorithm in graph theory used to find strongly 
 in a directed graph. The algorithm is named after its inventor, Robert Tarjan. The algorithm is based
 on depth-first search (DFS) and is very efficient in both time and space complexity.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/tarjan/service-calls"><img alt="connectivity.Tarjan finding the strongly connected components of a set of microservice calls" src="../.github/images/tarjan-service-calls.gif" width="760"></a>
+  <br>
+  <sub><code>connectivity.Tarjan</code> finding the strongly connected components of a set of microservice calls. <a href="https://gograph.dev/algorithms/tarjan/service-calls">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 The main usage of the Tarjan algorithm is to find strongly connected components in a directed graph.
 Strongly connected components are used in many applications, such as finding the shortest path between
 two nodes in a graph, identifying the critical paths in a project schedule, and solving problems related
@@ -112,6 +118,8 @@ The time complexity of Kosaraju's algorithm is O(V + E), where V is the number o
 and E is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is
 the number of vertices in the graph.
 
+[Run Kosaraju's algorithm step by step on gograph.dev](https://gograph.dev/algorithms/kosaraju/service-calls).
+
 To use Kosaraju algorithm, you can call the 'Kosaraju[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
 and path your graph to it:
 
@@ -158,6 +166,8 @@ The time complexity of Gabow's algorithm is O(V + E), where V is the number of v
 is the number of edges in the graph. The space complexity of the algorithm is O(V), where V is the number
 of vertices in the graph.
 
+[Run Gabow's algorithm step by step on gograph.dev](https://gograph.dev/algorithms/gabow/service-calls).
+
 To use Gabow algorithm, you can call the 'Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T]' function
 and path your graph to it:
 
@@ -188,3 +198,36 @@ func main() {
 ```
 
 It returns a slice of strongly connected component.
+
+### Condensation
+
+Functions that need a directed acyclic graph, such as `gograph.TopologySort`, refuse graphs with cycles.
+The condensation of a graph replaces each strongly connected component with a single vertex, so it never
+has a cycle. A component with more than one member is a group of vertices that depend on each other, for
+example modules that have to be upgraded in one step.
+
+`Condense` runs Tarjan's algorithm once, in O(V + E) time. The components are labeled 0 to n-1 in
+topological order, and there is an edge between two components if an edge of the graph crosses between
+them:
+
+```go
+c, err := connectivity.Condense(g)
+if err != nil {
+  return err
+}
+
+order, err := gograph.TopologySort(c.Graph) // never fails with ErrDAGHasCycle
+if err != nil {
+  return err
+}
+for _, comp := range order {
+  members := c.Members[comp.Label()]
+  if len(members) > 1 {
+    // these vertices depend on each other and have to be handled together
+  }
+}
+```
+
+`c.ComponentOf` maps each vertex label to its component. `WithComponentWeight` sets the weight of each
+component, for example the sum of its members' weights, and `WithCrossingWeight` sets the weight of each
+edge from the edges that cross between the two components.

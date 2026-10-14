@@ -8,6 +8,12 @@ Dijkstra's algorithm is a graph algorithm used to find the shortest path from a 
 other vertices in a weighted graph with non-negative edge weights. It was developed by Dutch computer scientist
 Edsger W. Dijkstra in 1956.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/dijkstra/new-york"><img alt="path.Dijkstra finding the quickest drive from Manhattan to Brooklyn on a New York street map" src="../.github/images/dijkstra-new-york.gif" width="760"></a>
+  <br>
+  <sub><code>path.Dijkstra</code> finding the quickest drive from Manhattan to Brooklyn on a New York street map. <a href="https://gograph.dev/algorithms/dijkstra/new-york">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 Here's a step-by-step explanation of how Dijkstra's algorithm works:
 
 1. **Initialization:** Start by selecting a source vertex. Set the distance of the source vertex to itself as 0, and the

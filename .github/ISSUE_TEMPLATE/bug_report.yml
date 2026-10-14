@@ -19,7 +19,7 @@ body:
     attributes:
       label: Go version
       description: Output of `go version`.
-      placeholder: go version go1.24.2 linux/amd64
+      placeholder: go version go1.26.0 linux/amd64
     validations:
       required: true
   - type: textarea

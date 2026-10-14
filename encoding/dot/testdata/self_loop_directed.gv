@@ -1,0 +1,6 @@
+digraph {
+	n0 [label="A"];
+	n1 [label="B"];
+	n0 -> n0;
+	n0 -> n1;
+}

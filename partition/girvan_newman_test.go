@@ -215,8 +215,8 @@ func TestGirvanNewman_KeepsWeights(t *testing.T) {
 	a := g.AddVertexByLabel("A", gograph.WithVertexWeight(1.5))
 	b := g.AddVertexByLabel("B", gograph.WithVertexWeight(2.5))
 	c := g.AddVertexByLabel("C", gograph.WithVertexWeight(3.5))
-	_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(4))
-	_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(4), gograph.WithEdgeLabel("A-B"))
+	_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(5), gograph.WithEdgeLabel("B-C"))
 
 	communities, err := GirvanNewman(g, 2)
 	if err != nil {
@@ -238,9 +238,15 @@ func TestGirvanNewman_KeepsWeights(t *testing.T) {
 		}
 		for _, e := range community.AllEdges() {
 			edges++
-			want := g.GetEdge(g.GetVertexByID(e.Source().Label()), g.GetVertexByID(e.Destination().Label())).Weight()
-			if e.Weight() != want {
-				t.Errorf("edge %s-%s: expected weight %v, got %v", e.Source().Label(), e.Destination().Label(), want, e.Weight())
+			original := g.GetEdge(
+				g.GetVertexByID(e.Source().Label()),
+				g.GetVertexByID(e.Destination().Label()),
+			)
+			if e.Weight() != original.Weight() {
+				t.Errorf("edge %s-%s: expected weight %v, got %v", e.Source().Label(), e.Destination().Label(), original.Weight(), e.Weight())
+			}
+			if e.Label() != original.Label() {
+				t.Errorf("edge %s-%s: expected label %q, got %q", e.Source().Label(), e.Destination().Label(), original.Label(), e.Label())
 			}
 		}
 	}

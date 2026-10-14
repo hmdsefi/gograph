@@ -8,6 +8,12 @@ The Bellman-Ford algorithm is a graph algorithm used to find the shortest path f
 vertices in a weighted graph, even in the presence of negative weight edges (as long as there are no negative weight
 cycles). It was developed by Richard Bellman and Lester Ford Jr.
 
+<p align="center">
+  <a href="https://gograph.dev/algorithms/bellman-ford/school-run"><img alt="path.BellmanFord finding the shortest distance from home to every stop on a school run" src="../.github/images/bellman-ford-school-run.gif" width="760"></a>
+  <br>
+  <sub><code>path.BellmanFord</code> finding the shortest distance from home to every stop on a school run. <a href="https://gograph.dev/algorithms/bellman-ford/school-run">Run it step by step on gograph.dev</a>.</sub>
+</p>
+
 Here's a step-by-step explanation of how the Bellman-Ford algorithm works:
 
 1. **Initialization:** Start by setting the distance of the source vertex to itself as 0,

@@ -125,6 +125,7 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 						subgraph.GetVertexByID(e.Source().Label()),
 						subgraph.GetVertexByID(e.Destination().Label()),
 						gograph.WithEdgeWeight(e.Weight()),
+						gograph.WithEdgeLabel(e.Label()),
 					)
 				}
 			}
@@ -148,6 +149,7 @@ func cloneGraph[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
 			vertexMap[e.Source().Label()],
 			vertexMap[e.Destination().Label()],
 			gograph.WithEdgeWeight(e.Weight()),
+			gograph.WithEdgeLabel(e.Label()),
 		)
 	}
 	return clone
