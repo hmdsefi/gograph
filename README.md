@@ -468,9 +468,9 @@ that times the algorithm on that page's example graphs.
 ## Examples
 
 - [gomodgraph](examples/gomodgraph): loads `go mod graph` output and finds requirement
-  cycles, the modules that depend on a module, why a module is needed, what changed
-  between two versions of `go.mod`, and a diagram of a module with its direct
-  dependencies and dependents.
+  cycles, the modules that depend on a module, why a module is needed, which version of
+  each module builds, what changed between two versions of `go.mod`, and a diagram of a
+  module with its direct dependencies and dependents.
 
 ## Stability
 
