@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the module versions by path and marks the one that builds, and `diff -selected`
   compares the version of each module that builds, like `go list -m all` on
   both commits. ([#246], [#249])
+- `connectivity.ConnectedComponents` returns the connected components of an
+  undirected graph and the weakly connected components of a directed one.
+  `connectivity.HasCycle` reports whether a graph has a cycle, including a
+  self-loop. ([#111], [#250])
 
 ### Changed
 
@@ -315,3 +319,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#247]: https://github.com/hmdsefi/gograph/pull/247
 [#246]: https://github.com/hmdsefi/gograph/issues/246
 [#249]: https://github.com/hmdsefi/gograph/pull/249
+[#111]: https://github.com/hmdsefi/gograph/issues/111
+[#250]: https://github.com/hmdsefi/gograph/pull/250
