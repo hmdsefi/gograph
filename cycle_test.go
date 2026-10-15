@@ -60,6 +60,26 @@ func TestHasCycleAfterRemovals(t *testing.T) {
 	}
 }
 
+func TestHasCycleOtherGraph(t *testing.T) {
+	graphs := []Graph[int]{
+		graphWithEdges(false, 4, [][2]int{{1, 2}, {2, 3}}),
+		graphWithEdges(false, 4, [][2]int{{1, 2}, {2, 3}, {3, 1}}),
+		graphWithEdges(false, 3, [][2]int{{1, 1}}),
+		graphWithEdges(true, 4, [][2]int{{1, 2}, {2, 3}}),
+		graphWithEdges(true, 4, [][2]int{{1, 2}, {2, 3}, {3, 1}}),
+		graphWithEdges(true, 3, [][2]int{{2, 2}}),
+	}
+	acyclic := New[int](Acyclic())
+	_, _ = acyclic.AddEdge(NewVertex(1), NewVertex(2))
+	graphs = append(graphs, acyclic)
+
+	for i, g := range graphs {
+		if got, want := HasCycle(otherGraph[int]{g}), HasCycle(g); got != want {
+			t.Fatalf("graph %d: HasCycle(wrapper) = %v, want %v", i, got, want)
+		}
+	}
+}
+
 func TestHasCyclePanics(t *testing.T) {
 	for _, g := range []Graph[int]{nil, (*baseGraph[int])(nil)} {
 		func() {

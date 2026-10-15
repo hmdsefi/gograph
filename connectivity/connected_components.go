@@ -12,10 +12,10 @@ import "github.com/hmdsefi/gograph"
 // order from that vertex, following the order the edges were added. In a
 // directed graph, they are in GetAllVertices order.
 //
-// It runs in O(V+E) time, up to the inverse Ackermann factor of union-find
-// for directed graphs, and uses O(V) extra space. It calls
-// gograph.ConnectedComponents, which panics if g is nil or not created by
-// gograph.New.
+// A graph from gograph.New takes O(V+E) time, up to the inverse Ackermann
+// factor of union-find for directed graphs, and uses O(V) extra space. Any
+// other Graph is read through GetAllVertices and EdgesOf. It panics if g is
+// nil.
 func ConnectedComponents[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	return gograph.ConnectedComponents(g)
 }

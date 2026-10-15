@@ -129,6 +129,23 @@ func TestConnectedComponentsStoredVertices(t *testing.T) {
 	}
 }
 
+type otherGraph[T comparable] struct{ Graph[T] }
+
+func TestConnectedComponentsOtherGraph(t *testing.T) {
+	for _, directed := range []bool{false, true} {
+		g := graphWithEdges(directed, 6, [][2]int{{1, 2}, {2, 3}, {4, 5}})
+		got := labelsOf(ConnectedComponents(otherGraph[int]{g}))
+		want := labelsOf(ConnectedComponents(g))
+		for i := range got {
+			slices.Sort(got[i])
+			slices.Sort(want[i])
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("directed=%v: ConnectedComponents(wrapper) = %v, want %v", directed, got, want)
+		}
+	}
+}
+
 func TestConnectedComponentsPanics(t *testing.T) {
 	for _, g := range []Graph[int]{nil, (*baseGraph[int])(nil)} {
 		func() {

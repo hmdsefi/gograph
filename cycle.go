@@ -6,25 +6,77 @@ package gograph
 // cycle needs at least three vertices.
 //
 // A graph created with Acyclic refuses edges that would create a cycle, so it
-// returns false without a search. Other graphs take O(V+E) time and O(V)
-// extra space, and the search stops at the first cycle it finds. It panics if
-// g is nil or not created by New.
+// returns false without a search. A graph from New takes O(V+E) time and O(V)
+// extra space, and the search stops at the first cycle it finds. Any other
+// graph is read through its methods: TopologySort when it is directed, and
+// Neighbors when it is undirected. It panics if g is nil.
 //
 // connectivity.HasCycle calls this.
 func HasCycle[T comparable](g Graph[T]) bool {
 	bg, ok := g.(*baseGraph[T])
-	if !ok || bg == nil {
-		panic("gograph: HasCycle requires a graph from New")
+	if g == nil || (ok && bg == nil) {
+		panic("gograph: HasCycle requires a non-nil graph")
+	}
+	if ok {
+		switch {
+		case bg.properties.isAcyclic:
+			return false
+		case bg.properties.isDirected:
+			return bg.hasDirectedCycle()
+		default:
+			return bg.hasUndirectedCycle()
+		}
+	}
+	return hasCycleByMethods(g)
+}
+
+// hasCycleByMethods checks a graph through TopologySort and Neighbors.
+func hasCycleByMethods[T comparable](g Graph[T]) bool {
+	if g.IsAcyclic() {
+		return false
+	}
+	if g.IsDirected() {
+		_, err := TopologySort(g)
+		return err != nil
 	}
 
-	switch {
-	case bg.properties.isAcyclic:
-		return false
-	case bg.properties.isDirected:
-		return bg.hasDirectedCycle()
-	default:
-		return bg.hasUndirectedCycle()
+	visited := make(map[T]bool)
+	type entry struct {
+		vertex    *Vertex[T]
+		parent    T
+		hasParent bool
 	}
+
+	for _, root := range g.GetAllVertices() {
+		if visited[root.Label()] {
+			continue
+		}
+
+		visited[root.Label()] = true
+		stack := []entry{{vertex: root}}
+		for len(stack) > 0 {
+			current := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+
+			for _, neighbor := range current.vertex.Neighbors() {
+				label := neighbor.Label()
+				if !visited[label] {
+					visited[label] = true
+					stack = append(stack, entry{
+						vertex:    neighbor,
+						parent:    current.vertex.Label(),
+						hasParent: true,
+					})
+					continue
+				}
+				if !current.hasParent || label != current.parent {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // hasDirectedCycle runs a depth-first search over the neighbor lists stored

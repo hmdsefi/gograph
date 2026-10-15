@@ -11,21 +11,62 @@ package gograph
 // directed graph, they are in GetAllVertices order. The components share one
 // backing array, but appending to one doesn't change the others.
 //
-// Undirected graphs take O(V+E) time. Directed graphs take O((V+E)·α(V))
+// A graph from New is read from the neighbor lists stored on its vertices.
+// An undirected one takes O(V+E) time. A directed one takes O((V+E)·α(V))
 // time, where α is the inverse Ackermann function, which is below 5 for any
-// graph that fits in memory. Both use O(V) extra space. It panics if g is nil
-// or not created by New.
+// graph that fits in memory. Both use O(V) extra space. Any other Graph is
+// read through GetAllVertices and EdgesOf. It panics if g is nil.
 //
 // connectivity.ConnectedComponents calls this.
 func ConnectedComponents[T comparable](g Graph[T]) [][]*Vertex[T] {
 	bg, ok := g.(*baseGraph[T])
-	if !ok || bg == nil {
-		panic("gograph: ConnectedComponents requires a graph from New")
+	if g == nil || (ok && bg == nil) {
+		panic("gograph: ConnectedComponents requires a non-nil graph")
 	}
-	if bg.properties.isDirected {
-		return bg.weakComponents()
+	if ok {
+		if bg.properties.isDirected {
+			return bg.weakComponents()
+		}
+		return bg.components()
 	}
-	return bg.components()
+	return componentsByEdges(g)
+}
+
+// componentsByEdges searches through EdgesOf. EdgesOf walks every vertex,
+// so this is O(V²).
+func componentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
+	visited := make(map[*Vertex[T]]bool)
+	components := make([][]*Vertex[T], 0)
+
+	for _, root := range g.GetAllVertices() {
+		if visited[root] {
+			continue
+		}
+
+		visited[root] = true
+		queue := []*Vertex[T]{root}
+		component := make([]*Vertex[T], 0)
+
+		for len(queue) > 0 {
+			vertex := queue[0]
+			queue = queue[1:]
+			component = append(component, vertex)
+
+			for _, edge := range g.EdgesOf(vertex) {
+				neighbor := edge.OtherVertex(vertex.Label())
+				if neighbor == nil || visited[neighbor] {
+					continue
+				}
+
+				visited[neighbor] = true
+				queue = append(queue, neighbor)
+			}
+		}
+
+		components = append(components, component)
+	}
+
+	return components
 }
 
 // components runs a breadth-first search over the neighbor lists stored on
