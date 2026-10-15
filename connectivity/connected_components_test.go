@@ -48,6 +48,20 @@ func TestConnectedComponents_DirectedAreWeak(t *testing.T) {
 	}
 }
 
+type wrappedGraph[T comparable] struct{ gograph.Graph[T] }
+
+func TestConnectedComponents_WrappedGraph(t *testing.T) {
+	g := gograph.New[int]()
+	for i := 1; i <= 4; i++ {
+		g.AddVertexByLabel(i)
+	}
+	_, _ = g.AddEdge(g.GetVertexByID(1), g.GetVertexByID(2))
+
+	if got, want := componentLabels(ConnectedComponents(wrappedGraph[int]{g})), componentLabels(ConnectedComponents(g)); !reflect.DeepEqual(got, want) {
+		t.Fatalf("ConnectedComponents(wrapper) = %v, want %v", got, want)
+	}
+}
+
 func TestConnectedComponents_Empty(t *testing.T) {
 	if got := ConnectedComponents(gograph.New[int]()); len(got) != 0 {
 		t.Fatalf("ConnectedComponents() = %v, want no components", got)

@@ -64,6 +64,16 @@ func TestHasCycle_Undirected(t *testing.T) {
 	}
 }
 
+func TestHasCycle_WrappedGraph(t *testing.T) {
+	g := gograph.New[int]()
+	_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
+	_, _ = g.AddEdge(g.GetVertexByID(2), gograph.NewVertex(3))
+	_, _ = g.AddEdge(g.GetVertexByID(3), g.GetVertexByID(1))
+	if !HasCycle(wrappedGraph[int]{g}) {
+		t.Fatal("HasCycle(wrapper) = false, want true")
+	}
+}
+
 func TestHasCycle_AcyclicGraph(t *testing.T) {
 	g := gograph.New[int](gograph.Acyclic())
 	_, _ = g.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))

@@ -31,6 +31,8 @@ A name with no package is in package `gograph`. An empty example means [gograph.
 | Start a task when its own dependencies are done | `dag.NewTracker` | `Ready` lists what can start, `Done` marks it finished, and `Remaining` counts what is left. One goroutine calls them. `dag.Levels` waits for a whole level. | |
 | The longest chain of dependent tasks | `dag.CriticalPath` | The cost is the stored vertex and edge weights, and an unset weight is 0. Costs kept outside the graph use `dag.CriticalPathFunc`. | |
 | The longest chain when the costs are not stored on the graph | `dag.CriticalPathFunc` | A nil cost function means 0. Stored weights use `dag.CriticalPath`. | |
+| The pieces of an undirected graph, or of a directed graph when direction does not matter | `connectivity.ConnectedComponents` | Edge direction is ignored. Groups that can all reach each other are `connectivity.Tarjan`. | |
+| Whether the graph has a cycle | `connectivity.HasCycle` | A self-loop counts. A graph made with `Acyclic()` has none. The order of a graph with no cycles is `TopologySort`. | |
 | Groups of vertices that can all reach each other | `connectivity.Tarjan` | One depth-first search. `connectivity.Kosaraju` and `connectivity.Gabow` find the same groups. | https://gograph.dev/algorithms/tarjan/service-calls |
 | The same groups, with a second search on the reversed edges | `connectivity.Kosaraju` | Two searches. `connectivity.Tarjan` does the same job in one search. | https://gograph.dev/algorithms/kosaraju/service-calls |
 | The same groups, with two stacks and one search | `connectivity.Gabow` | No low-link numbers. `connectivity.Tarjan` is the usual call. | https://gograph.dev/algorithms/gabow/service-calls |
