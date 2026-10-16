@@ -7,30 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-19
+
 ### Added
 
 - `WithEdgeLabel` and `Edge.Label()` to give an edge a short label, such as
   "imports" or "calls". The Mermaid and DOT output show it by default, and
   `TransitiveReduction` and `GirvanNewman` keep it. ([#191], [#217])
+- `InducedSubgraph` returns a new graph with the given vertices and every edge
+  between them. It has the same directed, weighted and acyclic properties as
+  the input, and copies the weights, edge labels and metadata. ([#118], [#234])
+- `Edge.InsertionIndex()` reports the order in which an edge was added to its
+  graph. ([#233])
+- `dag.Levels` groups the vertices of a DAG so that every edge goes from a lower
+  level to a higher one, and the vertices of one level can run at the same time.
+  `dag.Tracker` hands out each vertex as soon as every vertex it depends on is
+  done, so a slow vertex only holds up the ones that depend on it. `Done`
+  returns `dag.ErrNotReady` or `dag.ErrAlreadyDone` for a vertex it can't mark
+  done. ([#120], [#181])
 - `dag.CriticalPath` and `dag.CriticalPathFunc` to find the most expensive chain
   of dependent vertices, such as the steps that set how long a build takes. The
   path runs from a vertex with no incoming edges to one with no outgoing edges,
   and its cost is the sum of the vertex and edge weights. ([#121], [#228])
 - `dag.Sources` and `dag.Sinks` to find the vertices with no incoming edges and
   no outgoing edges, in `GetAllVertices()` order. ([#116], [#247])
+- `connectivity.Condense` replaces each strongly connected component with one
+  vertex and returns the resulting DAG, with the components numbered in
+  topological order, the members of each one, and the component of each
+  vertex. `WithComponentWeight` and `WithCrossingWeight` set the weights of the
+  new vertices and edges. ([#128], [#183])
+- `connectivity.ConnectedComponents` returns the connected components of an
+  undirected graph and the weakly connected components of a directed one.
+  `connectivity.HasCycle` reports whether a graph has a cycle, including a
+  self-loop. Both call `gograph.ConnectedComponents` and `gograph.HasCycle`,
+  which read the neighbor lists stored on the vertices. ([#111], [#250], [#252])
+- `path.DijkstraMultiSource` finds the nearest of several sources for every
+  vertex in one search, which costs the same as Dijkstra from a single start.
+  `NearestSources` gives the distance, the source and the path for each vertex.
+  ([#218], [#233])
+- `path.KCenter` chooses k centers so that the vertex farthest from its nearest
+  center is as close to one as it can make it, and can start from centers that
+  are already open. On an undirected graph the radius is at most twice the
+  smallest possible. It returns `path.ErrInvalidK` for a k that's too small and
+  `path.ErrNegativeWeight` for a negative edge weight, which
+  `DijkstraMultiSource` returns too. ([#219], [#232])
+- The `encoding/dot` package writes a graph in the DOT language of Graphviz,
+  with options for the graph name and the graph, vertex and edge attributes. A
+  graph built the same way gives the same text on every run. ([#123], [#182])
+- `mermaid` in `examples/gomodgraph` draws a module with the modules it requires
+  directly and the modules that require it directly. ([#127], [#237])
 - `versions` and `diff -selected` in `examples/gomodgraph`. `versions` groups
   the module versions by path and marks the one that builds, and `diff -selected`
   compares the version of each module that builds, like `go list -m all` on
   both commits. ([#246], [#249])
-- `connectivity.ConnectedComponents` returns the connected components of an
-  undirected graph and the weakly connected components of a directed one.
-  `connectivity.HasCycle` reports whether a graph has a cycle, including a
-  self-loop. ([#111], [#250])
+- `.agents/skills/gograph/SKILL.md`, a skill that picks the gograph function for
+  a graph question and names the constraint that makes a nearby function the
+  wrong one. ([#220], [#238])
 
 ### Changed
 
 - Raise the minimum Go version to 1.26 and update golangci-lint to v2.14.0.
   Projects using an older local toolchain can stay on v0.8.x. ([#177], [#216])
+- The directed graph example in the README added an edge from 2 to 2, where the
+  diagram shows an edge from 2 to 4. The README and `ExampleNew_directed` now
+  add the edge from 2 to 4, and the example prints every edge. ([#230])
 
 ## [0.8.2] - 2026-10-02
 
@@ -241,7 +281,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/hmdsefi/gograph/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/hmdsefi/gograph/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/hmdsefi/gograph/compare/v0.7.2...v0.8.0
@@ -319,5 +360,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#247]: https://github.com/hmdsefi/gograph/pull/247
 [#246]: https://github.com/hmdsefi/gograph/issues/246
 [#249]: https://github.com/hmdsefi/gograph/pull/249
+[#118]: https://github.com/hmdsefi/gograph/issues/118
+[#120]: https://github.com/hmdsefi/gograph/issues/120
+[#123]: https://github.com/hmdsefi/gograph/issues/123
+[#128]: https://github.com/hmdsefi/gograph/issues/128
+[#218]: https://github.com/hmdsefi/gograph/issues/218
+[#219]: https://github.com/hmdsefi/gograph/issues/219
+[#220]: https://github.com/hmdsefi/gograph/issues/220
+[#181]: https://github.com/hmdsefi/gograph/pull/181
+[#182]: https://github.com/hmdsefi/gograph/pull/182
+[#183]: https://github.com/hmdsefi/gograph/pull/183
+[#230]: https://github.com/hmdsefi/gograph/pull/230
+[#232]: https://github.com/hmdsefi/gograph/pull/232
+[#233]: https://github.com/hmdsefi/gograph/pull/233
+[#234]: https://github.com/hmdsefi/gograph/pull/234
+[#237]: https://github.com/hmdsefi/gograph/pull/237
+[#238]: https://github.com/hmdsefi/gograph/pull/238
+[#252]: https://github.com/hmdsefi/gograph/pull/252
 [#111]: https://github.com/hmdsefi/gograph/issues/111
 [#250]: https://github.com/hmdsefi/gograph/pull/250
