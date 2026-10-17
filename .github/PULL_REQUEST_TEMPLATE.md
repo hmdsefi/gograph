@@ -10,6 +10,7 @@ Fixes #
 
 ## Checklist
 
+- [ ] The base branch matches the issue's milestone: `master` for the next release, `release/vX.Y.Z` for a later one
 - [ ] `go test -race ./...` passes
 - [ ] `golangci-lint run ./...` passes
 - [ ] New or changed behavior has tests
