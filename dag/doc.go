@@ -56,14 +56,22 @@
 // In the example above, Sources(g) returns checkout, and Sinks(g) returns test
 // and lint.
 //
+// # Heaviest branch
+//
+// HeaviestBranch walks a tree from its root to a leaf, following at each
+// vertex the child whose subtree has the greatest total weight. Fork choice
+// rules such as GHOST pick the head of a chain of blocks this way. It returns
+// ErrNotTree if the graph is not a tree rooted at the given vertex.
+//
 // # Behavior
 //
 // Descendants, Ancestors, Affected, Sources and Sinks work on any directed
-// graph, including graphs with cycles. Levels, NewTracker and CriticalPath
-// return gograph.ErrDAGHasCycle for a graph with a cycle, since its vertices
-// can't run in dependency order. All functions return gograph.ErrNotDirected
-// for undirected graphs, and an error that matches
-// gograph.ErrVertexDoesNotExist with errors.Is if a label is not in the graph.
+// graph, including graphs with cycles. Levels, NewTracker, CriticalPath and
+// HeaviestBranch return gograph.ErrDAGHasCycle for a graph with a cycle,
+// since its vertices can't run in dependency order. All functions return
+// gograph.ErrNotDirected for undirected graphs, and an error that matches
+// gograph.ErrVertexDoesNotExist with errors.Is if a label is not in the
+// graph.
 //
 // Sources and Sinks follow the order of GetAllVertices. Vertices on a cycle
 // are never sources or sinks, a self-loop counts as an incoming and an
