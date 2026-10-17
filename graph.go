@@ -54,8 +54,8 @@ type Graph[T comparable] interface {
 	// AllEdges returns all the edges in the graph. The edges are grouped by
 	// source vertex in the order of GetAllVertices, and the edges of each
 	// source vertex are in the order they were added. In an undirected
-	// graph, each edge is stored in both directions, so it appears in the
-	// group of both its vertices.
+	// graph, an edge between distinct vertices is stored in both directions,
+	// so it appears in the group of both its vertices. A self-loop is stored once.
 	AllEdges() []*Edge[T]
 
 	// GetEdge returns an edge connecting source vertex to target vertex
@@ -70,6 +70,9 @@ type Graph[T comparable] interface {
 
 	// EdgesOf returns a slice of all edges touching the specified vertex.
 	// If no edges are touching the specified vertex returns an empty slice.
+	//
+	// An undirected edge between distinct vertices appears in both directions.
+	// Use v.OutDegree() for the number of neighbors in an undirected graph.
 	//
 	// The edges that start from the vertex come first, in the order they
 	// were added. The edges that end at the vertex follow, in the order of
@@ -135,7 +138,8 @@ type Graph[T comparable] interface {
 	// Order returns the number of vertices in the graph.
 	Order() uint32
 
-	// Size returns the number of edges in the graph
+	// Size returns the number of stored edges in the graph. An undirected edge
+	// between distinct vertices is stored in both directions and counts twice.
 	Size() uint32
 }
 
@@ -271,7 +275,8 @@ func (v *Vertex[T]) OutDegree() int {
 }
 
 // Degree returns the total degree of the vertex which is the sum of
-// in and out degrees.
+// in and out degrees. In an undirected graph this counts incoming and outgoing
+// edges separately; use OutDegree for the number of neighbors.
 func (v *Vertex[T]) Degree() int {
 	return v.inDegree + v.OutDegree()
 }
