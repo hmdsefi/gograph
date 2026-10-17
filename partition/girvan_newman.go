@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/hmdsefi/gograph"
+	"github.com/hmdsefi/gograph/connectivity"
 )
 
 // GirvanNewman implements the Girvan-Newman community detection algorithm for
@@ -77,7 +78,7 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 		working = gograph.Clone(g)
 	}
 
-	components := getConnectedComponents(working)
+	components := connectivity.ConnectedComponents(working)
 	for (k > 0 && len(components) < k) || (k <= 0 && working.Size() > 0) {
 		// Compute edge betweenness
 		betweenness := calculateEdgeBetweenness(working)
@@ -104,7 +105,7 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 
 		working.RemoveEdges(edgeToRemove)
 
-		components = getConnectedComponents(working)
+		components = connectivity.ConnectedComponents(working)
 		if k > 0 && len(components) >= k {
 			break
 		}
@@ -161,36 +162,6 @@ func undirectedCopy[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
 		)
 	}
 	return clone
-}
-
-// getConnectedComponents returns slices of vertices representing each connected component (non-recursive)
-func getConnectedComponents[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
-	visited := make(map[*gograph.Vertex[T]]bool)
-	var components [][]*gograph.Vertex[T]
-	var queue []*gograph.Vertex[T]
-
-	for _, v := range g.GetAllVertices() {
-		if !visited[v] {
-			var comp []*gograph.Vertex[T]
-			queue = append(queue, v)
-			visited[v] = true
-			for len(queue) > 0 {
-				curr := queue[0]
-				queue = queue[1:]
-				comp = append(comp, curr)
-				for _, e := range g.EdgesOf(curr) {
-					neighbor := e.OtherVertex(curr.Label())
-					if neighbor != nil && !visited[neighbor] {
-						visited[neighbor] = true
-						queue = append(queue, neighbor)
-					}
-				}
-			}
-			components = append(components, comp)
-		}
-	}
-
-	return components
 }
 
 // calculateEdgeBetweenness computes edge betweenness centrality using Brandes' algorithm

@@ -45,7 +45,7 @@ strongly connected components and graph partitioning.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
 - **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators.
 - **Shortest paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
-- **Connectivity:** strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
+- **Connectivity:** connected components and cycle detection, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 - **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
@@ -384,6 +384,8 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
+| `ConnectedComponents` | Connected components. A directed graph is treated as undirected | O(V+E) | |
+| `HasCycle` | Whether the graph has a cycle, including a self-loop | O(V+E) | |
 | `Tarjan` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/tarjan/service-calls) |
 | `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
 | `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
@@ -468,9 +470,9 @@ that times the algorithm on that page's example graphs.
 ## Examples
 
 - [gomodgraph](examples/gomodgraph): loads `go mod graph` output and finds requirement
-  cycles, the modules that depend on a module, why a module is needed, what changed
-  between two versions of `go.mod`, and a diagram of a module with its direct
-  dependencies and dependents.
+  cycles, the modules that depend on a module, why a module is needed, which version of
+  each module builds, what changed between two versions of `go.mod`, and a diagram of a
+  module with its direct dependencies and dependents.
 
 ## Stability
 
