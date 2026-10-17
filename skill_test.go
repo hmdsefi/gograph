@@ -81,6 +81,7 @@ var skillCalls = []string{
 	"StableTopologySort",
 	"traverse.NewTopologicalIterator",
 	"InducedSubgraph",
+	"Clone",
 	"path.Dijkstra",
 	"path.DijkstraSimple",
 	"path.BellmanFord",
