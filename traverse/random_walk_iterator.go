@@ -17,9 +17,9 @@ import (
 // moves to it, and the process is repeated until a stopping condition
 // is met.
 //
-// In an unweighted graph, each neighboring node has an equal chance of
-// being chosen as the next node to visit during the traversal. However,
-// in a weighted graph, the probability of choosing a particular neighbor
+// Without gograph.Weighted(), each neighboring node has an equal chance of
+// being chosen, regardless of stored edge weights. With gograph.Weighted(),
+// the probability of choosing a particular neighbor
 // as the next node to visit is proportional to the weight of the edge
 // connecting the current node and the neighbor. This means that nodes
 // connected by heavier edges are more likely to be visited during the
@@ -41,7 +41,8 @@ type randomWalkIterator[T comparable] struct {
 // maximum number of vertices returned, including the start vertex, so a
 // walk with five steps moves at most four times.
 //
-// In a weighted graph, each step picks a neighbor with a probability
+// Without gograph.Weighted(), each neighbor has an equal chance of being picked.
+// With gograph.Weighted(), each step picks a neighbor with a probability
 // proportional to the weight of the edge to it. Edges with a weight of
 // zero or less are never picked, unless none of the edges of the current
 // vertex has a positive weight. Then each of them has an equal chance. An

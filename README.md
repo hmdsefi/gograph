@@ -126,37 +126,6 @@ func main() {
 ```
 
 
-## Edge counts and path contracts
-
-An undirected edge between distinct vertices is stored in both directions.
-For two undirected edges `A - B` and `A - C`:
-
-| Call | Result |
-| --- | --- |
-| `g.Size()` / `len(g.AllEdges())` | 4 |
-| `a.Degree()` | 4 |
-| `a.InDegree()` / `a.OutDegree()` | 2 |
-| `len(g.EdgesOf(a))` | 4 |
-| `len(g.GetAllEdges(a, b))` | 2 |
-
-Use `OutDegree()` to count neighbors in an undirected graph. A self-loop has the
-same source and destination, so it has only one stored direction.
-
-`Weighted()` is a graph flag, separate from the weights supplied with
-`WithEdgeWeight`. Dijkstra uses those weights even without the flag.
-Bellman-Ford and Floyd-Warshall require `Weighted()` or return `ErrNotWeighted`;
-the random walk uses edge weights only when that flag is set.
-
-| Shortest-path algorithm | Unreachable distance | Weight requirement |
-| --- | --- | --- |
-| `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
-| `path.BellmanFord` | `math.Inf(1)` | `Weighted()`; negative weights allowed, reachable negative cycles rejected |
-| `path.FloydWarshall` | `math.Inf(1)` | `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
-
-These are the current behaviors, not conversions between the sentinel values.
-Check the sentinel for the algorithm you called before treating a distance as a
-reachable route.
-
 ## Use cases
 
 - **Build and CI pipelines:** order the steps with `TopologySort`, run independent
@@ -184,7 +153,10 @@ of graph:
 
 - `gograph.Directed()` creates a directed graph. Without it, graphs are undirected.
 - `gograph.Acyclic()` creates a directed graph that rejects edges that would create a cycle.
-- `gograph.Weighted()` marks the graph as weighted. `BellmanFord` and `FloydWarshall` require it.
+- `gograph.Weighted()` marks the graph as weighted. This flag is separate from weights
+  supplied with `WithEdgeWeight`: Dijkstra uses those weights even without it.
+  `BellmanFord` and `FloydWarshall` require the flag or return `ErrNotWeighted`;
+  random walks use edge weights only when the flag is set.
 
 Every graph implements the `Graph[T]` interface. See the
 [package documentation](https://pkg.go.dev/github.com/hmdsefi/gograph#Graph) for the full list
@@ -278,6 +250,20 @@ _, _ = g.AddEdge(b, d)
 // Every undirected edge can be followed both ways.
 fmt.Println(g.ContainsEdge(a, b), g.ContainsEdge(b, a)) // true true
 ```
+
+An undirected edge between distinct vertices is stored in both directions.
+For two undirected edges `A - B` and `A - C`:
+
+| Call | Result |
+| --- | --- |
+| `g.Size()` / `len(g.AllEdges())` | 4 |
+| `a.Degree()` | 4 |
+| `a.InDegree()` / `a.OutDegree()` | 2 |
+| `len(g.EdgesOf(a))` | 4 |
+| `len(g.GetAllEdges(a, b))` | 2 |
+
+Use `OutDegree()` to count neighbors in an undirected graph. A self-loop has the
+same source and destination, so it has only one stored direction.
 
 ### Weighted
 
@@ -400,6 +386,12 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `CriticalPath` | The most expensive chain of dependent vertices | O(V+E) | |
 
 **Shortest paths** (`path` package)
+
+| Shortest-path algorithm | Unreachable distance | Weight requirement |
+| --- | --- | --- |
+| `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
+| `path.BellmanFord` | `math.Inf(1)` | `Weighted()`; negative weights allowed, reachable negative cycles rejected |
+| `path.FloydWarshall` | `math.Inf(1)` | `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
