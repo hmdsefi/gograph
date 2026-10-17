@@ -68,6 +68,10 @@ practice:
 
 ## Pull requests
 
+- Open the pull request against the branch for your issue's milestone. Work for the
+  next release goes to `master`. A later milestone has its own branch, such as
+  `release/v0.12.0` for v0.12.0, and its description names the branch. If that branch
+  doesn't exist yet, open the pull request against `master` and we'll move it.
 - Keep each pull request to one change. Several small pull requests are easier to
   review than one large one.
 - Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) in the
