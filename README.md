@@ -355,6 +355,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `TopologySort` | An order where every edge points forward (Kahn's algorithm) | O(V+E) | [watch](https://gograph.dev/algorithms/topological-sort/build-pipeline) |
 | `StableTopologySort` | The same, picking the smallest ready vertex by your compare function | O((V+E) log V) | [watch](https://gograph.dev/algorithms/stable-topological-sort/build-pipeline) |
 | `InducedSubgraph` | A chosen set of vertices and the edges between them | O(k+D) for k labels with D outgoing edges | |
+| `Clone` | A copy of the graph you can change without changing the original | O(V+E) | |
 
 **Dependencies** (`dag` package)
 
