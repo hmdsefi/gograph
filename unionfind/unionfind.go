@@ -108,19 +108,43 @@ func (s *Sets[T]) Connected(a, b T) bool {
 
 // Groups returns the members of each group. Members are in the order they
 // were first added, and groups are ordered by their first member. An empty
-// collection returns an empty slice. It runs in O(n) time for n labels.
+// collection returns an empty slice. The groups share one array, so a group
+// that is still referenced keeps the members of every group alive. It runs
+// in O(n) time for n labels.
 func (s *Sets[T]) Groups() [][]T {
-	groups := [][]T{}
-	position := make(map[int]int)
-	for i, label := range s.labels {
-		r := s.root(i)
-		p, ok := position[r]
-		if !ok {
-			p = len(groups)
-			position[r] = p
-			groups = append(groups, nil)
+	k := 0
+	for i, p := range s.parent {
+		if p == i {
+			k++
 		}
-		groups[p] = append(groups[p], label)
+	}
+	groups := make([][]T, k)
+	if k == 0 {
+		return groups
+	}
+
+	id := make([]int, len(s.labels))
+	size := make([]int, k)
+	next := 0
+	for i := range s.labels {
+		r := s.root(i)
+		if id[r] == 0 {
+			next++
+			id[r] = next
+		}
+		size[id[r]-1]++
+	}
+
+	members := make([]T, len(s.labels))
+	start := 0
+	for g, n := range size {
+		groups[g] = members[start : start : start+n]
+		start += n
+	}
+	// Every label points straight at its root after the loop above.
+	for i, label := range s.labels {
+		g := id[s.parent[i]] - 1
+		groups[g] = append(groups[g], label)
 	}
 	return groups
 }

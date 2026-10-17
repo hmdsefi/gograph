@@ -139,6 +139,15 @@ func TestAdd(t *testing.T) {
 	}
 }
 
+func TestGroupsAppend(t *testing.T) {
+	s := twoGroups()
+	groups := s.Groups()
+	_ = append(groups[0], "x")
+	if want := []string{"c", "d", "f"}; !reflect.DeepEqual(groups[1], want) {
+		t.Fatalf("groups[1] = %v after appending to groups[0], want %v", groups[1], want)
+	}
+}
+
 func TestEmpty(t *testing.T) {
 	s := New[string]()
 	if got := s.Groups(); got == nil || len(got) != 0 {
@@ -156,7 +165,10 @@ func TestDeterministic(t *testing.T) {
 		s.Union("f", "e")
 		var reps []string
 		for _, x := range []string{"a", "b", "c", "d", "e", "f"} {
-			r, _ := s.Find(x)
+			r, ok := s.Find(x)
+			if !ok || r == "" {
+				t.Fatalf("Find(%q) = %q, %v, want a non-empty representative", x, r, ok)
+			}
 			reps = append(reps, r)
 		}
 		return s.Groups(), reps
