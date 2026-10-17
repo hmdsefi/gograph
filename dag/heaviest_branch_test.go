@@ -157,6 +157,11 @@ func TestHeaviestBranchErrors(t *testing.T) {
 			"r", ErrNotTree,
 		},
 		{"cycle", cycle, "r", gograph.ErrDAGHasCycle},
+		{
+			"cycle the root can't reach",
+			buildTree([]string{"r", "a", "b"}, tEdge{"a", "b"}, tEdge{"b", "a"}),
+			"r", gograph.ErrDAGHasCycle,
+		},
 		{"self-loop", selfLoop, "r", gograph.ErrDAGHasCycle},
 	}
 

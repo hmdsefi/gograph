@@ -54,37 +54,50 @@ func HeaviestBranch[T comparable](
 	}
 
 	vertices := g.GetAllVertices()
+	for _, v := range vertices {
+		want := 1
+		if v.Label() == root {
+			want = 0
+		}
+		if v.InDegree() != want {
+			if _, err := gograph.TopologySort(g); err != nil {
+				return nil, err
+			}
+			return nil, ErrNotTree
+		}
+	}
+
 	index := make(map[T]int, len(vertices))
 	for i, v := range vertices {
 		index[v.Label()] = i
 	}
 	rootIdx := index[root]
-
-	out := make([][]int, len(vertices))
 	parent := make([]int, len(vertices))
-	for i := range parent {
-		parent[i] = -1
-	}
+	parent[rootIdx] = -1
 	for _, e := range g.AllEdges() {
-		from, to := index[e.Source().Label()], index[e.Destination().Label()]
-		out[from] = append(out[from], to)
-		parent[to] = from
+		parent[index[e.Destination().Label()]] = index[e.Source().Label()]
 	}
 
-	// Kahn's algorithm over the whole graph, to report a cycle anywhere.
-	waiting := make([]int, len(vertices))
+	// Subtree weights, leaves first: a vertex is summed once all of its
+	// children are. Every vertex but root has one parent, so a vertex that is
+	// never summed is on a cycle or below one.
+	subtree := make([]float64, len(vertices))
+	pending := make([]int, len(vertices))
 	queue := make([]int, 0, len(vertices))
 	for i, v := range vertices {
-		waiting[i] = v.InDegree()
-		if waiting[i] == 0 {
+		subtree[i] = weight(v)
+		pending[i] = v.OutDegree()
+		if pending[i] == 0 {
 			queue = append(queue, i)
 		}
 	}
-	for i := 0; i < len(queue); i++ {
-		for _, to := range out[queue[i]] {
-			waiting[to]--
-			if waiting[to] == 0 {
-				queue = append(queue, to)
+	for k := 0; k < len(queue); k++ {
+		i := queue[k]
+		if p := parent[i]; p >= 0 {
+			subtree[p] += subtree[i]
+			pending[p]--
+			if pending[p] == 0 {
+				queue = append(queue, p)
 			}
 		}
 	}
@@ -92,50 +105,25 @@ func HeaviestBranch[T comparable](
 		return nil, gograph.ErrDAGHasCycle
 	}
 
-	// In an acyclic graph where root is the only vertex without a parent and
-	// every other vertex has exactly one, following the parents from any
-	// vertex ends at root, so every vertex is reachable from it.
-	for i, v := range vertices {
-		want := 1
-		if i == rootIdx {
-			want = 0
-		}
-		if v.InDegree() != want {
-			return nil, ErrNotTree
+	// pending is all zeros now, so it can hold the best child of each vertex.
+	// Going in GetAllVertices order keeps the earlier child on a tie.
+	best := pending
+	for i := range best {
+		best[i] = -1
+	}
+	for i, p := range parent {
+		if p >= 0 && (best[p] == -1 || subtree[i] > subtree[best[p]]) {
+			best[p] = i
 		}
 	}
 
-	// Children in GetAllVertices order, which is the tie-break order.
-	children := make([][]int, len(vertices))
-	for i := range vertices {
-		if i != rootIdx {
-			children[parent[i]] = append(children[parent[i]], i)
-		}
+	n := 1
+	for at := best[rootIdx]; at != -1; at = best[at] {
+		n++
 	}
-
-	// Subtree weights, children before parents: reverse topological order.
-	subtree := make([]float64, len(vertices))
-	for _, i := range queue {
-		subtree[i] = weight(vertices[i])
-	}
-	for k := len(queue) - 1; k >= 0; k-- {
-		i := queue[k]
-		if i != rootIdx {
-			subtree[parent[i]] += subtree[i]
-		}
-	}
-
-	path := []*gograph.Vertex[T]{vertices[rootIdx]}
-	for at := rootIdx; len(children[at]) > 0; {
-		best := children[at][0]
-		for _, c := range children[at][1:] {
-			if subtree[c] > subtree[best] {
-				best = c
-			}
-		}
-		at = best
+	path := make([]*gograph.Vertex[T], 0, n)
+	for at := rootIdx; at != -1; at = best[at] {
 		path = append(path, vertices[at])
 	}
-
 	return path, nil
 }
