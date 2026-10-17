@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   original. It keeps the directed, weighted and acyclic properties, the
   weights, edge labels and metadata, and the order of vertices and edges.
   ([#108], [#251])
+- New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
+  as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
+  union by rank and path compression. Groups and their members come back in
+  the order the labels were first added. ([#204])
 
 ### Changed
 
@@ -394,3 +398,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
+[#204]: https://github.com/hmdsefi/gograph/issues/204

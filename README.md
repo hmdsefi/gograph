@@ -400,6 +400,12 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | [`GirvanNewman`](partition/girvan-newman.md) | Communities, by removing the most central edges | O(E·V·(V+E)) | [watch](https://gograph.dev/algorithms/girvan-newman/friend-groups) |
 | [`RandomizedKCut`](partition/k-cut.md) | A split into k groups with few edges between them | O(V·E) per run | [watch](https://gograph.dev/algorithms/randomized-k-cut/friend-groups) |
 
+**Grouping** (`unionfind` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `Sets` | Which labels are in the same group, as pairs are merged (union by rank, path compression) | Nearly O(1) per call, amortized | |
+
 ## Diagrams
 
 `encoding/mermaid` writes a graph as a Mermaid flowchart, which GitHub and GitLab render
