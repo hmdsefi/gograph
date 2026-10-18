@@ -42,10 +42,12 @@ func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Ite
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited or not.
+// to be visited or not. Queued vertices that have been removed from the
+// graph are skipped.
 func (c *closestFirstIterator[T]) HasNext() bool {
 	for c.pq.Len() > 0 {
-		if !c.visited[c.pq.Peek().Vertex().Label()] {
+		v := c.pq.Peek().Vertex()
+		if !c.visited[v.Label()] && c.graph.GetVertexByID(v.Label()) == v {
 			return true
 		}
 
@@ -94,12 +96,14 @@ func (c *closestFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) er
 }
 
 // Reset resets the iterator by setting the initial state of the iterator.
-// There is no guarantee that the reset method works as expected, if
-// the start vertex being removed.
+// If the start vertex has been removed from the graph, the iterator has
+// nothing left to visit.
 func (c *closestFirstIterator[T]) Reset() {
 	c.visited = make(map[T]bool)
 	c.currDist = 0
 
 	c.pq = util.NewVertexPriorityQueue[T]()
-	c.pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(c.start), 0))
+	if v := c.graph.GetVertexByID(c.start); v != nil {
+		c.pq.Push(util.NewVertexWithPriority(v, 0))
+	}
 }

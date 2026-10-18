@@ -37,8 +37,13 @@ func newBreadthFirstIterator[T comparable](g gograph.Graph[T], start T) *breadth
 
 // HasNext returns a boolean indicating whether there are more vertices
 // to be visited in the BFS traversal. It returns true if the head index
-// is in the range of the queue indices.
+// is in the range of the queue indices. Queued vertices that have been
+// removed from the graph are skipped.
 func (d *breadthFirstIterator[T]) HasNext() bool {
+	for d.head < len(d.queue)-1 && d.graph.GetVertexByID(d.queue[d.head+1]) == nil {
+		d.head++
+	}
+
 	return d.head < len(d.queue)-1
 }
 

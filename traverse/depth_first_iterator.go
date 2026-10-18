@@ -35,8 +35,13 @@ func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirs
 
 // HasNext returns a boolean indicating whether there are more vertices
 // to be visited in the DFS traversal. It returns true if the stack is
-// not empty.
+// not empty. Stacked vertices that have been removed from the graph are
+// skipped.
 func (d *depthFirstIterator[T]) HasNext() bool {
+	for len(d.stack) > 0 && d.graph.GetVertexByID(d.stack[len(d.stack)-1]) == nil {
+		d.stack = d.stack[:len(d.stack)-1]
+	}
+
 	return len(d.stack) > 0
 }
 
