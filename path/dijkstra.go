@@ -18,8 +18,9 @@ import (
 // Edge weights are used whether or not the graph has the Weighted option.
 //
 // Edge weights must be non-negative, and this is not checked: a negative weight
-// can give a wrong distance without an error. Use BellmanFord for graphs with
-// negative weights. DijkstraMultiSource, which also takes a single source,
+// can give a wrong distance without an error. For directed graphs created with
+// gograph.Weighted(), use BellmanFord to handle negative weights.
+// DijkstraMultiSource, which also takes a single source,
 // returns ErrNegativeWeight instead.
 func DijkstraSimple[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	dist := make(map[T]float64)
@@ -82,8 +83,9 @@ func newDVertex[T comparable](label T) *dVertex[T] {
 // Edge weights are used whether or not the graph has the Weighted option.
 //
 // Edge weights must be non-negative, and this is not checked: a negative weight
-// can give a wrong distance without an error. Use BellmanFord for graphs with
-// negative weights. DijkstraMultiSource, which also takes a single source,
+// can give a wrong distance without an error. For directed graphs created with
+// gograph.Weighted(), use BellmanFord to handle negative weights.
+// DijkstraMultiSource, which also takes a single source,
 // returns ErrNegativeWeight instead.
 func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	startVertex := g.GetVertexByID(start)
