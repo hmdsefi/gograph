@@ -14,8 +14,10 @@ package gograph
 // A graph from New is read from the neighbor lists stored on its vertices.
 // An undirected one takes O(V+E) time. A directed one takes O((V+E)·α(V))
 // time, where α is the inverse Ackermann function, which is below 5 for any
-// graph that fits in memory. Both use O(V) extra space. Any other Graph is
-// read through GetAllVertices and EdgesOf. It panics if g is nil.
+// graph that fits in memory. Both use O(V) extra space. Other directed Graph
+// implementations are read through GetAllVertices and AllEdges, also in
+// O((V+E)·α(V)) time. Other undirected Graph implementations are read through
+// GetAllVertices and EdgesOf in O(V²) time. It panics if g is nil.
 //
 // connectivity.ConnectedComponents calls this.
 func ConnectedComponents[T comparable](g Graph[T]) [][]*Vertex[T] {
@@ -35,6 +37,10 @@ func ConnectedComponents[T comparable](g Graph[T]) [][]*Vertex[T] {
 // componentsByEdges searches through EdgesOf. EdgesOf walks every vertex,
 // so this is O(V²).
 func componentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
+	if g.IsDirected() {
+		return directedComponentsByEdges(g)
+	}
+
 	visited := make(map[*Vertex[T]]bool)
 	components := make([][]*Vertex[T], 0)
 
@@ -64,6 +70,66 @@ func componentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
 		}
 
 		components = append(components, component)
+	}
+
+	return components
+}
+
+// directedComponentsByEdges joins the endpoints of every edge, ignoring its
+// direction, then groups vertices in GetAllVertices order.
+func directedComponentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
+	vertices := g.GetAllVertices()
+	indices := make(map[*Vertex[T]]int, len(vertices))
+	parent := make([]int, len(vertices))
+	for i, vertex := range vertices {
+		indices[vertex] = i
+		parent[i] = -1
+	}
+
+	for _, edge := range g.AllEdges() {
+		from, fromOK := indices[edge.Source()]
+		to, toOK := indices[edge.Destination()]
+		if !fromOK || !toOK {
+			continue
+		}
+
+		a, b := findRoot(parent, from), findRoot(parent, to)
+		if a == b {
+			continue
+		}
+
+		// Attach the smaller set to the larger one.
+		if parent[a] > parent[b] {
+			a, b = b, a
+		}
+		parent[a] += parent[b]
+		parent[b] = a
+	}
+
+	count := 0
+	for _, p := range parent {
+		if p < 0 {
+			count++
+		}
+	}
+
+	// index is one more than the component of each root, or 0 until the
+	// first vertex of the set is placed.
+	index := make([]int, len(vertices))
+	members := make([]*Vertex[T], len(vertices))
+	components := make([][]*Vertex[T], 0, count)
+	next := 0
+	for i, vertex := range vertices {
+		root := findRoot(parent, i)
+		if index[root] == 0 {
+			size := -parent[root]
+			components = append(components, members[next:next:next+size])
+			next += size
+			index[root] = len(components)
+		}
+
+		c := index[root] - 1
+		components[c] = append(components[c], vertex)
 	}
 
 	return components
