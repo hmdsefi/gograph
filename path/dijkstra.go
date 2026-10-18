@@ -99,7 +99,11 @@ func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	for pq.Len() > 0 {
 		// Extract the vertex with the smallest tentative distance from the heap
 		curr := pq.Pop()
-		visited[curr.Vertex().Label()] = true
+		label := curr.Vertex().Label()
+		if visited[label] {
+			continue
+		}
+		visited[label] = true
 
 		// Update the distances of its neighbors
 		neighbors := curr.Vertex().Neighbors()
