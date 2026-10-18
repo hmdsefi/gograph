@@ -9,9 +9,10 @@ import (
 // of g whose endpoints are both in that set.
 //
 // The result has the same directed, weighted, and acyclic properties as g.
-// Vertex weights, edge weights, edge labels, and metadata are copied. The
-// result does not share vertices or edges with g. Duplicate labels are
-// ignored, and vertex order follows the first occurrence of each label.
+// Vertex weights, edge weights, edge labels, metadata, and edge insertion
+// indexes are copied. The result does not share vertices or edges with g.
+// Duplicate labels are ignored, and vertex order follows the first occurrence
+// of each label.
 // No labels returns an empty graph with the same properties.
 //
 // A label that is not in g returns ErrVertexDoesNotExist wrapped with that
@@ -179,6 +180,7 @@ func putInducedEdge[T comparable](g *baseGraph[T], from, to *Vertex[T], src *Edg
 		dest:   to,
 	}
 	if src != nil {
+		edge.added = src.added
 		edge.properties = src.properties
 		edge.metadata = src.metadata
 	}
@@ -186,4 +188,5 @@ func putInducedEdge[T comparable](g *baseGraph[T], from, to *Vertex[T], src *Edg
 	from.neighbors = append(from.neighbors, to)
 	to.inDegree++
 	g.edges[from.label][to.label] = edge
+	g.nextEdge = max(g.nextEdge, edge.added)
 }
