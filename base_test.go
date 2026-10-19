@@ -1282,8 +1282,8 @@ func TestBaseGraph_AddVertexAfterRemoval(t *testing.T) {
 	if added.OutDegree() != 0 || g.ContainsEdge(added, b) {
 		t.Errorf("A came back with neighbors %v", neighborLabels(added))
 	}
-	if a.OutDegree() != 1 {
-		t.Errorf("the removed vertex lost its neighbors: %v", neighborLabels(a))
+	if a.OutDegree() != 0 {
+		t.Errorf("the removed vertex kept its neighbors: %v", neighborLabels(a))
 	}
 	assertNeighborsInGraph(t, "g", g)
 }
@@ -1351,5 +1351,78 @@ func TestBaseGraph_AddVertexKeepsNewVertex(t *testing.T) {
 	}
 	if edge.Source() != from || edge.Destination() != to {
 		t.Error("the edge doesn't point to the graph's vertices")
+	}
+}
+
+func TestBaseGraph_RemoveVertices_ClearedEdgesAndInDegree(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		t.Run(fmt.Sprintf("directed=%v", directed), func(t *testing.T) {
+			var g Graph[string]
+			if directed {
+				g = New[string](Directed())
+			} else {
+				g = New[string]()
+			}
+
+			a := g.AddVertexByLabel("a")
+			b := g.AddVertexByLabel("b")
+			_, _ = g.AddEdge(a, a)
+			_, _ = g.AddEdge(a, b)
+
+			g.RemoveVertices(a)
+
+			if in := a.InDegree(); in != 0 {
+				t.Errorf("expected in-degree 0, got %d", in)
+			}
+			if out := a.OutDegree(); out != 0 {
+				t.Errorf("expected out-degree 0, got %d", out)
+			}
+			if a.HasNeighbor(b) {
+				t.Errorf("expected HasNeighbor(b) to be false")
+			}
+			if len(a.Neighbors()) != 0 {
+				t.Errorf("expected 0 neighbors, got %d", len(a.Neighbors()))
+			}
+			if g.ContainsEdge(a, b) {
+				t.Errorf("expected ContainsEdge(a, b) to be false")
+			}
+		})
+	}
+}
+
+func TestVertex_NeighborsSnapshotIndependence(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		t.Run(fmt.Sprintf("directed=%v", directed), func(t *testing.T) {
+			var g Graph[string]
+			if directed {
+				g = New[string](Directed())
+			} else {
+				g = New[string]()
+			}
+
+			p := g.AddVertexByLabel("p")
+			q := g.AddVertexByLabel("q")
+			for _, l := range []string{"x", "y", "z"} {
+				_, _ = g.AddEdge(q, g.AddVertexByLabel(l))
+			}
+			_, _ = g.AddEdge(p, q)
+
+			qCopy := p.Neighbors()[0]
+			var before []string
+			for _, n := range qCopy.Neighbors() {
+				before = append(before, n.Label())
+			}
+
+			g.RemoveEdges(g.GetEdge(q, g.GetVertexByID("y")))
+
+			var after []string
+			for _, n := range qCopy.Neighbors() {
+				after = append(after, n.Label())
+			}
+
+			if !reflect.DeepEqual(before, after) {
+				t.Fatalf("snapshot neighbors changed after removing edge: before %v, after %v", before, after)
+			}
+		})
 	}
 }

@@ -430,7 +430,8 @@ func (g *baseGraph[T]) GetAllVertices() []*Vertex[T] {
 }
 
 // RemoveVertices removes all the specified vertices from this graph including
-// all its touching edges if present.
+// all its touching edges if present. A removed vertex reports no neighbors
+// and an in-degree of 0.
 func (g *baseGraph[T]) RemoveVertices(vertices ...*Vertex[T]) {
 	for i := range vertices {
 		g.removeVertex(vertices[i])
@@ -451,7 +452,9 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 
 	if g.IsDirected() {
 		for i := range v.neighbors {
-			v.neighbors[i].inDegree--
+			if v.neighbors[i] != v {
+				v.neighbors[i].inDegree--
+			}
 		}
 	}
 
@@ -469,6 +472,13 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 	delete(g.edges, v.label)
 	delete(g.vertices, v.label)
 	atomic.AddUint32(&g.verticesCount, ^(uint32(1) - 1))
+
+	v.neighbors = nil
+	v.inDegree = 0
+	if in != v {
+		in.neighbors = nil
+		in.inDegree = 0
+	}
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge

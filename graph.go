@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"errors"
+	"slices"
 )
 
 var (
@@ -117,7 +118,8 @@ type Graph[T comparable] interface {
 	GetAllVertices() []*Vertex[T]
 
 	// RemoveVertices removes all the specified vertices from this graph including
-	// all its touching edges if present.
+	// all its touching edges if present. A removed vertex reports no neighbors
+	// and an in-degree of 0.
 	RemoveVertices(vertices ...*Vertex[T])
 
 	// ContainsEdge returns 'true' if and only if this graph contains an edge
@@ -276,13 +278,15 @@ func (v *Vertex[T]) Degree() int {
 	return v.inDegree + v.OutDegree()
 }
 
-// Neighbors returns a copy of neighbor slice. If the caller changed the
-// result slice, it won't impact the graph or the vertex.
+// Neighbors returns a copy of neighbor slice. Each returned vertex has its
+// own neighbor slice as a snapshot, so later changes to the graph do not
+// mutate it.
 func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 	var neighbors []*Vertex[T]
 	for i := range v.neighbors {
 		clone := &Vertex[T]{}
 		*clone = *v.neighbors[i]
+		clone.neighbors = slices.Clone(v.neighbors[i].neighbors)
 		neighbors = append(neighbors, clone)
 	}
 
