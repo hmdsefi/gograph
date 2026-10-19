@@ -1003,6 +1003,18 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	}
 }
 
+func TestBaseGraph_NoEdgesReturnsNil(t *testing.T) {
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("a")
+	b := g.AddVertexByLabel("b")
+	if edges := g.GetAllEdges(a, b); edges != nil {
+		t.Errorf("GetAllEdges = %v, want nil", edges)
+	}
+	if edges := g.EdgesOf(a); edges != nil {
+		t.Errorf("EdgesOf = %v, want nil", edges)
+	}
+}
+
 func TestBaseGraph_GetAllEdges(t *testing.T) {
 	g := newBaseGraph[int](newProperties())
 	v1 := g.AddVertexByLabel(1)

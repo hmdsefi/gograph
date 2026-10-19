@@ -93,6 +93,32 @@ func TestDijkstraMultiSourceEqualPathFollowsEarlierEdge(t *testing.T) {
 	}
 }
 
+// Every edge of S, P1, X is added before the edges of S, P2, X, but P2 is
+// closer, so it is settled first and reaches X first.
+func TestDijkstraMultiSourceEqualPathKeepsTheFirstFound(t *testing.T) {
+	g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	s := g.AddVertexByLabel("S")
+	p1 := g.AddVertexByLabel("P1")
+	p2 := g.AddVertexByLabel("P2")
+	x := g.AddVertexByLabel("X")
+	addWeighted(t, g, s, p1, 2)
+	addWeighted(t, g, p1, x, 1)
+	addWeighted(t, g, s, p2, 1)
+	addWeighted(t, g, p2, x, 2)
+
+	got, err := DijkstraMultiSource(g, "S")
+	if err != nil {
+		t.Fatalf("DijkstraMultiSource: %v", err)
+	}
+	path, ok := got.PathTo("X")
+	if !ok {
+		t.Fatal("PathTo(X) missing")
+	}
+	if fmt.Sprint(labelsOf(path)) != "[S P2 X]" {
+		t.Fatalf("path to X: got %v, want [S P2 X]", labelsOf(path))
+	}
+}
+
 // Letting an earlier vertex's later edge win fails this. The edges were
 // added along S, A, U, T before the edges along S, B, V, T.
 func TestDijkstraMultiSourceEqualPathFollowsAddOrder(t *testing.T) {
