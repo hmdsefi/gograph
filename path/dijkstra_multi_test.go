@@ -123,6 +123,39 @@ func TestDijkstraMultiSourceEqualPathFollowsAddOrder(t *testing.T) {
 	}
 }
 
+// Inducing all vertices must preserve equal-path tie breaking by edge order.
+func TestDijkstraMultiSourceInducedSubgraphPreservesEqualPath(t *testing.T) {
+	g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	m := g.AddVertexByLabel("m")
+	q := g.AddVertexByLabel("q")
+	p := g.AddVertexByLabel("p")
+	z := g.AddVertexByLabel("z")
+	s := g.AddVertexByLabel("s")
+	addWeighted(t, g, m, q, 1)
+	addWeighted(t, g, p, z, 1)
+	addWeighted(t, g, q, z, 1)
+	addWeighted(t, g, s, p, 1)
+	addWeighted(t, g, s, m, 0)
+
+	want, err := DijkstraMultiSource(g, "s")
+	if err != nil {
+		t.Fatalf("DijkstraMultiSource: %v", err)
+	}
+	sub, err := gograph.InducedSubgraph(g, "m", "q", "p", "z", "s")
+	if err != nil {
+		t.Fatalf("InducedSubgraph: %v", err)
+	}
+	got, err := DijkstraMultiSource(sub, "s")
+	if err != nil {
+		t.Fatalf("DijkstraMultiSource on induced graph: %v", err)
+	}
+	wantPath, _ := want.PathTo("z")
+	gotPath, _ := got.PathTo("z")
+	if fmt.Sprint(labelsOf(gotPath)) != fmt.Sprint(labelsOf(wantPath)) {
+		t.Fatalf("induced path to z: got %v, want %v", labelsOf(gotPath), labelsOf(wantPath))
+	}
+}
+
 // A path that starts at the wrong vertex, or whose weights do not add up
 // to the distance, fails this.
 func TestDijkstraMultiSourcePathTo(t *testing.T) {
