@@ -102,6 +102,8 @@ var skillCalls = []string{
 	"connectivity.Kosaraju",
 	"connectivity.Gabow",
 	"connectivity.Condense",
+	"connectivity.Bridges",
+	"connectivity.ArticulationPoints",
 	"partition.MaximalCliques",
 	"partition.GirvanNewman",
 	"partition.RandomizedKCut",

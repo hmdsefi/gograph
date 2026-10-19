@@ -11,6 +11,8 @@ var (
 	ErrDAGCycle           = errors.New("edges would create cycle")
 	ErrDAGHasCycle        = errors.New("the graph contains a cycle")
 	ErrNotDirected        = errors.New("graph is not directed")
+	// ErrNotUndirected indicates that an undirected graph is required.
+	ErrNotUndirected = errors.New("graph is not undirected")
 )
 
 // Graph defines methods for managing a graph with vertices and edges. It is the

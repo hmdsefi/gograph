@@ -391,6 +391,8 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
 | `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
 | [`Condense`](connectivity#condensation) | The DAG of components, one vertex per component | O(V+E) | |
+| [`Bridges`](connectivity#bridges-and-articulation-points) | The edges whose removal disconnects an undirected graph | O(V+E) | |
+| [`ArticulationPoints`](connectivity#bridges-and-articulation-points) | The vertices whose removal disconnects an undirected graph | O(V+E) | |
 
 **Partitioning** (`partition` package)
 
