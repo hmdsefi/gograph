@@ -96,6 +96,7 @@ var skillCalls = []string{
 	"dag.NewTracker",
 	"dag.CriticalPath",
 	"dag.CriticalPathFunc",
+	"dag.HeaviestBranch",
 	"connectivity.ConnectedComponents",
 	"connectivity.HasCycle",
 	"connectivity.Tarjan",

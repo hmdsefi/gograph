@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with the greatest subtree weight at each step, the way GHOST style fork choice
   picks a head. The weight comes from a function, and ties go to the child that
   comes first in `GetAllVertices`. It returns the new `dag.ErrNotTree` when the
-  graph is not a tree rooted at the given vertex. ([#206])
+  graph is not a tree rooted at the given vertex. ([#206], [#256])
 
 ### Changed
 
@@ -400,3 +400,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
 [#206]: https://github.com/hmdsefi/gograph/issues/206
+[#256]: https://github.com/hmdsefi/gograph/pull/256
