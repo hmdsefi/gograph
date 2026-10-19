@@ -11,6 +11,9 @@ import (
 // there are no negative weight cycles). It was proposed by Robert Floyd and
 // Stephen Warshall.
 //
+// The graph must have the Weighted option or ErrNotWeighted is returned.
+// Unreachable vertices have distance math.Inf(1).
+//
 // Steps:
 //
 //  1. Initialization: Create a distance matrix D[][] where D[i][j] represents the
