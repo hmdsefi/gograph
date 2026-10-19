@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The closest-first iterator can return vertices at equal distances in a
+  different order than before. ([#261], [#273])
+
+### Fixed
+
+- `ConnectedComponents` keeps `GetAllVertices` order for a directed `Graph`
+  that isn't from `New`, and reads it in O((V+E)·α(V)) instead of O(V²).
+  ([#267], [#271])
+- `InducedSubgraph` copies each edge's insertion index, so ties in
+  `DijkstraMultiSource` and other functions that use `InsertionIndex` break
+  the same way as on the original graph. ([#265], [#272])
+- `Dijkstra` no longer expands a vertex again for each outdated queue entry,
+  and the closest-first iterator keeps at most one queue entry per vertex. On
+  a hub graph with 1,000 branches, `Dijkstra` takes 0.7 ms instead of 63 ms.
+  ([#261], [#273])
+
 ## [0.9.0] - 2026-10-16
 
 ### Added
@@ -379,3 +397,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#252]: https://github.com/hmdsefi/gograph/pull/252
 [#111]: https://github.com/hmdsefi/gograph/issues/111
 [#250]: https://github.com/hmdsefi/gograph/pull/250
+[#261]: https://github.com/hmdsefi/gograph/issues/261
+[#265]: https://github.com/hmdsefi/gograph/issues/265
+[#267]: https://github.com/hmdsefi/gograph/issues/267
+[#271]: https://github.com/hmdsefi/gograph/pull/271
+[#272]: https://github.com/hmdsefi/gograph/pull/272
+[#273]: https://github.com/hmdsefi/gograph/pull/273
