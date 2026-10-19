@@ -117,7 +117,8 @@ type Graph[T comparable] interface {
 	GetAllVertices() []*Vertex[T]
 
 	// RemoveVertices removes all the specified vertices from this graph including
-	// all its touching edges if present.
+	// all its touching edges if present. A removed vertex reports no neighbors
+	// and an in-degree of 0.
 	RemoveVertices(vertices ...*Vertex[T])
 
 	// ContainsEdge returns 'true' if and only if this graph contains an edge
@@ -277,7 +278,10 @@ func (v *Vertex[T]) Degree() int {
 }
 
 // Neighbors returns a copy of neighbor slice. If the caller changed the
-// result slice, it won't impact the graph or the vertex.
+// result slice, it won't impact the graph or the vertex. The returned
+// vertices are snapshots that share their own neighbor lists with the graph,
+// so their Neighbors, OutDegree and HasNeighbor aren't reliable once the
+// graph changes. Use GetVertexByID to read the current neighbors of a vertex.
 func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 	var neighbors []*Vertex[T]
 	for i := range v.neighbors {
