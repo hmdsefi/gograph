@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   original. It keeps the directed, weighted and acyclic properties, the
   weights, edge labels and metadata, and the order of vertices and edges.
   ([#108], [#251])
+- `dag.HeaviestBranch` walks a tree from its root to a leaf, following the child
+  with the greatest subtree weight at each step, the way GHOST style fork choice
+  picks a head. The weight comes from a function, and ties go to the child that
+  comes first in `GetAllVertices`. It returns the new `dag.ErrNotTree` when the
+  graph is not a tree rooted at the given vertex. ([#206], [#256])
 
 ### Changed
 
@@ -394,3 +399,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
+[#206]: https://github.com/hmdsefi/gograph/issues/206
+[#256]: https://github.com/hmdsefi/gograph/pull/256

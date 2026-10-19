@@ -216,3 +216,30 @@ func ExampleSinks() {
 	// Output:
 	// sinks: [docs test lint]
 }
+
+func ExampleHeaviestBranch() {
+	// A tree of blocks. Each block carries the votes it received.
+	g := gograph.New[string](gograph.Acyclic())
+
+	genesis := g.AddVertexByLabel("genesis")
+	a1 := g.AddVertexByLabel("a1", gograph.WithVertexWeight(5))
+	a2 := g.AddVertexByLabel("a2", gograph.WithVertexWeight(1))
+	b1 := g.AddVertexByLabel("b1", gograph.WithVertexWeight(2))
+	b2 := g.AddVertexByLabel("b2", gograph.WithVertexWeight(3))
+	b3 := g.AddVertexByLabel("b3", gograph.WithVertexWeight(2))
+
+	_, _ = g.AddEdge(genesis, a1)
+	_, _ = g.AddEdge(a1, a2)
+	_, _ = g.AddEdge(genesis, b1)
+	_, _ = g.AddEdge(b1, b2)
+	_, _ = g.AddEdge(b2, b3)
+
+	// a1 has more votes than b1, but the b branch has more in total.
+	head, _ := dag.HeaviestBranch(g, "genesis", func(v *gograph.Vertex[string]) float64 {
+		return v.Weight()
+	})
+	fmt.Println(labels(head))
+
+	// Output:
+	// [genesis b1 b2 b3]
+}

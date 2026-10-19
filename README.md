@@ -369,6 +369,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `Levels` | Which vertices can run at the same time | O(V+E) | |
 | `NewTracker` | Which vertices are ready as others finish | O(V+E) in total | |
 | `CriticalPath` | The most expensive chain of dependent vertices | O(V+E) | |
+| `HeaviestBranch` | The path from a tree's root that follows the heaviest subtree at each step (GHOST fork choice) | O(V+E) | |
 
 **Shortest paths** (`path` package)
 
