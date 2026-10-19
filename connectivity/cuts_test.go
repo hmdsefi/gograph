@@ -137,6 +137,31 @@ func TestCutsAgainstRemoval(t *testing.T) {
 	}
 }
 
+func TestCutsWrappedGraph(t *testing.T) {
+	g := gograph.New[int]()
+	for i := range 5 {
+		g.AddVertexByLabel(i)
+	}
+	for _, e := range [][2]int{{0, 1}, {1, 2}, {2, 0}, {2, 3}, {3, 4}} {
+		_, _ = g.AddEdge(g.GetVertexByID(e[0]), g.GetVertexByID(e[1]))
+	}
+	w := wrappedGraph[int]{g}
+
+	wantBridges, _ := Bridges[int](g)
+	gotBridges, err := Bridges[int](w)
+	if err != nil || !reflect.DeepEqual(gotBridges, wantBridges) {
+		t.Fatalf("bridges %v, %v, want %v", gotBridges, err, wantBridges)
+	}
+	wantPoints, _ := ArticulationPoints[int](g)
+	gotPoints, err := ArticulationPoints[int](w)
+	if err != nil || !reflect.DeepEqual(gotPoints, wantPoints) {
+		t.Fatalf("points %v, %v, want %v", gotPoints, err, wantPoints)
+	}
+	if len(gotBridges) != 2 || len(gotPoints) != 2 {
+		t.Fatalf("got %d bridges and %d points, want 2 and 2", len(gotBridges), len(gotPoints))
+	}
+}
+
 func countCutComponents(edges [][2]int, removedVertex, removedEdge int) int {
 	seen := make(map[int]bool)
 	count := 0
