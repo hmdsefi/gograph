@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the closest-first iterator keeps at most one queue entry per vertex. On
   a hub graph with 1,000 branches, `Dijkstra` takes 0.7 ms instead of 63 ms.
   ([#261], [#273])
+- `RemoveVertices` clears the neighbors and in-degree of a removed vertex, so
+  its `Neighbors`, `OutDegree`, `InDegree` and `HasNeighbor` no longer report
+  edges the graph doesn't have. A directed self-loop no longer leaves its
+  in-degree at -1. ([#266], [#275])
 
 ## [0.9.0] - 2026-10-16
 
@@ -399,7 +403,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#261]: https://github.com/hmdsefi/gograph/issues/261
 [#265]: https://github.com/hmdsefi/gograph/issues/265
+[#266]: https://github.com/hmdsefi/gograph/issues/266
 [#267]: https://github.com/hmdsefi/gograph/issues/267
 [#271]: https://github.com/hmdsefi/gograph/pull/271
 [#272]: https://github.com/hmdsefi/gograph/pull/272
 [#273]: https://github.com/hmdsefi/gograph/pull/273
+[#275]: https://github.com/hmdsefi/gograph/pull/275
