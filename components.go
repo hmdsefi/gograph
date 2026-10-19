@@ -79,16 +79,19 @@ func componentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
 // direction, then groups vertices in GetAllVertices order.
 func directedComponentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
 	vertices := g.GetAllVertices()
-	indices := make(map[*Vertex[T]]int, len(vertices))
+	indices := make(map[T]int, len(vertices))
 	parent := make([]int, len(vertices))
 	for i, vertex := range vertices {
-		indices[vertex] = i
+		indices[vertex.Label()] = i
 		parent[i] = -1
 	}
 
 	for _, edge := range g.AllEdges() {
-		from, fromOK := indices[edge.Source()]
-		to, toOK := indices[edge.Destination()]
+		if edge == nil || edge.Source() == nil || edge.Destination() == nil {
+			continue
+		}
+		from, fromOK := indices[edge.Source().Label()]
+		to, toOK := indices[edge.Destination().Label()]
 		if !fromOK || !toOK {
 			continue
 		}

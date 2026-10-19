@@ -166,6 +166,29 @@ func TestConnectedComponentsOtherDirectedGraphAppend(t *testing.T) {
 	}
 }
 
+type distinctEndpointsGraph[T comparable] struct {
+	Graph[T]
+}
+
+func (g distinctEndpointsGraph[T]) AllEdges() []*Edge[T] {
+	edges := g.Graph.AllEdges()
+	distinct := make([]*Edge[T], len(edges)+1)
+	for i, e := range edges {
+		distinct[i] = NewEdge(NewVertex(e.Source().Label()), NewVertex(e.Destination().Label()))
+	}
+	distinct[len(edges)] = nil
+	return distinct
+}
+
+func TestConnectedComponentsOtherDirectedGraphDistinctEndpoints(t *testing.T) {
+	g := graphWithEdges(true, 3, [][2]int{{1, 2}, {2, 3}})
+	got := labelsOf(ConnectedComponents(distinctEndpointsGraph[int]{g}))
+	want := [][]int{{1, 2, 3}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ConnectedComponents(distinct endpoints) = %v, want %v", got, want)
+	}
+}
+
 func TestConnectedComponentsPanics(t *testing.T) {
 	for _, g := range []Graph[int]{nil, (*baseGraph[int])(nil)} {
 		func() {
