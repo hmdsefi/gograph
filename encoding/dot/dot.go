@@ -4,9 +4,13 @@
 // Every vertex gets a generated node ID (n0, n1, ...) and its label goes in
 // the label attribute, so two labels that print the same don't collide.
 // Attribute values are written in quotes, with double quotes and
-// backslashes escaped and newlines written as \n. A value set by an option
-// that starts with < and ends with > is written as is instead, so Graphviz
-// reads it as an HTML-like label.
+// backslashes escaped, & written as &amp; so Graphviz doesn't read it as
+// the start of an entity, newlines written as \n, and NUL bytes written as
+// U+FFFD. A value set by an option is written as is instead when Graphviz
+// reads all of it as one HTML-like label: it starts with <, its angle
+// brackets balance, and the first < closes at the last character, as in
+// <<b>bold</b>>. Any other value is quoted, so <b>bold</b> is drawn as
+// that text.
 //
 // Directed graphs are written as a digraph with -> for edges, and
 // undirected graphs as a graph with --. Each undirected edge is written
@@ -49,7 +53,9 @@ type options[T comparable] struct {
 type Option[T comparable] func(*options[T])
 
 // WithName sets the name of the graph, which is written after digraph or
-// graph. By default the graph has no name.
+// graph. By default the graph has no name. A DOT ID can't have a backslash
+// at the end or before a double quote or a line break, so Marshal and
+// Write return an error for such a name or attribute name.
 func WithName[T comparable](name string) Option[T] {
 	return func(o *options[T]) {
 		o.name = name
@@ -67,7 +73,8 @@ func WithGraphAttributes[T comparable](attrs map[string]string) Option[T] {
 
 // WithVertexAttributes sets attributes for each vertex, for example its
 // shape or color. By default a vertex has a label attribute with fmt.Sprint
-// of its label, and fn can replace it by setting label too.
+// of its label, and fn can replace it by setting label too. Attribute names
+// follow the same rule as the name in WithName.
 func WithVertexAttributes[T comparable](fn func(*gograph.Vertex[T]) map[string]string) Option[T] {
 	return func(o *options[T]) {
 		o.vertexAttrs = fn
@@ -78,7 +85,8 @@ func WithVertexAttributes[T comparable](fn func(*gograph.Vertex[T]) map[string]s
 // or style. By default an edge's label attribute is its label when one is
 // set, or its weight on a weighted graph, and fn can replace it by setting
 // label too. For an undirected edge, fn gets the direction that starts at
-// the vertex that is written first.
+// the vertex that is written first. Attribute names follow the same rule as
+// the name in WithName.
 func WithEdgeAttributes[T comparable](fn func(*gograph.Edge[T]) map[string]string) Option[T] {
 	return func(o *options[T]) {
 		o.edgeAttrs = fn
@@ -95,7 +103,10 @@ func Marshal[T comparable](g gograph.Graph[T], opts ...Option[T]) ([]byte, error
 	return buf.Bytes(), nil
 }
 
-// Write writes the graph to w in the DOT language.
+// Write writes the graph to w in the DOT language. If the name or a graph
+// attribute name is invalid, it returns an error before writing anything.
+// If a vertex or edge attribute name is invalid, it returns an error, and
+// w may already hold part of the output.
 func Write[T comparable](w io.Writer, g gograph.Graph[T], opts ...Option[T]) error {
 	if g == nil {
 		return errors.New("dot: graph is nil")
@@ -104,6 +115,14 @@ func Write[T comparable](w io.Writer, g gograph.Graph[T], opts ...Option[T]) err
 	var o options[T]
 	for _, opt := range opts {
 		opt(&o)
+	}
+	if !validID(o.name) {
+		return fmt.Errorf("dot: graph name %q can't be written as a DOT ID", o.name)
+	}
+	for key := range o.graphAttrs {
+		if !validID(key) {
+			return fmt.Errorf("dot: graph attribute %q can't be written as a DOT ID", key)
+		}
 	}
 
 	vertices := sortedVertices(g)
@@ -131,11 +150,16 @@ func Write[T comparable](w io.Writer, g gograph.Graph[T], opts ...Option[T]) err
 		if o.vertexAttrs != nil {
 			custom = o.vertexAttrs(v)
 		}
-		attrs := attributes(map[string]string{"label": fmt.Sprint(v.Label())}, custom)
+		attrs, err := attributes(map[string]string{"label": fmt.Sprint(v.Label())}, custom)
+		if err != nil {
+			return err
+		}
 		_, _ = fmt.Fprintf(bw, "\tn%d%s;\n", i, attrs)
 	}
 
-	writeEdges(bw, g, vertices, ids, o.edgeAttrs)
+	if err := writeEdges(bw, g, vertices, ids, o.edgeAttrs); err != nil {
+		return err
+	}
 
 	_, _ = bw.WriteString("}\n")
 	return bw.Flush()
@@ -187,7 +211,7 @@ func writeEdges[T comparable](
 	vertices []*gograph.Vertex[T],
 	ids map[T]int,
 	edgeAttrs func(*gograph.Edge[T]) map[string]string,
-) {
+) error {
 	arrow := "->"
 	if !g.IsDirected() {
 		arrow = "--"
@@ -216,21 +240,31 @@ func writeEdges[T comparable](
 			if edgeAttrs != nil {
 				custom = edgeAttrs(e)
 			}
-			_, _ = fmt.Fprintf(w, "\tn%d %s n%d%s;\n", i, arrow, j, attributes(defaults, custom))
+			attrs, err := attributes(defaults, custom)
+			if err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(w, "\tn%d %s n%d%s;\n", i, arrow, j, attrs)
 		}
 	}
+
+	return nil
 }
 
 // attributes returns the DOT attribute list for the defaults and the
 // attributes set by an option, which take precedence, sorted by name. It
-// returns an empty string if there are none.
-func attributes(defaults, custom map[string]string) string {
+// returns an empty string if there are none, and an error if the name of
+// an attribute set by an option can't be written as a DOT ID.
+func attributes(defaults, custom map[string]string) (string, error) {
 	if len(defaults) == 0 && len(custom) == 0 {
-		return ""
+		return "", nil
 	}
 
 	keys := slices.Collect(maps.Keys(defaults))
 	for key := range custom {
+		if !validID(key) {
+			return "", fmt.Errorf("dot: attribute %q can't be written as a DOT ID", key)
+		}
 		if _, ok := defaults[key]; !ok {
 			keys = append(keys, key)
 		}
@@ -253,7 +287,7 @@ func attributes(defaults, custom map[string]string) string {
 	}
 	b.WriteByte(']')
 
-	return b.String()
+	return b.String(), nil
 }
 
 // keywords can't be used as an ID without quotes. DOT keywords are case
@@ -267,7 +301,7 @@ var keywords = map[string]bool{
 // quoted otherwise.
 func id(s string) string {
 	if s == "" || keywords[strings.ToLower(s)] {
-		return quote(s)
+		return quoteID(s)
 	}
 
 	for i, r := range s {
@@ -275,7 +309,7 @@ func id(s string) string {
 		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r == '_':
 		case i > 0 && r >= '0' && r <= '9':
 		default:
-			return quote(s)
+			return quoteID(s)
 		}
 	}
 
@@ -285,23 +319,87 @@ func id(s string) string {
 // value returns an attribute value set by an option: as is if it's an
 // HTML-like string, and quoted otherwise.
 func value(s string) string {
-	if len(s) >= 2 && s[0] == '<' && s[len(s)-1] == '>' {
+	if htmlLike(s) {
 		return s
 	}
 
 	return quote(s)
 }
 
+// htmlLike reports whether Graphviz reads all of s as one HTML-like string:
+// it starts with <, its angle brackets balance, and the first < closes at
+// the last character. Graphviz ends the string at the > that balances the
+// first <, so anything after it would be a syntax error.
+func htmlLike(s string) bool {
+	if len(s) < 2 || s[0] != '<' {
+		return false
+	}
+
+	depth := 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '<':
+			depth++
+		case '>':
+			depth--
+			if depth == 0 {
+				return i == len(s)-1
+			}
+		case 0:
+			return false
+		}
+	}
+
+	return false
+}
+
 // escaper escapes the characters that end or change a quoted DOT string,
 // and writes line breaks as \n, which Graphviz draws as a new line.
+// Graphviz decodes entities such as &amp; in quoted strings, so & is
+// written as &amp; to be drawn as is. It can't read a NUL byte in a quoted
+// string, so NUL is written as U+FFFD.
 var escaper = strings.NewReplacer(
 	`\`, `\\`,
 	`"`, `\"`,
+	"&", "&amp;",
 	"\r\n", `\n`,
 	"\n", `\n`,
 	"\r", `\n`,
+	"\x00", "\uFFFD",
 )
 
 func quote(s string) string {
 	return `"` + escaper.Replace(s) + `"`
+}
+
+// idEscaper escapes the characters that end a quoted DOT ID. Graphviz
+// doesn't unescape IDs a second time, as it does labels, so a backslash is
+// written as is.
+var idEscaper = strings.NewReplacer(
+	`"`, `\"`,
+	"\x00", "\uFFFD",
+)
+
+func quoteID(s string) string {
+	return `"` + idEscaper.Replace(s) + `"`
+}
+
+// validID reports whether s can be written as a quoted DOT ID. Graphviz
+// reads a backslash before a double quote as an escaped quote and drops a
+// backslash before a line break, so neither can be written, and a
+// backslash at the end would escape the closing quote.
+func validID(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] != '\\' {
+			continue
+		}
+		if i == len(s)-1 {
+			return false
+		}
+		if next := s[i+1]; next == '"' || next == '\n' || next == '\r' {
+			return false
+		}
+	}
+
+	return true
 }

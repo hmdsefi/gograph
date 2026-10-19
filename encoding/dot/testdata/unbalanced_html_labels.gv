@@ -1,0 +1,9 @@
+digraph {
+	n0 [label="<<a>"];
+	n1 [label=<<b>bold</b>>];
+	n2 [label=<>];
+	n3 [label="<a�b>"];
+	n4 [label="<a><b>"];
+	n5 [label="<a>>"];
+	n6 [label="<b>bold</b>"];
+}
