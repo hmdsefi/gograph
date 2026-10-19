@@ -23,6 +23,8 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    base_branches:
+      - "^release/v.*$"
 
   path_instructions:
     - path: "**/*.go"

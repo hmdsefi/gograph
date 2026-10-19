@@ -27,7 +27,8 @@ example.com/codec@v0.5.0 example.com/util@v0.3.1
 ```
 
 `dependents <module>` prints every module that requires a version of `<module>`, directly
-or indirectly. It walks a reversed copy of the graph with the breadth-first iterator:
+or indirectly. It uses `dag.Ancestors`: the modules that can reach a module are the ones
+that require it.
 
 ```text
 $ gomodgraph -f testdata/modgraph.txt dependents example.com/util@v0.2.0
@@ -47,6 +48,22 @@ example.com/util@v0.3.1
 example.com/codec@v0.5.0
 ```
 
+`versions [module]` groups the module versions by path and prints each path that the
+graph has at more than one version, or only the path of `<module>`. `go mod graph`
+lists every version that some module requires, and minimal version selection builds the
+highest one, so that's the version marked with `*`. Each version lists the modules that
+require it directly, which shows the requirement that sets it:
+
+```text
+$ gomodgraph -f testdata/modgraph.txt versions
+example.com/util
+  v0.2.0  required by example.com/log@v1.1.0
+* v0.3.1  required by example.com/codec@v0.5.0, example.com/lib@v1.4.0
+```
+
+A main module builds from its own code. When a dependency requires a version of it, its
+path is printed with `(main module)`, and none of those versions is marked.
+
 `diff <old> <new>` compares two saved outputs of `go mod graph` and prints the module
 versions and requirements that were removed (`-`) or added (`+`):
 
@@ -61,11 +78,52 @@ $ gomodgraph diff testdata/modgraph.txt testdata/modgraph_new.txt
 ...
 ```
 
+`diff -selected <old> <new>` compares the version of each module path that builds:
+`-` for a module that left the build, `+` for a new one, and `~` for a version that
+changed. It matches what `go list -m all` reports on the two commits:
+
+```text
+$ gomodgraph diff -selected testdata/modgraph.txt testdata/modgraph_new.txt
+- example.com/log v1.1.0
++ example.com/metrics v0.1.0
+~ example.com/lib v1.4.0 -> v1.5.0
+```
+
+The plain `diff` lists `- module example.com/util@v0.2.0` for the same change, while
+`example.com/util` builds at v0.3.1 before and after. On a large module the gap is
+wider: between Prometheus v3.14.0 and v3.15.0, `diff` prints 3,488 lines and
+`diff -selected` prints 171.
+
+`mermaid <module>` draws the module, the modules it requires directly, and the modules
+that require it directly. `encoding/mermaid` writes the picture as a flowchart, so it can
+sit in a pull request or a doc. The command leaves out the rest of the graph, which is
+usually too large for a diagram.
+
+```text
+$ gomodgraph -f testdata/modgraph.txt mermaid example.com/app
+flowchart TD
+    n0["example.com/app"]
+    n1["example.com/lib@v1.4.0"]
+    n2["example.com/log@v1.1.0"]
+    n0 --> n1
+    n0 --> n2
+```
+
+```mermaid
+flowchart TD
+    n0["example.com/app"]
+    n1["example.com/lib@v1.4.0"]
+    n2["example.com/log@v1.1.0"]
+    n0 --> n1
+    n0 --> n2
+```
+
 ## Comment on pull requests that change go.mod
 
 This workflow runs `go mod graph` on the base and head commits of a pull request and posts
-the `diff` output as a comment. Pull requests from forks get a read-only token, so the
-comment step only works for branches in the same repository.
+the `diff -selected` output as a comment, so the comment lists the modules whose version
+in the build changed. Pull requests from forks get a read-only token, so the comment step
+only works for branches in the same repository.
 
 ```yaml
 name: Module graph
@@ -98,7 +156,7 @@ jobs:
           {
             echo '```diff'
             go run github.com/hmdsefi/gograph/examples/gomodgraph@latest \
-              diff "$RUNNER_TEMP/old.txt" "$RUNNER_TEMP/new.txt"
+              diff -selected "$RUNNER_TEMP/old.txt" "$RUNNER_TEMP/new.txt"
             echo '```'
           } > "$RUNNER_TEMP/comment.md"
       - name: Comment

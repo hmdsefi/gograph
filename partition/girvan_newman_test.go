@@ -1,6 +1,8 @@
 package partition
 
 import (
+	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -207,6 +209,40 @@ func TestGirvanNewman_AlreadySplit(t *testing.T) {
 	}
 	if len(communities) != 3 {
 		t.Fatalf("expected the 3 existing components, got %d", len(communities))
+	}
+}
+
+func TestGirvanNewman_DirectedInput(t *testing.T) {
+	// 1-4 has the highest betweenness, and 0<->1 and 3<->6 go both ways
+	edges := [][2]int{{5, 0}, {4, 1}, {6, 3}, {5, 1}, {2, 3}, {1, 0}, {6, 1}, {0, 1}, {1, 2}, {0, 2}, {3, 6}}
+	want := [][]int{{0, 1, 2, 3, 5, 6}, {4}}
+	for _, directed := range []bool{false, true} {
+		var options []gograph.GraphOptionFunc
+		if directed {
+			options = append(options, gograph.Directed())
+		}
+		g := gograph.New[int](options...)
+		for v := range 7 {
+			g.AddVertexByLabel(v)
+		}
+		for _, e := range edges {
+			_, _ = g.AddEdge(g.GetVertexByID(e[0]), g.GetVertexByID(e[1]))
+		}
+
+		communities, err := GirvanNewman(g, 2)
+		if err != nil {
+			t.Fatalf("directed=%v: unexpected error: %v", directed, err)
+		}
+		got := make([][]int, len(communities))
+		for i, c := range communities {
+			for _, v := range c.GetAllVertices() {
+				got[i] = append(got[i], v.Label())
+			}
+			slices.Sort(got[i])
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("directed=%v: GirvanNewman() = %v, want %v", directed, got, want)
+		}
 	}
 }
 

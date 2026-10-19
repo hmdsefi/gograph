@@ -2,6 +2,8 @@
 // and answers a few questions about the module requirements:
 //
 //	go mod graph | go run github.com/hmdsefi/gograph/examples/gomodgraph cycles
+//	go mod graph | go run github.com/hmdsefi/gograph/examples/gomodgraph versions
+//	go mod graph | go run github.com/hmdsefi/gograph/examples/gomodgraph mermaid example.com/lib
 //
 // Each line of "go mod graph" is "from to", meaning that from requires to.
 // The main module has no version, and the other modules are written as
@@ -20,10 +22,13 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hmdsefi/gograph"
 	"github.com/hmdsefi/gograph/connectivity"
+	"github.com/hmdsefi/gograph/dag"
+	"github.com/hmdsefi/gograph/encoding/mermaid"
 	"github.com/hmdsefi/gograph/traverse"
 )
 
@@ -35,7 +40,12 @@ Commands:
   cycles               print groups of module versions that require each other
   dependents <module>  print every module that requires <module>, directly or indirectly
   why <module>         print the shortest requirement path from the main module to <module>
-  diff <old> <new>     compare two saved "go mod graph" outputs
+  versions [module]    print the versions of each module the graph has more than one of,
+                       or of <module>, and mark the version that builds
+  diff [-selected] <old> <new>
+                       compare two saved "go mod graph" outputs, or with -selected,
+                       the version of each module that builds
+  mermaid <module>     draw <module> with its direct dependencies and dependents
 
 <module> is either a module path, which matches every version, or path@version.`
 
@@ -60,16 +70,42 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 	}
 
 	command, args := args[0], args[1:]
-	wantArgs := map[string]int{"cycles": 0, "dependents": 1, "why": 1, "diff": 2}
+	wantArgs := map[string][2]int{
+		"cycles":     {0, 0},
+		"dependents": {1, 1},
+		"why":        {1, 1},
+		"versions":   {0, 1},
+		"diff":       {2, 2},
+		"mermaid":    {1, 1},
+	}
 	n, ok := wantArgs[command]
 	if !ok {
 		return fmt.Errorf("unknown command %q\n\n%s", command, usage)
 	}
-	if len(args) != n {
-		return fmt.Errorf("%s takes %d arguments, got %d\n\n%s", command, n, len(args), usage)
+
+	selected := false
+	if command == "diff" {
+		diffFlags := flag.NewFlagSet("diff", flag.ContinueOnError)
+		diffFlags.SetOutput(io.Discard)
+		diffFlags.BoolVar(&selected, "selected", false, "compare the version of each module that builds")
+		if err := diffFlags.Parse(args); err != nil {
+			return fmt.Errorf("%w\n\n%s", err, usage)
+		}
+		args = diffFlags.Args()
+	}
+
+	if len(args) < n[0] || len(args) > n[1] {
+		want := strconv.Itoa(n[0])
+		if n[1] != n[0] {
+			want += " or " + strconv.Itoa(n[1])
+		}
+		return fmt.Errorf("%s takes %s arguments, got %d\n\n%s", command, want, len(args), usage)
 	}
 
 	if command == "diff" {
+		if selected {
+			return diffSelected(stdout, args[0], args[1])
+		}
 		return diff(stdout, args[0], args[1])
 	}
 
@@ -94,6 +130,10 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 		return nil
 	case "dependents":
 		return printDependents(stdout, g, args[0])
+	case "versions":
+		return printVersions(stdout, g, mains, args)
+	case "mermaid":
+		return printMermaid(stdout, g, args[0])
 	default:
 		printWhy(stdout, g, mains, args[0])
 		return nil
@@ -150,6 +190,69 @@ func matches(label, module string) bool {
 	return label == module || path == module
 }
 
+// matching returns the labels of every version of module, in vertex order.
+func matching(g gograph.Graph[string], module string) []string {
+	var labels []string
+	for _, v := range g.GetAllVertices() {
+		if matches(v.Label(), module) {
+			labels = append(labels, v.Label())
+		}
+	}
+	return labels
+}
+
+func notInGraph(module string) error {
+	return fmt.Errorf("module %s is not in the graph", module)
+}
+
+// printMermaid writes a flowchart of module, the modules it requires
+// directly, the modules that require it directly, and the requirement
+// edges between those vertices.
+func printMermaid(w io.Writer, g gograph.Graph[string], module string) error {
+	sub, err := neighborhood(g, module)
+	if err != nil {
+		return err
+	}
+	return mermaid.Write(w, sub)
+}
+
+// neighborhood is the induced subgraph on the module and the modules one
+// requirement away from it: the ones it requires, and the ones that require it.
+func neighborhood(g gograph.Graph[string], module string) (gograph.Graph[string], error) {
+	chosen := matching(g, module)
+	if len(chosen) == 0 {
+		return nil, notInGraph(module)
+	}
+
+	keep := make(map[string]bool, len(chosen))
+	for _, label := range chosen {
+		keep[label] = true
+	}
+	for _, e := range g.AllEdges() {
+		from, to := e.Source().Label(), e.Destination().Label()
+		if matches(from, module) {
+			keep[to] = true
+		}
+		if matches(to, module) {
+			keep[from] = true
+		}
+	}
+
+	sub := gograph.New[string](gograph.Directed())
+	for _, v := range g.GetAllVertices() {
+		if keep[v.Label()] {
+			sub.AddVertexByLabel(v.Label())
+		}
+	}
+	for _, e := range g.AllEdges() {
+		from, to := e.Source().Label(), e.Destination().Label()
+		if keep[from] && keep[to] {
+			_, _ = sub.AddEdge(sub.GetVertexByID(from), sub.GetVertexByID(to))
+		}
+	}
+	return sub, nil
+}
+
 // printCycles prints each strongly connected component with more than one
 // module version, one per line.
 func printCycles(w io.Writer, g gograph.Graph[string]) {
@@ -173,33 +276,27 @@ func printCycles(w io.Writer, g gograph.Graph[string]) {
 }
 
 // printDependents prints every module that requires a version of module,
-// directly or indirectly. It walks a reversed copy of the graph, where the
-// dependents are reachable from the module.
+// directly or indirectly. Ancestors are the modules that can reach it.
 func printDependents(w io.Writer, g gograph.Graph[string], module string) error {
-	reversed := gograph.New[string](gograph.Directed())
-	for _, e := range g.AllEdges() {
-		_, _ = reversed.AddEdge(vertex(reversed, e.Destination().Label()), vertex(reversed, e.Source().Label()))
+	targets := matching(g, module)
+	if len(targets) == 0 {
+		return notInGraph(module)
 	}
 
-	targets := make(map[string]bool)
-	for _, v := range g.GetAllVertices() {
-		if matches(v.Label(), module) {
-			targets[v.Label()] = true
-		}
-	}
-	if len(targets) == 0 {
-		return fmt.Errorf("module %s is not in the graph", module)
+	isTarget := make(map[string]bool, len(targets))
+	for _, label := range targets {
+		isTarget[label] = true
 	}
 
 	dependents := make(map[string]bool)
-	for target := range targets {
-		it, err := traverse.NewBreadthFirstIterator(reversed, target)
+	for _, label := range targets {
+		ancestors, err := dag.Ancestors(g, label)
 		if err != nil {
 			return err
 		}
-		for it.HasNext() {
-			if label := it.Next().Label(); !targets[label] {
-				dependents[label] = true
+		for _, v := range ancestors {
+			if !isTarget[v.Label()] {
+				dependents[v.Label()] = true
 			}
 		}
 	}
@@ -214,6 +311,111 @@ func printDependents(w io.Writer, g gograph.Graph[string], module string) error 
 	}
 
 	return nil
+}
+
+// printVersions prints each module path that the graph has at more than one
+// version, or only the path of the module in args, followed by its versions
+// in order. The version that builds is marked with "*", and each version
+// lists the modules that require it directly. A main module builds from its
+// own code, so its path is printed with every version it's required at, and
+// none of them is marked.
+func printVersions(w io.Writer, g gograph.Graph[string], mains, args []string) error {
+	versions := moduleVersions(g)
+	selected := selectedVersions(g, mains)
+	isMain := make(map[string]bool, len(mains))
+	for _, m := range mains {
+		isMain[m] = true
+	}
+
+	var paths []string
+	if len(args) == 1 {
+		if len(matching(g, args[0])) == 0 {
+			return notInGraph(args[0])
+		}
+		path, _, _ := strings.Cut(args[0], "@")
+		paths = []string{path}
+	} else {
+		for path, list := range versions {
+			if len(list) > 1 || isMain[path] {
+				paths = append(paths, path)
+			}
+		}
+		sort.Strings(paths)
+	}
+
+	requiredBy := make(map[string][]string)
+	for _, e := range g.AllEdges() {
+		to := e.Destination().Label()
+		requiredBy[to] = append(requiredBy[to], e.Source().Label())
+	}
+
+	for _, path := range paths {
+		if isMain[path] {
+			_, _ = fmt.Fprintf(w, "%s (main module)\n", path)
+		} else {
+			_, _ = fmt.Fprintln(w, path)
+		}
+
+		width := 0
+		for _, version := range versions[path] {
+			width = max(width, len(version))
+		}
+		for _, version := range versions[path] {
+			mark := " "
+			if !isMain[path] && version == selected[path] {
+				mark = "*"
+			}
+			line := fmt.Sprintf("%s %-*s", mark, width, version)
+			if by := requiredBy[path+"@"+version]; len(by) > 0 {
+				sort.Strings(by)
+				line += "  required by " + strings.Join(by, ", ")
+			}
+			_, _ = fmt.Fprintln(w, strings.TrimRight(line, " "))
+		}
+	}
+
+	return nil
+}
+
+// moduleVersions returns the versions of each module path in the graph, from
+// the lowest to the highest. Main modules have no version, so their own
+// vertices aren't included.
+func moduleVersions(g gograph.Graph[string]) map[string][]string {
+	versions := make(map[string][]string)
+	for _, v := range g.GetAllVertices() {
+		if path, version, ok := strings.Cut(v.Label(), "@"); ok {
+			versions[path] = append(versions[path], version)
+		}
+	}
+	for _, list := range versions {
+		sort.Slice(list, func(i, j int) bool {
+			if c := compareVersions(list[i], list[j]); c != 0 {
+				return c < 0
+			}
+			return list[i] < list[j]
+		})
+	}
+	return versions
+}
+
+// selectedVersions returns the version of each module path that builds,
+// which is the highest version of it in the graph: minimal version selection
+// picks the highest version that any module requires. A main module builds
+// from its own code, so its path is left out even when other modules
+// require a version of it.
+func selectedVersions(g gograph.Graph[string], mains []string) map[string]string {
+	isMain := make(map[string]bool, len(mains))
+	for _, m := range mains {
+		isMain[m] = true
+	}
+
+	selected := make(map[string]string)
+	for path, list := range moduleVersions(g) {
+		if !isMain[path] {
+			selected[path] = list[len(list)-1]
+		}
+	}
+	return selected
 }
 
 // printWhy prints the shortest path from each main module to the first
@@ -268,11 +470,11 @@ func shortestPath(g gograph.Graph[string], start, module string) []string {
 // diff prints the module versions and requirements that are only in the old
 // graph with a "-", and the ones only in the new graph with a "+".
 func diff(w io.Writer, oldFile, newFile string) error {
-	oldGraph, err := loadFile(oldFile)
+	oldGraph, _, err := loadFile(oldFile)
 	if err != nil {
 		return err
 	}
-	newGraph, err := loadFile(newFile)
+	newGraph, _, err := loadFile(newFile)
 	if err != nil {
 		return err
 	}
@@ -285,15 +487,57 @@ func diff(w io.Writer, oldFile, newFile string) error {
 	return nil
 }
 
-func loadFile(name string) (gograph.Graph[string], error) {
+// diffSelected compares the version of each module path that builds in the
+// old graph and in the new one. It prints "-" with the old version for a
+// path only the old graph has, "+" with the new version for a path only the
+// new graph has, and "~" with both versions for a path whose version changed.
+func diffSelected(w io.Writer, oldFile, newFile string) error {
+	oldGraph, oldMains, err := loadFile(oldFile)
+	if err != nil {
+		return err
+	}
+	newGraph, newMains, err := loadFile(newFile)
+	if err != nil {
+		return err
+	}
+	oldVersions := selectedVersions(oldGraph, oldMains)
+	newVersions := selectedVersions(newGraph, newMains)
+
+	var removed, added, changed []string
+	for path, oldVersion := range oldVersions {
+		newVersion, ok := newVersions[path]
+		switch {
+		case !ok:
+			removed = append(removed, fmt.Sprintf("- %s %s", path, oldVersion))
+		case newVersion != oldVersion:
+			changed = append(changed, fmt.Sprintf("~ %s %s -> %s", path, oldVersion, newVersion))
+		}
+	}
+	for path, newVersion := range newVersions {
+		if _, ok := oldVersions[path]; !ok {
+			added = append(added, fmt.Sprintf("+ %s %s", path, newVersion))
+		}
+	}
+
+	for _, lines := range [][]string{removed, added, changed} {
+		sort.Strings(lines)
+		for _, line := range lines {
+			_, _ = fmt.Fprintln(w, line)
+		}
+	}
+
+	return nil
+}
+
+// loadFile loads a saved "go mod graph" output, see load.
+func loadFile(name string) (gograph.Graph[string], []string, error) {
 	f, err := os.Open(name) //nolint:gosec // the user picks the file to read
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer f.Close()
 
-	g, _, err := load(f)
-	return g, err
+	return load(f)
 }
 
 // modules returns each module version in a, and whether b has it too.

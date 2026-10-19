@@ -126,3 +126,37 @@ func TestEdge_Label(t *testing.T) {
 		t.Errorf("duplicate edge: got %v, want %v", err, ErrEdgeAlreadyExists)
 	}
 }
+
+func TestEdge_InsertionIndex(t *testing.T) {
+	if got := NewEdge(NewVertex("A"), NewVertex("B")).InsertionIndex(); got != 0 {
+		t.Fatalf("edge not in a graph: got %d, want 0", got)
+	}
+
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	c := g.AddVertexByLabel("C")
+	first, err := g.AddEdge(a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := g.AddEdge(b, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.InsertionIndex() == 0 || first.InsertionIndex() >= second.InsertionIndex() {
+		t.Fatalf("indexes: first %d, second %d", first.InsertionIndex(), second.InsertionIndex())
+	}
+
+	u := New[string]()
+	ua := u.AddVertexByLabel("A")
+	ub := u.AddVertexByLabel("B")
+	forward, err := u.AddEdge(ua, ub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reverse := u.GetEdge(ub, ua)
+	if reverse.InsertionIndex() == 0 || reverse.InsertionIndex() >= forward.InsertionIndex() {
+		t.Fatalf("undirected indexes: reverse %d, forward %d", reverse.InsertionIndex(), forward.InsertionIndex())
+	}
+}
