@@ -154,10 +154,11 @@ func TestMarshal_HTMLLabels(t *testing.T) {
 
 // Graphviz ends an HTML-like string at the > that balances the first <, so
 // only a value that closes there at its last character is written as is. It
-// can't read a NUL byte in one either.
+// can't read a NUL byte in one either, and older versions reject one with
+// nothing but spaces in it.
 func TestMarshal_UnbalancedHTMLLabels(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
-	for _, label := range []string{"<b>bold</b>", "<<b>bold</b>>", "<a><b>", "<<a>", "<a>>", "<>", "<a\x00b>"} {
+	for _, label := range []string{"<b>bold</b>", "<<b>bold</b>>", "<a><b>", "<<a>", "<a>>", "<>", "< >", "<a\x00b>"} {
 		g.AddVertexByLabel(label)
 	}
 

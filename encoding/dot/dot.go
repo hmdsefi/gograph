@@ -8,9 +8,9 @@
 // the start of an entity, newlines written as \n, and NUL bytes written as
 // U+FFFD. A value set by an option is written as is instead when Graphviz
 // reads all of it as one HTML-like label: it starts with <, its angle
-// brackets balance, and the first < closes at the last character, as in
-// <<b>bold</b>>. Any other value is quoted, so <b>bold</b> is drawn as
-// that text.
+// brackets balance, the first < closes at the last character, and there is
+// more than spaces between them, as in <<b>bold</b>>. Any other value is
+// quoted, so <b>bold</b> is drawn as that text.
 //
 // Directed graphs are written as a digraph with -> for edges, and
 // undirected graphs as a graph with --. Each undirected edge is written
@@ -329,7 +329,8 @@ func value(s string) string {
 // htmlLike reports whether Graphviz reads all of s as one HTML-like string:
 // it starts with <, its angle brackets balance, and the first < closes at
 // the last character. Graphviz ends the string at the > that balances the
-// first <, so anything after it would be a syntax error.
+// first <, so anything after it would be a syntax error. Older versions of
+// Graphviz also reject an HTML-like string with nothing but spaces in it.
 func htmlLike(s string) bool {
 	if len(s) < 2 || s[0] != '<' {
 		return false
@@ -343,7 +344,7 @@ func htmlLike(s string) bool {
 		case '>':
 			depth--
 			if depth == 0 {
-				return i == len(s)-1
+				return i == len(s)-1 && strings.TrimSpace(s[1:i]) != ""
 			}
 		case 0:
 			return false
