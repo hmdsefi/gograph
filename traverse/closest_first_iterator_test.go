@@ -80,6 +80,39 @@ func TestClosestFirstIterator_Next(t *testing.T) {
 	}
 }
 
+func TestClosestFirstIteratorQueueStaysWithinVertexCount(t *testing.T) {
+	const n = 40
+	g := gograph.New[int](gograph.Directed())
+	vertices := make([]*gograph.Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for i, from := range vertices {
+		for j, to := range vertices {
+			if i != j {
+				if _, err := g.AddEdge(from, to, gograph.WithEdgeWeight(1)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+	}
+
+	it, err := NewClosestFirstIterator(g, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	closest, ok := it.(*closestFirstIterator[int])
+	if !ok {
+		t.Fatalf("iterator has type %T, want *closestFirstIterator[int]", it)
+	}
+	for it.HasNext() {
+		it.Next()
+		if got := closest.pq.Len(); got > n {
+			t.Fatalf("queue grew to %d entries for %d vertices", got, n)
+		}
+	}
+}
+
 func TestClosestFirstIterator_Iterate(t *testing.T) {
 	// create a graph and a starting vertex for the iterator
 	g := initClosestFirstIteratorTestGraph()

@@ -1,9 +1,89 @@
 package traverse
 
 import (
+	"container/heap"
+
 	"github.com/hmdsefi/gograph"
-	"github.com/hmdsefi/gograph/util"
 )
+
+type closestFirstEntry[T comparable] struct {
+	vertex   *gograph.Vertex[T]
+	priority float64
+	index    int
+}
+
+type closestFirstQueue[T comparable] struct {
+	items   []*closestFirstEntry[T]
+	byLabel map[T]*closestFirstEntry[T]
+}
+
+func newClosestFirstQueue[T comparable]() *closestFirstQueue[T] {
+	return &closestFirstQueue[T]{byLabel: make(map[T]*closestFirstEntry[T])}
+}
+
+func (q closestFirstQueue[T]) Len() int { return len(q.items) }
+
+func (q closestFirstQueue[T]) Less(i, j int) bool {
+	return q.items[i].priority < q.items[j].priority
+}
+
+func (q closestFirstQueue[T]) Swap(i, j int) {
+	q.items[i], q.items[j] = q.items[j], q.items[i]
+	q.items[i].index = i
+	q.items[j].index = j
+}
+
+func (q *closestFirstQueue[T]) Push(x any) {
+	entry, ok := x.(*closestFirstEntry[T])
+	if !ok || entry == nil {
+		return
+	}
+	entry.index = len(q.items)
+	q.items = append(q.items, entry)
+}
+
+func (q *closestFirstQueue[T]) Pop() any {
+	last := len(q.items) - 1
+	entry := q.items[last]
+	q.items[last] = nil
+	entry.index = -1
+	q.items = q.items[:last]
+	return entry
+}
+
+func (q *closestFirstQueue[T]) pushOrDecrease(vertex *gograph.Vertex[T], priority float64) {
+	label := vertex.Label()
+	if entry := q.byLabel[label]; entry != nil {
+		if priority < entry.priority {
+			entry.priority = priority
+			heap.Fix(q, entry.index)
+		}
+		return
+	}
+
+	entry := &closestFirstEntry[T]{vertex: vertex, priority: priority}
+	q.byLabel[label] = entry
+	heap.Push(q, entry)
+}
+
+func (q *closestFirstQueue[T]) peek() *closestFirstEntry[T] {
+	if q.Len() == 0 {
+		return nil
+	}
+	return q.items[0]
+}
+
+func (q *closestFirstQueue[T]) pop() *closestFirstEntry[T] {
+	if q.Len() == 0 {
+		return nil
+	}
+	entry, ok := heap.Pop(q).(*closestFirstEntry[T])
+	if !ok || entry == nil {
+		return nil
+	}
+	delete(q.byLabel, entry.vertex.Label())
+	return entry
+}
 
 // closestFirstIterator implements the Iterator interface to traverse
 // a graph by increasing distance from the start vertex.
@@ -13,11 +93,11 @@ import (
 // sum of edge weights along the shortest path found so far. Edge
 // weights are expected to be non-negative.
 type closestFirstIterator[T comparable] struct {
-	graph    gograph.Graph[T]             // the graph that being traversed.
-	start    T                            // the label of starting point of the traversal.
-	visited  map[T]bool                   // a map that keeps track of whether a vertex has been visited or not.
-	pq       *util.VertexPriorityQueue[T] // a slice of util.VertexWithPriority that represents a min heap.
-	currDist float64                      // the current distance from the start node.
+	graph    gograph.Graph[T] // the graph that being traversed.
+	start    T                // the label of starting point of the traversal.
+	visited  map[T]bool       // a map that keeps track of whether a vertex has been visited or not.
+	pq       *closestFirstQueue[T]
+	currDist float64 // the current distance from the start node.
 }
 
 // NewClosestFirstIterator creates a new instance of closestFirstIterator
@@ -30,8 +110,8 @@ func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Ite
 		return nil, gograph.ErrVertexDoesNotExist
 	}
 
-	pq := util.NewVertexPriorityQueue[T]()
-	pq.Push(util.NewVertexWithPriority[T](v, 0))
+	pq := newClosestFirstQueue[T]()
+	pq.pushOrDecrease(v, 0)
 	return &closestFirstIterator[T]{
 		graph:    graph,
 		start:    start,
@@ -45,11 +125,11 @@ func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Ite
 // to be visited or not.
 func (c *closestFirstIterator[T]) HasNext() bool {
 	for c.pq.Len() > 0 {
-		if !c.visited[c.pq.Peek().Vertex().Label()] {
+		if !c.visited[c.pq.peek().vertex.Label()] {
 			return true
 		}
 
-		c.pq.Pop()
+		c.pq.pop()
 	}
 
 	return false
@@ -63,17 +143,20 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 		return nil
 	}
 
-	vp := c.pq.Pop()
-	c.currDist = vp.Priority()
-	currNode := vp.Vertex()
+	vp := c.pq.pop()
+	c.currDist = vp.priority
+	currNode := vp.vertex
 	c.visited[currNode.Label()] = true
 
 	neighbors := currNode.Neighbors()
 	for _, neighbor := range neighbors {
+		if c.visited[neighbor.Label()] {
+			continue
+		}
 		edge := c.graph.GetEdge(currNode, neighbor)
-		if !c.visited[neighbor.Label()] {
+		if edge != nil {
 			dist := c.currDist + edge.Weight()
-			c.pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(neighbor.Label()), dist))
+			c.pq.pushOrDecrease(c.graph.GetVertexByID(neighbor.Label()), dist)
 		}
 	}
 
@@ -100,6 +183,6 @@ func (c *closestFirstIterator[T]) Reset() {
 	c.visited = make(map[T]bool)
 	c.currDist = 0
 
-	c.pq = util.NewVertexPriorityQueue[T]()
-	c.pq.Push(util.NewVertexWithPriority(c.graph.GetVertexByID(c.start), 0))
+	c.pq = newClosestFirstQueue[T]()
+	c.pq.pushOrDecrease(c.graph.GetVertexByID(c.start), 0)
 }
