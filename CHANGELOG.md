@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   original. It keeps the directed, weighted and acyclic properties, the
   weights, edge labels and metadata, and the order of vertices and edges.
   ([#108], [#251])
+- `connectivity.Bridges` and `connectivity.ArticulationPoints` find the edges
+  and vertices whose removal splits an undirected graph into more pieces, in
+  O(V+E). A directed graph returns the new `gograph.ErrNotUndirected`.
+  ([#113], [#235])
 
 ### Changed
 
@@ -394,3 +398,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
+[#113]: https://github.com/hmdsefi/gograph/issues/113
+[#235]: https://github.com/hmdsefi/gograph/pull/235
