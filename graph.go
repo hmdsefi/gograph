@@ -2,7 +2,6 @@ package gograph
 
 import (
 	"errors"
-	"slices"
 )
 
 var (
@@ -278,15 +277,16 @@ func (v *Vertex[T]) Degree() int {
 	return v.inDegree + v.OutDegree()
 }
 
-// Neighbors returns a copy of neighbor slice. Each returned vertex has its
-// own neighbor slice as a snapshot, so later changes to the graph do not
-// mutate it.
+// Neighbors returns a copy of neighbor slice. If the caller changed the
+// result slice, it won't impact the graph or the vertex. The returned
+// vertices are snapshots that share their own neighbor lists with the graph,
+// so their Neighbors, OutDegree and HasNeighbor aren't reliable once the
+// graph changes. Use GetVertexByID to read the current neighbors of a vertex.
 func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 	var neighbors []*Vertex[T]
 	for i := range v.neighbors {
 		clone := &Vertex[T]{}
 		*clone = *v.neighbors[i]
-		clone.neighbors = slices.Clone(v.neighbors[i].neighbors)
 		neighbors = append(neighbors, clone)
 	}
 
