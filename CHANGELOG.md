@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
   as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
   union by rank and path compression. Groups and their members come back in
-  the order the labels were first added. ([#204])
+  the order the labels were first added. ([#204], [#255])
 
 ### Changed
 
@@ -399,3 +399,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
 [#204]: https://github.com/hmdsefi/gograph/issues/204
+[#255]: https://github.com/hmdsefi/gograph/pull/255

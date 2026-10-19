@@ -404,7 +404,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
-| `Sets` | Which labels are in the same group, as pairs are merged (union by rank, path compression) | Nearly O(1) per call, amortized | |
+| `Sets` | Which labels are in the same group, as pairs are merged (union by rank, path compression) | Nearly O(1) amortized per `Union`, `Find` and `Connected`; O(n) for `Groups` | |
 
 ## Diagrams
 
