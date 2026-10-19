@@ -125,7 +125,6 @@ func main() {
 }
 ```
 
-
 ## Use cases
 
 - **Build and CI pipelines:** order the steps with `TopologySort`, run independent
@@ -387,11 +386,11 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 **Shortest paths** (`path` package)
 
-| Shortest-path algorithm | Unreachable distance | Weight requirement |
+| Shortest-path algorithm | Unreachable distance | Requirement |
 | --- | --- | --- |
 | `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
-| `path.BellmanFord` | `math.Inf(1)` | `Weighted()`; negative weights allowed, reachable negative cycles rejected |
-| `path.FloydWarshall` | `math.Inf(1)` | `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
+| `path.BellmanFord` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, reachable negative cycles rejected |
+| `path.FloydWarshall` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
