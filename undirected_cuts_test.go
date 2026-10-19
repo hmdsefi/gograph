@@ -2,7 +2,9 @@ package gograph
 
 import (
 	"errors"
+	"math/rand/v2"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -59,7 +61,43 @@ func TestUndirectedCuts(t *testing.T) {
 	}
 }
 
-func TestUndirectedCutsNotFromNew(t *testing.T) {
+func TestUndirectedCutsOtherGraph(t *testing.T) {
+	r := rand.New(rand.NewPCG(113, 236)) //nolint:gosec // seeded so failures are reproducible
+	for range 300 {
+		n := 1 + r.IntN(20)
+		g := New[int]()
+		for i := range n {
+			g.AddVertexByLabel(i)
+		}
+		for range r.IntN(2 * n) {
+			_, _ = g.AddEdge(g.GetVertexByID(r.IntN(n)), g.GetVertexByID(r.IntN(n)))
+		}
+		if r.IntN(2) == 0 {
+			g.RemoveVertices(g.GetVertexByID(r.IntN(n)))
+		}
+
+		wantBridges, wantPoints, err := UndirectedCuts[int](g)
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotBridges, gotPoints, err := UndirectedCuts[int](otherGraph[int]{g})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Equal(gotBridges, wantBridges) {
+			t.Fatalf("bridges %v, want %v", gotBridges, wantBridges)
+		}
+		if !slices.Equal(gotPoints, wantPoints) {
+			t.Fatalf("points %v, want %v", gotPoints, wantPoints)
+		}
+	}
+
+	if _, _, err := UndirectedCuts[int](otherGraph[int]{New[int](Directed())}); !errors.Is(err, ErrNotUndirected) {
+		t.Fatalf("error %v", err)
+	}
+}
+
+func TestUndirectedCutsNil(t *testing.T) {
 	for _, g := range []Graph[int]{nil, (*baseGraph[int])(nil)} {
 		func() {
 			defer func() {

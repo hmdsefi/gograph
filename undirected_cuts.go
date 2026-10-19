@@ -9,24 +9,45 @@ package gograph
 // isolated vertices and self-loops are not articulation points. Empty graphs
 // return empty slices. It runs in O(V+E) time and space.
 //
+// A graph from New is searched by vertex position. Any other Graph is read
+// through GetAllVertices and GetEdge, with its vertices looked up by label.
+// It panics if g is nil.
+//
 // connectivity.Bridges and connectivity.ArticulationPoints call this.
 func UndirectedCuts[T comparable](g Graph[T]) ([]*Edge[T], []*Vertex[T], error) {
 	bg, ok := g.(*baseGraph[T])
-	if !ok || bg == nil {
-		panic("gograph: UndirectedCuts requires a graph from New")
+	if g == nil || (ok && bg == nil) {
+		panic("gograph: UndirectedCuts requires a non-nil graph")
 	}
-	if bg.IsDirected() {
+	if g.IsDirected() {
 		return nil, nil, ErrNotUndirected
 	}
-	bridges, points := undirectedCuts(bg)
+	if ok {
+		bridges, points := undirectedCuts(bg.order, nil, func(from, to *Vertex[T]) *Edge[T] {
+			return bg.edges[from.label][to.label]
+		})
+		return bridges, points, nil
+	}
+
+	vertices := g.GetAllVertices()
+	index := make(map[T]int, len(vertices))
+	for i, v := range vertices {
+		index[v.label] = i
+	}
+	bridges, points := undirectedCuts(vertices, index, g.GetEdge)
 	return bridges, points, nil
 }
 
-// undirectedCuts walks the neighbor lists stored on the vertices. Those lists
-// are the graph's own vertices, in the order they were added, so the search
-// does not copy a vertex per edge.
-func undirectedCuts[T comparable](g *baseGraph[T]) ([]*Edge[T], []*Vertex[T]) {
-	n := len(g.order)
+// undirectedCuts walks the neighbor lists stored on the vertices, so the
+// search does not copy a vertex per edge. A neighbor is found by its position
+// in order when index is nil, and by its label otherwise. Neighbors missing
+// from index are skipped. order may contain nil entries for removed vertices.
+func undirectedCuts[T comparable](
+	order []*Vertex[T],
+	index map[T]int,
+	edge func(from, to *Vertex[T]) *Edge[T],
+) ([]*Edge[T], []*Vertex[T]) {
+	n := len(order)
 	// Discovery times start at 1, leaving 0 for vertices not visited yet.
 	disc := make([]int, n)
 	low := make([]int, n)
@@ -40,20 +61,26 @@ func undirectedCuts[T comparable](g *baseGraph[T]) ([]*Edge[T], []*Vertex[T]) {
 	}
 	var stack []frame
 	clock := 0
-	for _, root := range g.order {
-		if root == nil || disc[root.position] != 0 {
+	for ri, root := range order {
+		if root == nil || disc[ri] != 0 {
 			continue
 		}
 		clock++
-		disc[root.position], low[root.position] = clock, clock
-		stack = append(stack, frame{v: root.position})
+		disc[ri], low[ri] = clock, clock
+		stack = append(stack, frame{v: ri})
 		for len(stack) > 0 {
 			i := len(stack) - 1
-			v := g.order[stack[i].v]
+			v := order[stack[i].v]
 			if stack[i].next < len(v.neighbors) {
 				w := v.neighbors[stack[i].next]
 				stack[i].next++
 				wi := w.position
+				if index != nil {
+					var found bool
+					if wi, found = index[w.label]; !found {
+						continue
+					}
+				}
 				if len(stack) > 1 && wi == stack[len(stack)-2].v {
 					continue
 				}
@@ -78,16 +105,15 @@ func undirectedCuts[T comparable](g *baseGraph[T]) ([]*Edge[T], []*Vertex[T]) {
 			p := stack[len(stack)-1].v
 			low[p] = min(low[p], low[vi])
 			if low[vi] > disc[p] {
-				parent, child := g.order[p], g.order[vi]
-				bridges = append(bridges, g.edges[parent.label][child.label])
+				bridges = append(bridges, edge(order[p], order[vi]))
 			}
 			if len(stack) > 1 && low[vi] >= disc[p] {
 				isPoint[p] = true
 			}
 		}
 	}
-	for _, v := range g.order {
-		if v != nil && isPoint[v.position] {
+	for i, v := range order {
+		if v != nil && isPoint[i] {
 			points = append(points, v)
 		}
 	}
