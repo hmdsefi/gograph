@@ -29,8 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   edges the graph doesn't have. A directed self-loop no longer leaves its
   in-degree at -1. ([#266], [#275])
 - `TopologySort`, `StableTopologySort` and `traverse.NewTopologicalIterator`
-  return `ErrNotDirected` when given an undirected graph, instead of
-  reporting a cycle. ([#264])
+  return `ErrNotDirected` when given an undirected graph. Previously,
+  graphs with edges reported `ErrDAGHasCycle`, while edge-free graphs
+  sorted successfully. ([#264], [#281])
 
 ## [0.9.0] - 2026-10-16
 
@@ -413,3 +414,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#273]: https://github.com/hmdsefi/gograph/pull/273
 [#275]: https://github.com/hmdsefi/gograph/pull/275
 [#264]: https://github.com/hmdsefi/gograph/issues/264
+[#281]: https://github.com/hmdsefi/gograph/pull/281
