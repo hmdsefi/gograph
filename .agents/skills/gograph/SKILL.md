@@ -13,9 +13,9 @@ A name with no package is in package `gograph`. An empty example means [gograph.
 
 | Question | Call | Constraint | Example |
 |---|---|---|---|
-| Order a graph that has no cycles | `TopologySort` | Vertices the edges do not order follow insertion order. `StableTopologySort` takes a compare function for that choice. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
-| Order a graph that has no cycles, picking the ready vertex compare prefers | `StableTopologySort` | compare decides among ready vertices. `TopologySort` follows insertion order instead. | https://gograph.dev/algorithms/stable-topological-sort/build-pipeline |
-| Walk a graph that has no cycles, one vertex at a time | `traverse.NewTopologicalIterator` | The order is `TopologySort`. Use that function for the whole list. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
+| Order a graph that has no cycles | `TopologySort` | Directed. Vertices the edges do not order follow insertion order. `StableTopologySort` takes a compare function for that choice. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
+| Order a graph that has no cycles, picking the ready vertex compare prefers | `StableTopologySort` | Directed. compare decides among ready vertices. `TopologySort` follows insertion order instead. | https://gograph.dev/algorithms/stable-topological-sort/build-pipeline |
+| Walk a graph that has no cycles, one vertex at a time | `traverse.NewTopologicalIterator` | Directed. The order is `TopologySort`. Use that function for the whole list. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
 | Keep a chosen set of vertices and the edges between them | `InducedSubgraph` | An edge with an endpoint outside the set is dropped. | |
 | Distances from one source when no weight is negative | `path.Dijkstra` | Returns distances. A negative weight makes `path.BellmanFord` the call. The path itself is `path.DijkstraMultiSource`. | https://gograph.dev/algorithms/dijkstra/new-york |
 | Distances from one source on a small dense graph | `path.DijkstraSimple` | It scans every vertex, O(V^2). `path.Dijkstra` is the call once the graph is large. | |

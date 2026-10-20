@@ -406,6 +406,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#111]: https://github.com/hmdsefi/gograph/issues/111
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#261]: https://github.com/hmdsefi/gograph/issues/261
+[#264]: https://github.com/hmdsefi/gograph/issues/264
 [#265]: https://github.com/hmdsefi/gograph/issues/265
 [#266]: https://github.com/hmdsefi/gograph/issues/266
 [#267]: https://github.com/hmdsefi/gograph/issues/267
@@ -413,5 +414,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#272]: https://github.com/hmdsefi/gograph/pull/272
 [#273]: https://github.com/hmdsefi/gograph/pull/273
 [#275]: https://github.com/hmdsefi/gograph/pull/275
-[#264]: https://github.com/hmdsefi/gograph/issues/264
 [#281]: https://github.com/hmdsefi/gograph/pull/281
