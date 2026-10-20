@@ -13,12 +13,18 @@ type topologicalIterator[T comparable] struct {
 }
 
 // NewTopologicalIterator creates a new instance of topologicalIterator
-// and returns it as the Iterator interface.
+// and returns it as the Iterator interface. It returns gograph.ErrNotDirected
+// if the graph is not directed, and gograph.ErrDAGHasCycle if the graph has a
+// cycle.
 func NewTopologicalIterator[T comparable](g gograph.Graph[T]) (Iterator[T], error) {
 	return newTopologicalIterator[T](g)
 }
 
 func newTopologicalIterator[T comparable](g gograph.Graph[T]) (*topologicalIterator[T], error) {
+	if !g.IsDirected() {
+		return nil, gograph.ErrNotDirected
+	}
+
 	queue, err := gograph.TopologySort[T](g)
 	if err != nil {
 		return nil, err

@@ -180,3 +180,31 @@ func BenchmarkStableTopologySort(b *testing.B) {
 		_, _ = StableTopologySort(g, cmp.Compare[int])
 	}
 }
+
+func TestStableTopologySort_Undirected(t *testing.T) {
+	t.Run("with edge", func(t *testing.T) {
+		g := New[string]()
+		if _, err := g.AddEdge(NewVertex("A"), NewVertex("B")); err != nil {
+			t.Fatalf("AddEdge: %v", err)
+		}
+		if _, err := StableTopologySort(g, cmp.Compare[string]); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("StableTopologySort(undirected with edge) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
+
+	t.Run("without edges", func(t *testing.T) {
+		g := New[string]()
+		g.AddVertexByLabel("A")
+		g.AddVertexByLabel("B")
+		if _, err := StableTopologySort(g, cmp.Compare[string]); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("StableTopologySort(undirected without edges) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		g := New[string]()
+		if _, err := StableTopologySort(g, cmp.Compare[string]); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("StableTopologySort(empty undirected) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
+}
