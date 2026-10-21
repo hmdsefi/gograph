@@ -38,6 +38,11 @@ var (
 //		distances from the source vertex to all other vertices. If there is a negative weight
 //		cycle, the algorithm typically returns an indication of this fact.
 //
+// An edge with a NaN weight is skipped, as if it weren't in the graph. A path
+// through a +Inf weight is as long as no path. A distance of -Inf, from a -Inf
+// weight or from weights that add up below the float64 range, returns
+// ErrNegativeWeightCycle.
+//
 // The time complexity of the Bellman-Ford algorithm is O(V*E), where V is the number of vertices
 // and E is the number of edges.
 //
@@ -75,6 +80,12 @@ func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, erro
 		}
 	}
 
+	// -Inf can't be relaxed any further, so the extra pass misses a negative
+	// cycle once the distances reach it.
+	if hasNegativeInfinity(dist) {
+		return nil, ErrNegativeWeightCycle
+	}
+
 	for _, edge := range edges {
 		if dist[edge.Source().Label()] != maxValue &&
 			dist[edge.Source().Label()]+edge.Weight() < dist[edge.Destination().Label()] {
@@ -83,4 +94,13 @@ func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, erro
 	}
 
 	return dist, nil
+}
+
+func hasNegativeInfinity[T comparable](dist map[T]float64) bool {
+	for _, d := range dist {
+		if math.IsInf(d, -1) {
+			return true
+		}
+	}
+	return false
 }

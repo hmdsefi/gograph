@@ -41,10 +41,11 @@ var (
 // centers and radius 0.
 //
 // Distances follow the edges. The graph does not have to be weighted, and
-// an edge without a weight counts as 0. A negative weight returns
-// ErrNegativeWeight. k below 1, or below the number of fixed centers,
-// returns ErrInvalidK. A fixed center that is not in the graph returns
-// gograph.ErrVertexDoesNotExist.
+// an edge without a weight counts as 0. An edge with a NaN weight is
+// skipped, and a path through a +Inf weight is as long as no path. A
+// negative weight returns ErrNegativeWeight. k below 1, or below the number
+// of fixed centers, returns ErrInvalidK. A fixed center that is not in the
+// graph returns gograph.ErrVertexDoesNotExist.
 //
 // Time is O(k (V + E) log V) and extra space is O(V + E). The distances
 // from one round are kept. Opening a center searches only the vertices it
