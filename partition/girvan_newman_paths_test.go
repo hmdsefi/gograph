@@ -80,9 +80,11 @@ func TestEdgeBetweenness_LongPath(t *testing.T) {
 	edge := func(i int) *gograph.Edge[int] {
 		return g.GetEdge(g.GetVertexByID(i), g.GetVertexByID(i+1))
 	}
+	// The first edge is on the shortest paths from vertex 0 to the 1,024
+	// others, and each stored direction gets half of them.
 	first := betweenness[edge(0)]
-	if first == 0 {
-		t.Fatal("expected the first edge to have a betweenness")
+	if first != 512 {
+		t.Fatalf("edge 0-1: expected betweenness 512, got %v", first)
 	}
 	for i := 0; i < n-1; i++ {
 		want := first * float64((i+1)*(n-1-i)) / float64(n-1)
