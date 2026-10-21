@@ -48,7 +48,7 @@ type Graph[T comparable] interface {
 	//
 	// If any of the specified vertices is nil, returns nil.
 	// If any of the vertices does not exist, returns nil.
-	// If both vertices exist but no edges found, returns an empty set.
+	// If both vertices exist but no edges found, returns nil.
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 
 	// AllEdges returns all the edges in the graph. The edges are grouped by
@@ -69,7 +69,7 @@ type Graph[T comparable] interface {
 	GetEdge(from, to *Vertex[T]) *Edge[T]
 
 	// EdgesOf returns a slice of all edges touching the specified vertex.
-	// If no edges are touching the specified vertex returns an empty slice.
+	// If no edges are touching the specified vertex returns nil.
 	//
 	// The edges that start from the vertex come first, in the order they
 	// were added. The edges that end at the vertex follow, in the order of

@@ -134,6 +134,17 @@ func TestCycle(t *testing.T) {
 	assertLabels(t, "Affected(b)", mustLabels(t, got, err), []string{"b", "c", "a", "d"})
 }
 
+// b->y is added before a->x, but a is reached before b, so x comes first.
+func TestSameDistanceGroupedByReacher(t *testing.T) {
+	g := newGraph(t, [2]string{"s", "a"}, [2]string{"s", "b"}, [2]string{"b", "y"}, [2]string{"a", "x"})
+	got, err := Descendants(g, "s")
+	assertLabels(t, "Descendants(s)", mustLabels(t, got, err), []string{"a", "b", "x", "y"})
+
+	g = newGraph(t, [2]string{"a", "s"}, [2]string{"b", "s"}, [2]string{"y", "b"}, [2]string{"x", "a"})
+	got, err = Ancestors(g, "s")
+	assertLabels(t, "Ancestors(s)", mustLabels(t, got, err), []string{"a", "b", "x", "y"})
+}
+
 func TestSelfLoop(t *testing.T) {
 	g := newGraph(t, [2]string{"a", "a"}, [2]string{"a", "b"})
 
