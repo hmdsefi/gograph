@@ -18,7 +18,9 @@ import (
 //     - BFS is used from each vertex to determine the shortest paths.
 //     - Dependencies are accumulated to assign betweenness values to edges.
 //  2. Identify the edge with the highest betweenness. When several edges tie,
-//     take the first one in the order of AllEdges().
+//     take the first one in the order of AllEdges(). Values within one part
+//     in a billion of the highest count as tied, since sums of the same
+//     paths added in a different order can round differently.
 //  3. Remove that edge.
 //  4. Update connected components using a non-recursive BFS traversal.
 //  5. Repeat steps 1-4 until the desired number of components (`k`) is reached.
@@ -79,21 +81,11 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 			break
 		}
 
-		// Find max betweenness, going through the edges in graph order so
-		// the result doesn't depend on map iteration. Only one edge is
-		// removed per iteration: removing every tied edge at once can split
-		// the graph into more than k components.
-		maxVal := -1.0
-		var edgeToRemove *gograph.Edge[T]
-		for _, e := range working.AllEdges() {
-			val, ok := betweenness[e]
-			if !ok {
-				continue
-			}
-			if val > maxVal {
-				maxVal = val
-				edgeToRemove = e
-			}
+		// Only one edge is removed per iteration: removing every tied edge at
+		// once can split the graph into more than k components.
+		edgeToRemove := mostCentralEdge(working, betweenness)
+		if edgeToRemove == nil {
+			break
 		}
 
 		working.RemoveEdges(edgeToRemove)
@@ -134,6 +126,40 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	}
 
 	return result, nil
+}
+
+// tieTolerance is the relative difference within which two betweenness
+// values count as tied.
+const tieTolerance = 1e-9
+
+// mostCentralEdge returns the first edge in AllEdges order whose betweenness
+// is within tieTolerance of the highest, or nil when no edge has a value.
+// Going through the edges in graph order keeps the result independent of
+// map iteration. An undirected edge gets the sum of its two stored
+// directions, so both directions have the same value.
+func mostCentralEdge[T comparable](g gograph.Graph[T], betweenness map[*gograph.Edge[T]]float64) *gograph.Edge[T] {
+	edges := g.AllEdges()
+	values := make([]float64, len(edges))
+	maxVal := -1.0
+	for i, e := range edges {
+		values[i] = -1
+		if forward, ok := betweenness[e]; ok {
+			values[i] = forward + betweenness[g.GetEdge(e.Destination(), e.Source())]
+		}
+		if values[i] > maxVal {
+			maxVal = values[i]
+		}
+	}
+	if maxVal < 0 {
+		return nil
+	}
+
+	for i, e := range edges {
+		if values[i] >= maxVal*(1-tieTolerance) {
+			return e
+		}
+	}
+	return nil
 }
 
 // cloneGraph deep-copies the graph
