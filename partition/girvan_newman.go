@@ -8,10 +8,10 @@ import (
 )
 
 // GirvanNewman implements the Girvan-Newman community detection algorithm for
-// undirected graphs. It partitions a graph into communities by iteratively
-// removing edges with the highest betweenness centrality until either the
-// specified number of connected components `k` is reached, or no edges remain
-// if k <= 0.
+// undirected graphs, and splits a directed graph as if it were undirected.
+// It partitions a graph into communities by iteratively removing edges with
+// the highest betweenness centrality until either the specified number of
+// connected components `k` is reached, or no edges remain if k <= 0.
 //
 // The algorithm proceeds as follows:
 //  1. Compute edge betweenness centrality for all edges using Brandes algorithm.
@@ -30,6 +30,9 @@ import (
 // returned as they are. If g has fewer than k vertices, every vertex ends up
 // in its own community.
 //
+// The communities of a directed graph are directed, and each edge of g in a
+// community keeps its own direction, weight and label.
+//
 // Important details:
 //   - High betweenness edges typically act as bridges between clusters and are
 //     removed first, effectively separating communities.
@@ -38,7 +41,7 @@ import (
 //   - The input graph `g` is cloned internally to prevent mutation.
 //
 // Parameters:
-//   - g: An instance of gograph.Graph[T] representing the undirected input graph.
+//   - g: The input graph, directed or undirected.
 //   - k: The desired number of communities (connected components). If k <= 0,
 //     the algorithm continues removing edges until no edges remain.
 //
@@ -107,6 +110,9 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	var options []gograph.GraphOptionFunc
 	if g.IsWeighted() {
 		options = append(options, gograph.Weighted())
+	}
+	if g.IsDirected() {
+		options = append(options, gograph.Directed())
 	}
 
 	// Convert components to Graph[T] objects
