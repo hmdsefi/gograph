@@ -2,10 +2,15 @@ package partition
 
 import (
 	"errors"
+	"math"
 
 	"github.com/hmdsefi/gograph"
 	"github.com/hmdsefi/gograph/connectivity"
 )
+
+// errTooManyPaths is returned when two vertices have more shortest paths
+// between them than a float64 can count.
+var errTooManyPaths = errors.New("too many shortest paths between two vertices to count")
 
 // GirvanNewman implements the Girvan-Newman community detection algorithm for
 // undirected graphs. It partitions a graph into communities by iteratively
@@ -49,7 +54,8 @@ import (
 //     Each community has every edge of g between its vertices, including
 //     edges the algorithm removed while splitting the graph. The communities
 //     keep the vertex and edge weights, and are weighted if g is weighted.
-//   - An error if the operation fails.
+//   - An error if g is nil, or if two vertices have more shortest paths
+//     between them than a float64 can count (about 1.8e308).
 //
 // Time Complexity:
 //   - Each iteration requires computing betweenness for all edges using BFS from each node.
@@ -74,7 +80,10 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	components := connectivity.ConnectedComponents(working)
 	for (k > 0 && len(components) < k) || (k <= 0 && working.Size() > 0) {
 		// Compute edge betweenness
-		betweenness := calculateEdgeBetweenness(working)
+		betweenness, err := calculateEdgeBetweenness(working)
+		if err != nil {
+			return nil, err
+		}
 		if len(betweenness) == 0 {
 			break
 		}
@@ -155,10 +164,19 @@ func cloneGraph[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
 	return clone
 }
 
-// calculateEdgeBetweenness computes edge betweenness centrality using Brandes' algorithm
-func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edge[T]]float64 {
+// calculateEdgeBetweenness computes edge betweenness centrality using Brandes'
+// algorithm. It returns errTooManyPaths when the number of shortest paths to
+// a vertex is too large for a float64.
+func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) (map[*gograph.Edge[T]]float64, error) {
 	betweenness := make(map[*gograph.Edge[T]]float64)
 	vertices := g.GetAllVertices()
+
+	// The search must reach each neighbor once, or sigma counts a path more
+	// than once. EdgesOf lists both stored directions of an undirected edge.
+	outgoing := make(map[*gograph.Vertex[T]][]*gograph.Edge[T], len(vertices))
+	for _, e := range g.AllEdges() {
+		outgoing[e.Source()] = append(outgoing[e.Source()], e)
+	}
 
 	for _, s := range vertices {
 		// BFS structures
@@ -183,17 +201,17 @@ func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edg
 			queue = queue[1:]
 			stack = append(stack, v)
 
-			for _, e := range g.EdgesOf(v) {
-				w := e.OtherVertex(v.Label())
-				if w == nil {
-					continue
-				}
+			for _, e := range outgoing[v] {
+				w := e.Destination()
 				if distance[w] < 0 {
 					distance[w] = distance[v] + 1
 					queue = append(queue, w)
 				}
 				if distance[w] == distance[v]+1 {
 					sigma[w] += sigma[v]
+					if math.IsInf(sigma[w], 1) {
+						return nil, errTooManyPaths
+					}
 					pred[w] = append(pred[w], v)
 				}
 			}
@@ -220,5 +238,5 @@ func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edg
 		betweenness[e] /= 2
 	}
 
-	return betweenness
+	return betweenness, nil
 }
