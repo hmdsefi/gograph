@@ -2,12 +2,14 @@ package util
 
 import (
 	"container/heap"
+	"math"
 
 	"github.com/hmdsefi/gograph"
 )
 
 // VertexPriorityQueue wraps priorityQueue to expose a small,
-// type-safe API.
+// type-safe API. A vertex with a NaN priority comes out after every vertex
+// with a number.
 type VertexPriorityQueue[T comparable] struct {
 	pq priorityQueue[T] // a slice of VertexWithPriority that represents min heap.
 }
@@ -89,9 +91,11 @@ type priorityQueue[T comparable] []*VertexWithPriority[T]
 func (pq priorityQueue[T]) Len() int { return len(pq) }
 
 // Less reports whether the element with index i
-// must sort before the element with index j.
+// must sort before the element with index j. A NaN priority sorts after
+// every number, since < can't order it.
 func (pq priorityQueue[T]) Less(i, j int) bool {
-	return pq[i].priority < pq[j].priority
+	a, b := pq[i].priority, pq[j].priority
+	return a < b || (math.IsNaN(b) && !math.IsNaN(a))
 }
 
 // Swap swaps the elements with indexes i and j.

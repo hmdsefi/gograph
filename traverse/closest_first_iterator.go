@@ -2,6 +2,7 @@ package traverse
 
 import (
 	"container/heap"
+	"math"
 
 	"github.com/hmdsefi/gograph"
 )
@@ -103,6 +104,10 @@ type closestFirstIterator[T comparable] struct {
 // NewClosestFirstIterator creates a new instance of closestFirstIterator
 // and returns it as the Iterator interface.
 //
+// Edge weights are expected to be non-negative. An edge with a NaN weight is
+// skipped. A vertex reached only through a +Inf weight is visited after every
+// vertex at a finite distance.
+//
 // if the start node doesn't exist, returns error.
 func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Iterator[T], error) {
 	v := graph.GetVertexByID(start)
@@ -154,8 +159,11 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 			continue
 		}
 		edge := c.graph.GetEdge(currNode, neighbor)
-		if edge != nil {
-			dist := c.currDist + edge.Weight()
+		if edge == nil {
+			continue
+		}
+		// the queue can't order a NaN distance
+		if dist := c.currDist + edge.Weight(); !math.IsNaN(dist) {
 			c.pq.pushOrDecrease(c.graph.GetVertexByID(neighbor.Label()), dist)
 		}
 	}
