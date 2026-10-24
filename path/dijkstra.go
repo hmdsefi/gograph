@@ -14,8 +14,10 @@ import (
 // The time complexity of the simple Dijkstra's algorithm implementation is O(V^2).
 //
 // It returns the shortest distances from the starting vertex to all other vertices
-// in the graph. Unreachable vertices have distance math.MaxFloat64.
+// in the graph. A vertex that isn't reachable has the distance math.MaxFloat64.
 // Edge weights are used whether or not the graph has the Weighted option.
+// An edge with a NaN weight is skipped, and a path through a +Inf weight is as
+// long as no path.
 //
 // Edge weights must be non-negative, and this is not checked: a negative weight
 // can give a wrong distance without an error. For directed graphs created with
@@ -79,8 +81,10 @@ func newDVertex[T comparable](label T) *dVertex[T] {
 // The time complexity of the standard Dijkstra's algorithm with a min heap is O((E+V)logV).
 //
 // It returns the shortest distances from the starting vertex to all other vertices
-// in the graph. Unreachable vertices have distance math.MaxFloat64.
+// in the graph. A vertex that isn't reachable has the distance math.MaxFloat64.
 // Edge weights are used whether or not the graph has the Weighted option.
+// An edge with a NaN weight is skipped, and a path through a +Inf weight is as
+// long as no path.
 //
 // Edge weights must be non-negative, and this is not checked: a negative weight
 // can give a wrong distance without an error. For directed graphs created with
@@ -113,7 +117,11 @@ func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	for pq.Len() > 0 {
 		// Extract the vertex with the smallest tentative distance from the heap
 		curr := pq.Pop()
-		visited[curr.Vertex().Label()] = true
+		label := curr.Vertex().Label()
+		if visited[label] {
+			continue
+		}
+		visited[label] = true
 
 		// Update the distances of its neighbors
 		neighbors := curr.Vertex().Neighbors()

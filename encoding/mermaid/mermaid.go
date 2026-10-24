@@ -83,8 +83,9 @@ func WithEdgeLabel[T comparable](fn func(*gograph.Edge[T]) string) Option[T] {
 // WithVertexClass assigns a class to each vertex, for example to highlight a
 // path or a cycle. An empty string means no class. Class names can contain
 // letters, digits and '_', can't start with a digit, and can't be a word
-// that Mermaid reads as a keyword, such as end, class or style. Declare the
-// style of each class with WithClassDef.
+// that Mermaid reads as a keyword, such as end, class or style. default and
+// node aren't allowed either, because Mermaid applies them to every node.
+// Declare the style of each class with WithClassDef.
 func WithVertexClass[T comparable](fn func(*gograph.Vertex[T]) string) Option[T] {
 	return func(o *options[T]) {
 		o.vertexClass = fn
@@ -306,11 +307,13 @@ func groupClasses[T comparable](vertices []*gograph.Vertex[T], vertexClass func(
 
 // reservedClassNames are the words that the Mermaid flowchart parser reads
 // as keywords, so a diagram that uses them as class names doesn't parse.
+// Mermaid applies the default and node classes to every node.
 var reservedClassNames = map[string]bool{
 	"end": true, "graph": true, "flowchart": true, "subgraph": true,
 	"class": true, "classDef": true, "style": true, "linkStyle": true,
 	"click": true, "call": true, "href": true, "interpolate": true,
 	"_self": true, "_blank": true, "_parent": true, "_top": true,
+	"default": true, "node": true,
 }
 
 func validClassName(name string) bool {
@@ -331,9 +334,13 @@ func validClassName(name string) bool {
 }
 
 // escaper writes the characters that Mermaid parses inside quoted text as
-// entity codes.
+// entity codes. Mermaid reads %%{ as a directive and rewrites lines that
+// match style or classDef, then a colon and a #, before it parses quotes, so
+// % and : are written as entity codes too.
 var escaper = strings.NewReplacer(
 	"#", "#35;",
+	"%", "#37;",
+	":", "#58;",
 	`"`, "#quot;",
 	"&", "#amp;",
 	"<", "#lt;",

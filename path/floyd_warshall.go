@@ -35,6 +35,11 @@ import (
 //     between all pairs of vertices. If there is a negative weight cycle, it might not produce
 //     the correct shortest paths, but it can still detect the presence of such cycles.
 //
+// An edge with a NaN weight is skipped, as if it weren't in the graph. A path
+// through a +Inf weight is as long as no path. A distance of -Inf, from a -Inf
+// weight or from weights that add up below the float64 range, returns
+// ErrNegativeWeightCycle.
+//
 // The time complexity of the Floyd-Warshall algorithm is O(V^3), where V is the
 // number of vertices in the graph. Despite its cubic time complexity, it is often
 // preferred over other algorithms like Bellman-Ford for dense graphs or when the
@@ -65,7 +70,7 @@ func FloydWarshall[T comparable](g gograph.Graph[T]) (map[T]map[T]float64, error
 				destMap[dest.Label()] = 0
 			}
 
-			if edge := g.GetEdge(source, dest); edge != nil {
+			if edge := g.GetEdge(source, dest); edge != nil && !math.IsNaN(edge.Weight()) {
 				if source.Label() != dest.Label() || edge.Weight() < 0 {
 					destMap[dest.Label()] = edge.Weight()
 				}
@@ -89,6 +94,9 @@ func FloydWarshall[T comparable](g gograph.Graph[T]) (map[T]map[T]float64, error
 	edges := g.AllEdges()
 	for _, v := range vertices {
 		if dist[v.Label()][v.Label()] < 0 { // Check for negative cycles using diagonal
+			return nil, ErrNegativeWeightCycle
+		}
+		if hasNegativeInfinity(dist[v.Label()]) {
 			return nil, ErrNegativeWeightCycle
 		}
 

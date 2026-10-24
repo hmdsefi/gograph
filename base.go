@@ -195,7 +195,7 @@ func (g *baseGraph[T]) findVertex(label T) *Vertex[T] {
 //
 // If any of the specified vertices is nil, returns nil.
 // If any of the vertices does not exist, returns nil.
-// If both vertices exist but no edges found, returns an empty set.
+// If both vertices exist but no edges found, returns nil.
 func (g *baseGraph[T]) GetAllEdges(from, to *Vertex[T]) []*Edge[T] {
 	if from == nil || to == nil {
 		return nil
@@ -257,7 +257,7 @@ func (g *baseGraph[T]) GetEdge(from, to *Vertex[T]) *Edge[T] {
 }
 
 // EdgesOf returns a slice of all edges touching the specified vertex.
-// If no edges are touching the specified vertex returns an empty slice.
+// If no edges are touching the specified vertex returns nil.
 //
 // The edges that start from the vertex come first, in the order they were
 // added. The edges that end at the vertex follow, in the order of their
@@ -430,7 +430,8 @@ func (g *baseGraph[T]) GetAllVertices() []*Vertex[T] {
 }
 
 // RemoveVertices removes all the specified vertices from this graph including
-// all its touching edges if present.
+// all its touching edges if present. A removed vertex reports no neighbors
+// and an in-degree of 0.
 func (g *baseGraph[T]) RemoveVertices(vertices ...*Vertex[T]) {
 	for i := range vertices {
 		g.removeVertex(vertices[i])
@@ -451,7 +452,9 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 
 	if g.IsDirected() {
 		for i := range v.neighbors {
-			v.neighbors[i].inDegree--
+			if v.neighbors[i] != v {
+				v.neighbors[i].inDegree--
+			}
 		}
 	}
 
@@ -469,6 +472,13 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 	delete(g.edges, v.label)
 	delete(g.vertices, v.label)
 	atomic.AddUint32(&g.verticesCount, ^(uint32(1) - 1))
+
+	v.neighbors = nil
+	v.inDegree = 0
+	if in != v {
+		in.neighbors = nil
+		in.inDegree = 0
+	}
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge

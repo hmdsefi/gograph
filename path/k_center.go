@@ -30,20 +30,22 @@ var (
 // Each next center is the vertex farthest from the centers chosen so far.
 // Ties take the vertex added earlier, so the same graph gives the same
 // centers on every run. On an undirected graph, the radius is at most twice
-// the smallest radius any k centers can have. On a directed graph the
-// distances are not symmetric, and that factor of two does not hold.
+// the smallest radius any k centers that include the fixed ones can have.
+// With zero or one fixed center, that is any k centers. On a directed graph
+// the distances are not symmetric, and that factor of two does not hold.
 //
 // A vertex no center reaches is infinitely far and is chosen next. If some
 // vertex is still unreachable after k centers, the radius is +Inf. When k
-// is at least the number of vertices, every vertex is a center, fewer than
-// k are returned, and the radius is 0. An empty graph returns nil centers
-// and radius 0.
+// is at least the number of vertices, every vertex is a center, min(k, V)
+// centers are returned, and the radius is 0. An empty graph returns nil
+// centers and radius 0.
 //
 // Distances follow the edges. The graph does not have to be weighted, and
-// an edge without a weight counts as 0. A negative weight returns
-// ErrNegativeWeight. k below 1, or below the number of fixed centers,
-// returns ErrInvalidK. A fixed center that is not in the graph returns
-// gograph.ErrVertexDoesNotExist.
+// an edge without a weight counts as 0. An edge with a NaN weight is
+// skipped, and a path through a +Inf weight is as long as no path. A
+// negative weight returns ErrNegativeWeight. k below 1, or below the number
+// of fixed centers, returns ErrInvalidK. A fixed center that is not in the
+// graph returns gograph.ErrVertexDoesNotExist.
 //
 // Time is O(k (V + E) log V) and extra space is O(V + E). The distances
 // from one round are kept. Opening a center searches only the vertices it

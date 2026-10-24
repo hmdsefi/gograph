@@ -13,9 +13,9 @@ A name with no package is in package `gograph`. An empty example means [gograph.
 
 | Question | Call | Constraint | Example |
 |---|---|---|---|
-| Order a graph that has no cycles | `TopologySort` | Vertices the edges do not order follow insertion order. `StableTopologySort` takes a compare function for that choice. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
-| Order a graph that has no cycles, picking the ready vertex compare prefers | `StableTopologySort` | compare decides among ready vertices. `TopologySort` follows insertion order instead. | https://gograph.dev/algorithms/stable-topological-sort/build-pipeline |
-| Walk a graph that has no cycles, one vertex at a time | `traverse.NewTopologicalIterator` | The order is `TopologySort`. Use that function for the whole list. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
+| Order a graph that has no cycles | `TopologySort` | Directed. Vertices the edges do not order follow insertion order. `StableTopologySort` takes a compare function for that choice. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
+| Order a graph that has no cycles, picking the ready vertex compare prefers | `StableTopologySort` | Directed. compare decides among ready vertices. `TopologySort` follows insertion order instead. | https://gograph.dev/algorithms/stable-topological-sort/build-pipeline |
+| Walk a graph that has no cycles, one vertex at a time | `traverse.NewTopologicalIterator` | Directed. The order is `TopologySort`. Use that function for the whole list. | https://gograph.dev/algorithms/topological-sort/build-pipeline |
 | Keep a chosen set of vertices and the edges between them | `InducedSubgraph` | An edge with an endpoint outside the set is dropped. | |
 | Change a copy of a graph and leave the original as it is | `Clone` | The vertices and edges are new, so look them up in the copy by label. Metadata is shared, so a map or pointer stored there changes in both. | |
 | Distances from one source when no weight is negative | `path.Dijkstra` | Returns distances. A negative weight makes `path.BellmanFord` the call. The path itself is `path.DijkstraMultiSource`. | https://gograph.dev/algorithms/dijkstra/new-york |
@@ -44,6 +44,6 @@ A name with no package is in package `gograph`. An empty example means [gograph.
 | Visit vertices in layers from a start | `traverse.NewBreadthFirstIterator` | The edges are unweighted. Weighted distance uses `traverse.NewClosestFirstIterator`. | https://gograph.dev/algorithms/bfs/office-network |
 | Follow one branch to its end before the next branch | `traverse.NewDepthFirstIterator` | It is not a shortest path and not layer by layer. | https://gograph.dev/algorithms/dfs/office-network |
 | Visit the nearest remaining vertex by edge weight | `traverse.NewClosestFirstIterator` | Weights are not negative. Unweighted layers use `traverse.NewBreadthFirstIterator`. | https://gograph.dev/algorithms/closest-first/school-run |
-| Follow random edges for a fixed number of steps | `traverse.NewRandomWalkIterator` | It does not visit every vertex. A full scan uses breadth-first or depth-first. | https://gograph.dev/algorithms/random-walk/service-calls |
+| Follow random edges for a fixed number of steps | `traverse.NewRandomWalkIterator` | It does not visit every vertex. A full scan starts a breadth-first or depth-first iterator from each vertex in `GetAllVertices()` that no earlier one reached. | https://gograph.dev/algorithms/random-walk/service-calls |
 | Write the graph as Graphviz DOT | `encoding/dot.Marshal` | `encoding/dot.Write` sends the same text to an io.Writer. A flowchart is `encoding/mermaid.Marshal`. | |
 | Write the graph as a Mermaid flowchart | `encoding/mermaid.Marshal` | `encoding/mermaid.Write` sends the same text to an io.Writer. A large graph is too big for the diagram. Graphviz is `encoding/dot.Marshal`. | |

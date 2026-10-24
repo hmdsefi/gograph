@@ -136,13 +136,56 @@ func TestConnectedComponentsOtherGraph(t *testing.T) {
 		g := graphWithEdges(directed, 6, [][2]int{{1, 2}, {2, 3}, {4, 5}})
 		got := labelsOf(ConnectedComponents(otherGraph[int]{g}))
 		want := labelsOf(ConnectedComponents(g))
-		for i := range got {
-			slices.Sort(got[i])
-			slices.Sort(want[i])
-		}
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("directed=%v: ConnectedComponents(wrapper) = %v, want %v", directed, got, want)
 		}
+	}
+}
+
+func TestConnectedComponentsOtherDirectedGraphPreservesVertexOrder(t *testing.T) {
+	g := New[int](Directed())
+	for _, label := range []int{1, 2, 3} {
+		g.AddVertexByLabel(label)
+	}
+	_, _ = g.AddEdge(g.GetVertexByID(1), g.GetVertexByID(3))
+	_, _ = g.AddEdge(g.GetVertexByID(3), g.GetVertexByID(2))
+
+	got := labelsOf(ConnectedComponents(otherGraph[int]{g}))
+	want := [][]int{{1, 2, 3}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ConnectedComponents(wrapper) = %v, want %v", got, want)
+	}
+}
+
+func TestConnectedComponentsOtherDirectedGraphAppend(t *testing.T) {
+	g := graphWithEdges(true, 3, [][2]int{{1, 2}})
+	components := ConnectedComponents(otherGraph[int]{g})
+	_ = append(components[0], NewVertex(99))
+	if components[1][0].label != 3 {
+		t.Fatal("appending to a component changed the next one")
+	}
+}
+
+type distinctEndpointsGraph[T comparable] struct {
+	Graph[T]
+}
+
+func (g distinctEndpointsGraph[T]) AllEdges() []*Edge[T] {
+	edges := g.Graph.AllEdges()
+	distinct := make([]*Edge[T], len(edges)+1)
+	for i, e := range edges {
+		distinct[i] = NewEdge(NewVertex(e.Source().Label()), NewVertex(e.Destination().Label()))
+	}
+	distinct[len(edges)] = nil
+	return distinct
+}
+
+func TestConnectedComponentsOtherDirectedGraphDistinctEndpoints(t *testing.T) {
+	g := graphWithEdges(true, 3, [][2]int{{1, 2}, {2, 3}})
+	got := labelsOf(ConnectedComponents(distinctEndpointsGraph[int]{g}))
+	want := [][]int{{1, 2, 3}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ConnectedComponents(distinct endpoints) = %v, want %v", got, want)
 	}
 }
 

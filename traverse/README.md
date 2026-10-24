@@ -56,8 +56,8 @@ type Iterator[T comparable] interface {
 
 BFS iterator is a technique used to implement the Breadth-First Search (BFS)
 algorithm for traversing a graph or tree in a systematic way. The BFS iterator
-iteratively visits all the vertices of the graph, starting from a given source
-vertex and moving outwards in levels. The iterator maintains a queue of vertices
+iteratively visits the vertices reachable from a given source vertex, moving
+outwards in levels. The iterator maintains a queue of vertices
 to be visited, and it visits each vertex only once.
 
 One of the most common usages of BFS iterator is to find the shortest path between
@@ -101,9 +101,8 @@ and the visited vertices at each step.
 
 DFS iterator is a technique used to implement the Depth-First Search (DFS)
 algorithm for traversing a graph or tree in a systematic way. The DFS iterator
-recursively visits all the vertices of the graph, starting from a given
-source vertex and exploring as far as possible along each branch before
-backtracking. The iterator maintains a stack of vertices to be visited,
+visits the vertices reachable from a given source vertex, exploring as far
+as possible along each branch before backtracking. The iterator maintains a stack of vertices to be visited,
 and it visits each vertex only once.
 
 One of the most common usages of DFS iterator is to find connected components
@@ -178,7 +177,7 @@ Closest-first traversal, also known as the Best-First search or Greedy Best-Firs
 search, is a technique used to traverse a graph or a tree based on the distance
 between vertices and a given source vertex. The algorithm iteratively visits the
 vertex closest to the source vertex first and then expands its neighbors, repeating
-this process until all vertices have been visited. The distance can be defined in
+this process until every vertex reachable from the source has been visited. The distance can be defined in
 various ways, such as the number of edges, the weight of the edges, or any other
 distance metric.
 

@@ -1,0 +1,7 @@
+digraph "a�b" {
+	n0 [label="&amp;lt;b&amp;gt;"];
+	n1 [label="AT&amp;amp;T"];
+	n2 [label="a�b"];
+	n0 -> n2 [label="a &amp; b"];
+	n1 -> n0 [label="a &amp; b"];
+}
