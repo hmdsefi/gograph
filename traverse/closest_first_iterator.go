@@ -13,6 +13,9 @@ type closestFirstEntry[T comparable] struct {
 	index    int
 }
 
+// closestFirstQueue is a heap of entries ordered by priority. An entry stays
+// in byLabel once it's popped, with an index of -1, so byLabel also tells
+// which labels were visited.
 type closestFirstQueue[T comparable] struct {
 	items   []*closestFirstEntry[T]
 	byLabel map[T]*closestFirstEntry[T]
@@ -52,19 +55,25 @@ func (q *closestFirstQueue[T]) Pop() any {
 	return entry
 }
 
-func (q *closestFirstQueue[T]) pushOrDecrease(vertex *gograph.Vertex[T], priority float64) {
-	label := vertex.Label()
-	if entry := q.byLabel[label]; entry != nil {
-		if priority < entry.priority {
-			entry.priority = priority
-			heap.Fix(q, entry.index)
-		}
-		return
+// push queues vertex at priority. entry is the one byLabel has for the label
+// of vertex, or nil. A popped entry is queued again, and a queued one only
+// moves to a lower priority, unless vertex replaced the removed vertex it
+// holds, since the old distance doesn't apply to the new vertex.
+func (q *closestFirstQueue[T]) push(entry *closestFirstEntry[T], vertex *gograph.Vertex[T], priority float64) {
+	switch {
+	case entry == nil:
+		entry = &closestFirstEntry[T]{vertex: vertex, priority: priority}
+		q.byLabel[vertex.Label()] = entry
+		heap.Push(q, entry)
+	case entry.index < 0:
+		entry.vertex = vertex
+		entry.priority = priority
+		heap.Push(q, entry)
+	case entry.vertex != vertex || priority < entry.priority:
+		entry.vertex = vertex
+		entry.priority = priority
+		heap.Fix(q, entry.index)
 	}
-
-	entry := &closestFirstEntry[T]{vertex: vertex, priority: priority}
-	q.byLabel[label] = entry
-	heap.Push(q, entry)
 }
 
 func (q *closestFirstQueue[T]) peek() *closestFirstEntry[T] {
@@ -82,7 +91,6 @@ func (q *closestFirstQueue[T]) pop() *closestFirstEntry[T] {
 	if !ok || entry == nil {
 		return nil
 	}
-	delete(q.byLabel, entry.vertex.Label())
 	return entry
 }
 
@@ -96,7 +104,6 @@ func (q *closestFirstQueue[T]) pop() *closestFirstEntry[T] {
 type closestFirstIterator[T comparable] struct {
 	graph    gograph.Graph[T] // the graph that being traversed.
 	start    T                // the label of starting point of the traversal.
-	visited  map[T]bool       // a map that keeps track of whether a vertex has been visited or not.
 	pq       *closestFirstQueue[T]
 	currDist float64 // the current distance from the start node.
 }
@@ -116,21 +123,21 @@ func NewClosestFirstIterator[T comparable](graph gograph.Graph[T], start T) (Ite
 	}
 
 	pq := newClosestFirstQueue[T]()
-	pq.pushOrDecrease(v, 0)
+	pq.push(nil, v, 0)
 	return &closestFirstIterator[T]{
 		graph:    graph,
 		start:    start,
-		visited:  make(map[T]bool),
 		pq:       pq,
 		currDist: 0,
 	}, nil
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited or not.
+// to be visited or not. It drops queued vertices that were removed from
+// the graph, and returns true if one is left.
 func (c *closestFirstIterator[T]) HasNext() bool {
 	for c.pq.Len() > 0 {
-		if !c.visited[c.pq.peek().vertex.Label()] {
+		if v := c.pq.peek().vertex; hasEdges(v) || stored(c.graph, v) {
 			return true
 		}
 
@@ -141,42 +148,64 @@ func (c *closestFirstIterator[T]) HasNext() bool {
 }
 
 // Next returns the next vertex to be visited in closest-first order.
+// A vertex removed from the graph after it was queued is skipped, and a
+// vertex added later with the same label is visited if the traversal
+// reaches it.
 //
 // If the HasNext is false, returns nil.
 func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
-	if !c.HasNext() {
-		return nil
-	}
-
-	vp := c.pq.pop()
-	c.currDist = vp.priority
-	currNode := vp.vertex
-	c.visited[currNode.Label()] = true
-
-	neighbors := currNode.Neighbors()
-	for _, neighbor := range neighbors {
-		if c.visited[neighbor.Label()] {
+	for c.pq.Len() > 0 {
+		vp := c.pq.pop()
+		currNode := vp.vertex
+		if !hasEdges(currNode) && !stored(c.graph, currNode) {
 			continue
 		}
-		edge := c.graph.GetEdge(currNode, neighbor)
-		if edge == nil {
-			continue
+
+		c.currDist = vp.priority
+
+		neighbors := currNode.Neighbors()
+		for _, neighbor := range neighbors {
+			label := neighbor.Label()
+			entry := c.pq.byLabel[label]
+
+			var v *gograph.Vertex[T]
+			switch {
+			case entry == nil:
+				v = c.graph.GetVertexByID(label)
+			case entry.vertex.InDegree() > 0:
+				if entry.index < 0 {
+					continue
+				}
+				v = entry.vertex
+			default:
+				v = reached(c.graph, entry.vertex, label)
+			}
+			if v == nil {
+				continue
+			}
+
+			edge := c.graph.GetEdge(currNode, v)
+			if edge == nil {
+				continue
+			}
+			// the queue can't order a NaN distance
+			if dist := c.currDist + edge.Weight(); !math.IsNaN(dist) {
+				c.pq.push(entry, v, dist)
+			}
 		}
-		// the queue can't order a NaN distance
-		if dist := c.currDist + edge.Weight(); !math.IsNaN(dist) {
-			c.pq.pushOrDecrease(c.graph.GetVertexByID(neighbor.Label()), dist)
-		}
+
+		return currNode
 	}
 
-	return currNode
+	return nil
 }
 
 // Iterate iterates through the vertices in closest-first order and applies
 // the given function to each vertex. If the function returns an error,
 // the iteration stops and the error is returned.
 func (c *closestFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {
-	for c.HasNext() {
-		if err := f(c.Next()); err != nil {
+	for v := c.Next(); v != nil; v = c.Next() {
+		if err := f(v); err != nil {
 			return err
 		}
 	}
@@ -185,12 +214,13 @@ func (c *closestFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) er
 }
 
 // Reset resets the iterator by setting the initial state of the iterator.
-// There is no guarantee that the reset method works as expected, if
-// the start vertex being removed.
+// If the start vertex was removed from the graph, there is nothing left to
+// visit.
 func (c *closestFirstIterator[T]) Reset() {
-	c.visited = make(map[T]bool)
 	c.currDist = 0
 
 	c.pq = newClosestFirstQueue[T]()
-	c.pq.pushOrDecrease(c.graph.GetVertexByID(c.start), 0)
+	if v := c.graph.GetVertexByID(c.start); v != nil {
+		c.pq.push(nil, v, 0)
+	}
 }
