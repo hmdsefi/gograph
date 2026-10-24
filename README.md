@@ -152,7 +152,10 @@ of graph:
 
 - `gograph.Directed()` creates a directed graph. Without it, graphs are undirected.
 - `gograph.Acyclic()` creates a directed graph that rejects edges that would create a cycle.
-- `gograph.Weighted()` marks the graph as weighted. `BellmanFord` and `FloydWarshall` require it.
+- `gograph.Weighted()` marks the graph as weighted. This flag is separate from weights
+  supplied with `WithEdgeWeight`: Dijkstra uses those weights even without it.
+  `BellmanFord` and `FloydWarshall` require the flag or return `ErrNotWeighted`;
+  random walks use edge weights only when the flag is set.
 
 Every graph implements the `Graph[T]` interface. See the
 [package documentation](https://pkg.go.dev/github.com/hmdsefi/gograph#Graph) for the full list
@@ -246,6 +249,20 @@ _, _ = g.AddEdge(b, d)
 // Every undirected edge can be followed both ways.
 fmt.Println(g.ContainsEdge(a, b), g.ContainsEdge(b, a)) // true true
 ```
+
+An undirected edge between distinct vertices is stored in both directions.
+For two undirected edges `A - B` and `A - C`:
+
+| Call | Result |
+| --- | --- |
+| `g.Size()` / `len(g.AllEdges())` | 4 |
+| `a.Degree()` | 4 |
+| `a.InDegree()` / `a.OutDegree()` | 2 |
+| `len(g.EdgesOf(a))` | 4 |
+| `len(g.GetAllEdges(a, b))` | 2 |
+
+Use `OutDegree()` to count neighbors in an undirected graph. A self-loop has the
+same source and destination, so it has only one stored direction.
 
 ### Weighted
 
@@ -355,6 +372,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `TopologySort` | An order where every edge points forward (Kahn's algorithm) | O(V+E) | [watch](https://gograph.dev/algorithms/topological-sort/build-pipeline) |
 | `StableTopologySort` | The same, picking the smallest ready vertex by your compare function | O((V+E) log V) | [watch](https://gograph.dev/algorithms/stable-topological-sort/build-pipeline) |
 | `InducedSubgraph` | A chosen set of vertices and the edges between them | O(k+D) for k labels with D outgoing edges | |
+| `Clone` | A copy of the graph you can change without changing the original | O(V+E) | |
 
 **Dependencies** (`dag` package)
 
@@ -370,6 +388,12 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `CriticalPath` | The most expensive chain of dependent vertices | O(V+E) | |
 
 **Shortest paths** (`path` package)
+
+| Shortest-path algorithm | Unreachable distance | Requirement |
+| --- | --- | --- |
+| `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
+| `path.BellmanFord` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, reachable negative cycles rejected |
+| `path.FloydWarshall` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|

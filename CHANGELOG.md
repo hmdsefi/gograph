@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Clone` returns a copy of a graph that can be changed without changing the
+  original. It keeps the directed, weighted and acyclic properties, the
+  weights, edge labels and metadata, and the order of vertices and edges.
+  ([#108], [#251])
+
 ### Changed
 
+- On an undirected graph, `GirvanNewman` breaks ties between equally busy
+  edges in `AllEdges` order. A graph with such ties can split into different,
+  equally valid communities than before. ([#251])
 - The closest-first iterator can return vertices at equal distances in a
   different order than before. ([#261], [#273])
 
@@ -405,6 +415,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#252]: https://github.com/hmdsefi/gograph/pull/252
 [#111]: https://github.com/hmdsefi/gograph/issues/111
 [#250]: https://github.com/hmdsefi/gograph/pull/250
+[#108]: https://github.com/hmdsefi/gograph/issues/108
+[#251]: https://github.com/hmdsefi/gograph/pull/251
 [#261]: https://github.com/hmdsefi/gograph/issues/261
 [#264]: https://github.com/hmdsefi/gograph/issues/264
 [#265]: https://github.com/hmdsefi/gograph/issues/265

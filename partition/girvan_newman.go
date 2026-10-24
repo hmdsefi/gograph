@@ -79,8 +79,14 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 		return nil, errors.New("input graph is nil")
 	}
 
-	// Clone graph
-	working := cloneGraph(g)
+	// A directed g splits as if it were undirected, so the betweenness below
+	// runs on an undirected copy, where a->b and b->a are one edge.
+	var working gograph.Graph[T]
+	if g.IsDirected() {
+		working = undirectedCopy(g)
+	} else {
+		working = gograph.Clone(g)
+	}
 
 	components := connectivity.ConnectedComponents(working)
 	for (k > 0 && len(components) < k) || (k <= 0 && working.Size() > 0) {
@@ -177,8 +183,10 @@ func mostCentralEdge[T comparable](g gograph.Graph[T], betweenness map[*gograph.
 	return nil
 }
 
-// cloneGraph deep-copies the graph
-func cloneGraph[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
+// undirectedCopy copies a directed g into an undirected graph. When g has
+// both a->b and b->a, the copy keeps the weight and label of the first one
+// in AllEdges.
+func undirectedCopy[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
 	clone := gograph.New[T]()
 	vertexMap := make(map[T]*gograph.Vertex[T])
 	for _, v := range g.GetAllVertices() {

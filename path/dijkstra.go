@@ -15,8 +15,15 @@ import (
 //
 // It returns the shortest distances from the starting vertex to all other vertices
 // in the graph. A vertex that isn't reachable has the distance math.MaxFloat64.
+// Edge weights are used whether or not the graph has the Weighted option.
 // An edge with a NaN weight is skipped, and a path through a +Inf weight is as
 // long as no path.
+//
+// Edge weights must be non-negative, and this is not checked: a negative weight
+// can give a wrong distance without an error. For directed graphs created with
+// gograph.Weighted(), use BellmanFord to handle negative weights.
+// DijkstraMultiSource, which also takes a single source,
+// returns ErrNegativeWeight instead.
 func DijkstraSimple[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	dist := make(map[T]float64)
 
@@ -75,8 +82,15 @@ func newDVertex[T comparable](label T) *dVertex[T] {
 //
 // It returns the shortest distances from the starting vertex to all other vertices
 // in the graph. A vertex that isn't reachable has the distance math.MaxFloat64.
+// Edge weights are used whether or not the graph has the Weighted option.
 // An edge with a NaN weight is skipped, and a path through a +Inf weight is as
 // long as no path.
+//
+// Edge weights must be non-negative, and this is not checked: a negative weight
+// can give a wrong distance without an error. For directed graphs created with
+// gograph.Weighted(), use BellmanFord to handle negative weights.
+// DijkstraMultiSource, which also takes a single source,
+// returns ErrNegativeWeight instead.
 func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 	startVertex := g.GetVertexByID(start)
 	if startVertex == nil {
