@@ -36,43 +36,54 @@ func newBreadthFirstIterator[T comparable](g gograph.Graph[T], start T) *breadth
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited in the BFS traversal. It returns true if the head index
-// is in the range of the queue indices.
+// to be visited in the BFS traversal. It drops queued vertices that were
+// removed from the graph, and returns true if one is left.
 func (d *breadthFirstIterator[T]) HasNext() bool {
-	return d.head < len(d.queue)-1
+	for d.head < len(d.queue)-1 {
+		if d.graph.GetVertexByID(d.queue[d.head+1]) != nil {
+			return true
+		}
+		d.head++
+	}
+
+	return false
 }
 
 // Next returns the next vertex to be visited in the BFS traversal.
 // It dequeues the next vertex from the queue and updates the head field.
+// A vertex removed from the graph after it was queued is skipped.
 // If the HasNext is false, returns nil.
 func (d *breadthFirstIterator[T]) Next() *gograph.Vertex[T] {
-	if !d.HasNext() {
-		return nil
-	}
+	for d.head < len(d.queue)-1 {
+		d.head++
 
-	d.head++
-
-	// get the next vertex from the queue
-	currentNode := d.graph.GetVertexByID(d.queue[d.head])
-
-	// add unvisited neighbors to the queue
-	neighbors := currentNode.Neighbors()
-	for _, neighbor := range neighbors {
-		if !d.visited[neighbor.Label()] {
-			d.visited[neighbor.Label()] = true
-			d.queue = append(d.queue, neighbor.Label())
+		// get the next vertex from the queue
+		currentNode := d.graph.GetVertexByID(d.queue[d.head])
+		if currentNode == nil {
+			continue
 		}
+
+		// add unvisited neighbors to the queue
+		neighbors := currentNode.Neighbors()
+		for _, neighbor := range neighbors {
+			if !d.visited[neighbor.Label()] {
+				d.visited[neighbor.Label()] = true
+				d.queue = append(d.queue, neighbor.Label())
+			}
+		}
+
+		return currentNode
 	}
 
-	return currentNode
+	return nil
 }
 
 // Iterate iterates through all the vertices in the BFS traversal order
 // and applies the given function to each vertex. If the function returns
 // an error, the iteration stops and the error is returned.
 func (d *breadthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {
-	for d.HasNext() {
-		if err := f(d.Next()); err != nil {
+	for v := d.Next(); v != nil; v = d.Next() {
+		if err := f(v); err != nil {
 			return err
 		}
 	}
@@ -81,6 +92,8 @@ func (d *breadthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) er
 }
 
 // Reset resets the iterator by setting the initial state of the iterator.
+// If the start vertex was removed from the graph, there is nothing left to
+// visit.
 func (d *breadthFirstIterator[T]) Reset() {
 	d.queue = []T{d.start}
 	d.head = -1

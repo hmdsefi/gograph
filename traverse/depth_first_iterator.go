@@ -34,43 +34,54 @@ func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirs
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
-// to be visited in the DFS traversal. It returns true if the stack is
-// not empty.
+// to be visited in the DFS traversal. It drops stacked vertices that were
+// removed from the graph, and returns true if one is left.
 func (d *depthFirstIterator[T]) HasNext() bool {
-	return len(d.stack) > 0
+	for len(d.stack) > 0 {
+		if d.graph.GetVertexByID(d.stack[len(d.stack)-1]) != nil {
+			return true
+		}
+		d.stack = d.stack[:len(d.stack)-1]
+	}
+
+	return false
 }
 
 // Next returns the next vertex to be visited in the DFS traversal. It
-// pops the latest vertex that has been added to the stack.
+// pops the latest vertex that has been added to the stack. A vertex
+// removed from the graph after it was stacked is skipped.
 // If the HasNext is false, returns nil.
 func (d *depthFirstIterator[T]) Next() *gograph.Vertex[T] {
-	if !d.HasNext() {
-		return nil
-	}
-
-	// get the next vertex from the stack
-	label := d.stack[len(d.stack)-1]
-	d.stack = d.stack[:len(d.stack)-1]
-	currentNode := d.graph.GetVertexByID(label)
-
-	// add unvisited neighbors to the stack
-	neighbors := currentNode.Neighbors()
-	for _, neighbor := range neighbors {
-		if !d.visited[neighbor.Label()] {
-			d.stack = append(d.stack, neighbor.Label())
-			d.visited[neighbor.Label()] = true
+	for len(d.stack) > 0 {
+		// get the next vertex from the stack
+		label := d.stack[len(d.stack)-1]
+		d.stack = d.stack[:len(d.stack)-1]
+		currentNode := d.graph.GetVertexByID(label)
+		if currentNode == nil {
+			continue
 		}
+
+		// add unvisited neighbors to the stack
+		neighbors := currentNode.Neighbors()
+		for _, neighbor := range neighbors {
+			if !d.visited[neighbor.Label()] {
+				d.stack = append(d.stack, neighbor.Label())
+				d.visited[neighbor.Label()] = true
+			}
+		}
+
+		return currentNode
 	}
 
-	return currentNode
+	return nil
 }
 
 // Iterate iterates through all the vertices in the DFS traversal order
 // and applies the given function to each vertex. If the function returns
 // an error, the iteration stops and the error is returned.
 func (d *depthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) error {
-	for d.HasNext() {
-		if err := f(d.Next()); err != nil {
+	for v := d.Next(); v != nil; v = d.Next() {
+		if err := f(v); err != nil {
 			return err
 		}
 	}
@@ -79,6 +90,8 @@ func (d *depthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 }
 
 // Reset resets the iterator by setting the initial state of the iterator.
+// If the start vertex was removed from the graph, there is nothing left to
+// visit.
 func (d *depthFirstIterator[T]) Reset() {
 	d.stack = []T{d.start}
 	d.visited = map[T]bool{d.start: true}
