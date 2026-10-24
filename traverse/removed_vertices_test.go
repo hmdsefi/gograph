@@ -170,6 +170,72 @@ func TestIterators_ReturnReaddedVertex(t *testing.T) {
 	}
 }
 
+func TestIterators_ReturnVertexReaddedAfterItsVisit(t *testing.T) {
+	for _, tt := range removalIterators {
+		t.Run(tt.name, func(t *testing.T) {
+			// A -> B -> C. B is visited, then replaced by a new B that only
+			// C reaches.
+			g := gograph.New[string](gograph.Directed())
+			a := g.AddVertexByLabel("A")
+			b := g.AddVertexByLabel("B")
+			c := g.AddVertexByLabel("C")
+			_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(1))
+			_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(1))
+
+			it := startIterator(t, g, tt.iter)
+			if v := it.Next(); v != b {
+				t.Fatalf("Expect B second, but got %v", v)
+			}
+			g.RemoveVertices(b)
+			b2 := g.AddVertexByLabel("B")
+			_, _ = g.AddEdge(c, b2, gograph.WithEdgeWeight(1))
+
+			if got, want := drain(t, g, it), []string{"C", "B"}; !reflect.DeepEqual(got, want) {
+				t.Errorf("Expect %v, with the new B, but got %v", want, got)
+			}
+		})
+	}
+}
+
+func TestIterators_SkipReaddedVertexThatIsNotReached(t *testing.T) {
+	for _, tt := range removalIterators {
+		t.Run(tt.name, func(t *testing.T) {
+			// A -> B, and B is replaced by a vertex with no edges.
+			g := gograph.New[string](gograph.Directed())
+			a := g.AddVertexByLabel("A")
+			b := g.AddVertexByLabel("B")
+			_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(1))
+
+			it := startIterator(t, g, tt.iter)
+			g.RemoveVertices(b)
+			g.AddVertexByLabel("B")
+
+			if got := drain(t, g, it); len(got) != 0 {
+				t.Errorf("Expect no vertices, since nothing reaches the new B, but got %v", got)
+			}
+		})
+	}
+}
+
+func TestIterators_ReturnQueuedVertexWithoutEdges(t *testing.T) {
+	for _, tt := range removalIterators {
+		t.Run(tt.name, func(t *testing.T) {
+			// A -> B, and the edge is removed while B is queued.
+			g := gograph.New[string](gograph.Directed())
+			a := g.AddVertexByLabel("A")
+			b := g.AddVertexByLabel("B")
+			edge, _ := g.AddEdge(a, b, gograph.WithEdgeWeight(1))
+
+			it := startIterator(t, g, tt.iter)
+			g.RemoveEdges(edge)
+
+			if got, want := drain(t, g, it), []string{"B"}; !reflect.DeepEqual(got, want) {
+				t.Errorf("Expect %v, since B is still in the graph, but got %v", want, got)
+			}
+		})
+	}
+}
+
 func TestIterators_IterateSkipsVertexRemovedByCallback(t *testing.T) {
 	for _, tt := range removalIterators {
 		t.Run(tt.name, func(t *testing.T) {

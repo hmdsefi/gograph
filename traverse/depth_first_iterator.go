@@ -7,10 +7,10 @@ import (
 // depthFirstIterator  is an implementation of the Iterator interface
 // for traversing a graph using a depth-first search (DFS) algorithm.
 type depthFirstIterator[T comparable] struct {
-	graph   gograph.Graph[T] // the graph being traversed.
-	start   T                // the label of the starting vertex for the DFS traversal.
-	stack   []T              // a slice that represents the stack of vertices to visit in DFS traversal order.
-	visited map[T]bool       // a map that keeps track of whether a vertex has been visited or not.
+	graph   gograph.Graph[T]         // the graph being traversed.
+	start   T                        // the label of the starting vertex for the DFS traversal.
+	stack   []*gograph.Vertex[T]     // a slice that represents the stack of vertices to visit in DFS traversal order.
+	visited map[T]*gograph.Vertex[T] // the vertex stacked for each label.
 }
 
 // NewDepthFirstIterator creates a new instance of depthFirstIterator
@@ -25,12 +25,13 @@ func NewDepthFirstIterator[T comparable](g gograph.Graph[T], start T) (Iterator[
 }
 
 func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirstIterator[T] {
-	return &depthFirstIterator[T]{
-		graph:   g,
-		start:   start,
-		stack:   []T{start},
-		visited: map[T]bool{start: true},
+	d := &depthFirstIterator[T]{
+		graph: g,
+		start: start,
 	}
+	d.Reset()
+
+	return d
 }
 
 // HasNext returns a boolean indicating whether there are more vertices
@@ -38,7 +39,7 @@ func newDepthFirstIterator[T comparable](g gograph.Graph[T], start T) *depthFirs
 // removed from the graph, and returns true if one is left.
 func (d *depthFirstIterator[T]) HasNext() bool {
 	for len(d.stack) > 0 {
-		if d.graph.GetVertexByID(d.stack[len(d.stack)-1]) != nil {
+		if v := d.stack[len(d.stack)-1]; hasEdges(v) || stored(d.graph, v) {
 			return true
 		}
 		d.stack = d.stack[:len(d.stack)-1]
@@ -49,24 +50,29 @@ func (d *depthFirstIterator[T]) HasNext() bool {
 
 // Next returns the next vertex to be visited in the DFS traversal. It
 // pops the latest vertex that has been added to the stack. A vertex
-// removed from the graph after it was stacked is skipped.
+// removed from the graph after it was stacked is skipped, and a vertex
+// added later with the same label is visited if the traversal reaches it.
 // If the HasNext is false, returns nil.
 func (d *depthFirstIterator[T]) Next() *gograph.Vertex[T] {
 	for len(d.stack) > 0 {
 		// get the next vertex from the stack
-		label := d.stack[len(d.stack)-1]
+		currentNode := d.stack[len(d.stack)-1]
 		d.stack = d.stack[:len(d.stack)-1]
-		currentNode := d.graph.GetVertexByID(label)
-		if currentNode == nil {
+		if !hasEdges(currentNode) && !stored(d.graph, currentNode) {
 			continue
 		}
 
 		// add unvisited neighbors to the stack
 		neighbors := currentNode.Neighbors()
 		for _, neighbor := range neighbors {
-			if !d.visited[neighbor.Label()] {
-				d.stack = append(d.stack, neighbor.Label())
-				d.visited[neighbor.Label()] = true
+			label := neighbor.Label()
+			prev := d.visited[label]
+			if prev != nil && prev.InDegree() > 0 {
+				continue
+			}
+			if v := reached(d.graph, prev, label); v != nil {
+				d.stack = append(d.stack, v)
+				d.visited[label] = v
 			}
 		}
 
@@ -93,6 +99,11 @@ func (d *depthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 // If the start vertex was removed from the graph, there is nothing left to
 // visit.
 func (d *depthFirstIterator[T]) Reset() {
-	d.stack = []T{d.start}
-	d.visited = map[T]bool{d.start: true}
+	d.stack = nil
+	d.visited = make(map[T]*gograph.Vertex[T])
+
+	if v := d.graph.GetVertexByID(d.start); v != nil {
+		d.stack = append(d.stack, v)
+		d.visited[d.start] = v
+	}
 }
