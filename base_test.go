@@ -1506,6 +1506,24 @@ func BenchmarkAddEdge(b *testing.B) {
 			})
 		}
 
+		const n = 4000
+		ascending, descending := make([]int, n+1), make([]int, n+1)
+		for i := range ascending {
+			ascending[i], descending[i] = i, n-i
+		}
+		b.Run(gt.name+"/backward-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, ascending, descending[1:])
+			}
+		})
+		b.Run(gt.name+"/reversed-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, descending, ascending[:n])
+			}
+		})
+
 		edges := benchEdges(2000, 10000, true)
 		b.Run(gt.name+"/random-dag", func(b *testing.B) {
 			b.ReportAllocs()
@@ -1513,6 +1531,38 @@ func BenchmarkAddEdge(b *testing.B) {
 				benchGraph(2000, edges, gt.options...)
 			}
 		})
+
+		shuffled := rand.New(rand.NewSource(2)).Perm(2000) //nolint:gosec // seeded so runs are comparable
+		b.Run(gt.name+"/shuffled-dag", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				g := New[int](gt.options...)
+				vertices := make([]*Vertex[int], len(shuffled))
+				for _, label := range shuffled {
+					vertices[label] = g.AddVertexByLabel(label)
+				}
+				for _, e := range edges {
+					if _, err := g.AddEdge(vertices[e[0]], vertices[e[1]]); err != nil {
+						b.Fatal(err)
+					}
+				}
+			}
+		})
+	}
+}
+
+// benchChain adds the vertices in the order of labels, then the edge from i
+// to i+1 for each i in from.
+func benchChain(b *testing.B, options []GraphOptionFunc, labels, from []int) {
+	g := New[int](options...)
+	vertices := make([]*Vertex[int], len(labels))
+	for _, label := range labels {
+		vertices[label] = g.AddVertexByLabel(label)
+	}
+	for _, i := range from {
+		if _, err := g.AddEdge(vertices[i], vertices[i+1]); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
