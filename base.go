@@ -34,10 +34,20 @@ type baseGraph[T comparable] struct {
 	edgesCount    uint32
 	nextEdge      int
 
-	// search numbers the searches in reaches, and stack is their reused
-	// work list.
+	// search numbers the searches that mark vertices, and stack, behind and
+	// places are their reused work lists.
 	search uint32
 	stack  []*Vertex[T]
+	behind []*Vertex[T]
+	places []int
+
+	// ord is the topological order of an acyclic graph, indexed by vertex
+	// position: every edge u -> v has ord[u.position] < ord[v.position].
+	// It is in use while it has one entry per slot of order, and is built
+	// again otherwise. first and last are at or beyond the lowest and the
+	// highest place in use.
+	ord         []int
+	first, last int
 }
 
 func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
@@ -91,8 +101,9 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 		return nil, ErrEdgeAlreadyExists
 	}
 
-	// in an acyclic graph, the new edge closes a cycle if "to" reaches "from"
-	if g.properties.isAcyclic && g.reaches(to, from) {
+	// in an acyclic graph, place the new edge in the topological order, or
+	// reject it if it closes a cycle
+	if g.properties.isAcyclic && !g.placeEdge(from, to) {
 		return nil, ErrDAGCycle
 	}
 
@@ -111,53 +122,6 @@ func (g *baseGraph[T]) link(from, to *Vertex[T], options ...EdgeOptionFunc) *Edg
 	to.incoming = append(to.incoming, edge)
 
 	return edge
-}
-
-// reaches reports whether target can be reached from v along the edge
-// directions. It only visits the vertices reachable from v, and marks them
-// with a new search number instead of allocating a visited set.
-func (g *baseGraph[T]) reaches(v, target *Vertex[T]) bool {
-	if v == target {
-		return true
-	}
-	if len(v.neighbors) == 0 || len(target.incoming) == 0 {
-		return false
-	}
-
-	g.search++
-	if g.search == 0 {
-		for _, u := range g.vertices {
-			u.seen = 0
-		}
-		g.search = 1
-	}
-
-	v.seen = g.search
-	stack := g.stack[:0]
-	stack = append(stack, v)
-	peak := 1
-	found := false
-	for len(stack) > 0 && !found {
-		u := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		for _, n := range u.neighbors {
-			if n == target {
-				found = true
-				break
-			}
-			if n.seen != g.search {
-				n.seen = g.search
-				stack = append(stack, n)
-			}
-		}
-		peak = max(peak, len(stack))
-	}
-
-	// drop the pointers, so the reused stack doesn't keep removed vertices alive
-	clear(stack[:peak])
-	g.stack = stack[:0]
-
-	return found
 }
 
 // AddVertexByLabel adds a new vertex with the given label to the graph.
@@ -210,6 +174,10 @@ func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
 	g.vertices[v.label] = v
 	v.position = len(g.order)
 	g.order = append(g.order, v)
+	if g.properties.isAcyclic && len(g.ord) == v.position {
+		g.last++
+		g.ord = append(g.ord, g.last)
+	}
 	atomic.AddUint32(&g.verticesCount, 1)
 
 	return v
@@ -226,15 +194,24 @@ func (g *baseGraph[T]) removeFromOrder(v *Vertex[T]) {
 	}
 
 	n := 0
-	for _, u := range g.order {
+	ordered := len(g.ord) == len(g.order)
+	for i, u := range g.order {
 		if u != nil {
 			u.position = n
 			g.order[n] = u
+			if ordered {
+				g.ord[n] = g.ord[i]
+			}
 			n++
 		}
 	}
 	clear(g.order[n:])
 	g.order = g.order[:n]
+	if ordered {
+		g.ord = g.ord[:n]
+	} else {
+		g.ord = nil
+	}
 	g.removedCount = 0
 }
 

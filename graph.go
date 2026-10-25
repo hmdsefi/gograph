@@ -36,10 +36,10 @@ type Graph[T comparable] interface {
 	// them to the new edge.
 	//
 	// In a graph created with Acyclic, an edge that would close a cycle
-	// returns ErrDAGCycle without adding the edge. For a graph from New, the
-	// check only visits the vertices reachable from the 'to' vertex. It takes
-	// O(1) time when the 'to' vertex has no outgoing edges or the 'from'
-	// vertex has no incoming edges, and O(V+E) in the worst case.
+	// returns ErrDAGCycle without adding the edge. A graph from New keeps a
+	// topological order of its vertices for this check, so an edge that
+	// follows the order is added in O(1), and any other edge only visits the
+	// vertices placed between its endpoints.
 	//
 	// It creates the input vertices if they don't exist in the graph, the
 	// same way AddVertex does, so a vertex from another graph is copied.
