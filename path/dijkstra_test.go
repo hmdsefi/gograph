@@ -1,6 +1,7 @@
 package path
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -108,5 +109,24 @@ func TestDijkstra(t *testing.T) {
 	dist = Dijkstra(g, 0)
 	if len(dist) > 0 {
 		t.Errorf("Expected dist map length be 0, got %d", len(dist))
+	}
+}
+
+func BenchmarkDijkstra(b *testing.B) {
+	const n, m = 10000, 50000
+	rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so runs are comparable
+	g := gograph.New[int](gograph.Directed(), gograph.Weighted())
+	vertices := make([]*gograph.Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for g.Size() < m {
+		from, to := vertices[rng.Intn(n)], vertices[rng.Intn(n)]
+		_, _ = g.AddEdge(from, to, gograph.WithEdgeWeight(1+rng.Float64()*9))
+	}
+
+	b.ReportAllocs()
+	for range b.N {
+		Dijkstra(g, 0)
 	}
 }

@@ -1439,3 +1439,111 @@ func TestBaseGraph_RemoveVertices_KeepsVertexOfAnotherGraph(t *testing.T) {
 		})
 	}
 }
+
+// benchEdges returns m distinct edges between n vertices, without self-loops,
+// in random order. With dag set, every edge goes from a lower label to a
+// higher one.
+func benchEdges(n, m int, dag bool) [][2]int {
+	rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so runs are comparable
+	seen := make(map[[2]int]bool, m)
+	edges := make([][2]int, 0, m)
+	for len(edges) < m {
+		e := [2]int{rng.Intn(n), rng.Intn(n)}
+		if e[0] == e[1] {
+			continue
+		}
+		if dag && e[0] > e[1] {
+			e[0], e[1] = e[1], e[0]
+		}
+		if !seen[e] {
+			seen[e] = true
+			edges = append(edges, e)
+		}
+	}
+
+	return edges
+}
+
+func benchGraph(n int, edges [][2]int, options ...GraphOptionFunc) (Graph[int], []*Vertex[int]) {
+	g := New[int](options...)
+	vertices := make([]*Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for _, e := range edges {
+		_, _ = g.AddEdge(vertices[e[0]], vertices[e[1]])
+	}
+
+	return g, vertices
+}
+
+func BenchmarkAddEdge(b *testing.B) {
+	graphTypes := []struct {
+		name    string
+		options []GraphOptionFunc
+	}{
+		{"directed", []GraphOptionFunc{Directed()}},
+		{"acyclic", []GraphOptionFunc{Acyclic()}},
+	}
+
+	for _, gt := range graphTypes {
+		for _, n := range []int{1000, 4000} {
+			b.Run(fmt.Sprintf("%s/chain-%d", gt.name, n), func(b *testing.B) {
+				b.ReportAllocs()
+				for range b.N {
+					g := New[int](gt.options...)
+					prev := g.AddVertexByLabel(0)
+					for i := 1; i <= n; i++ {
+						next := g.AddVertexByLabel(i)
+						if _, err := g.AddEdge(prev, next); err != nil {
+							b.Fatal(err)
+						}
+						prev = next
+					}
+				}
+			})
+		}
+
+		edges := benchEdges(2000, 10000, true)
+		b.Run(gt.name+"/random-dag", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchGraph(2000, edges, gt.options...)
+			}
+		})
+	}
+}
+
+func BenchmarkEdgesOf(b *testing.B) {
+	edges := benchEdges(2000, 10000, false)
+	for _, directed := range []bool{true, false} {
+		var options []GraphOptionFunc
+		name := "undirected"
+		if directed {
+			options = append(options, Directed())
+			name = "directed"
+		}
+		g, vertices := benchGraph(2000, edges, options...)
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				for _, v := range vertices {
+					_ = g.EdgesOf(v)
+				}
+			}
+		})
+	}
+}
+
+func BenchmarkRemoveVertices(b *testing.B) {
+	edges := benchEdges(2000, 10000, false)
+	b.ReportAllocs()
+	for range b.N {
+		b.StopTimer()
+		g, vertices := benchGraph(2000, edges, Directed())
+		b.StartTimer()
+		for _, v := range vertices {
+			g.RemoveVertices(v)
+		}
+	}
+}
