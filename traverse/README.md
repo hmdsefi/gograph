@@ -52,6 +52,35 @@ type Iterator[T comparable] interface {
 }
 ```
 
+### Range over a traversal
+
+Each traversal also comes as a sequence for a `range` loop. The work happens as
+the loop asks for the next vertex, so `break` ends the traversal there, and the
+standard helpers such as `slices.Collect` accept the sequences.
+
+```go
+for v := range traverse.BFS(g, "A") {
+	if v.Label() == target {
+		break
+	}
+}
+```
+
+| Function | Yields |
+|---|---|
+| `BFS(g, start)` | The vertices in the order of `NewBreadthFirstIterator` |
+| `BFSWithDepth(g, start)` | The same vertices, each with its number of edges from `start` |
+| `DFS(g, start)` | The vertices in the order of `NewDepthFirstIterator` |
+| `ClosestFirst(g, start)` | The vertices in the order of `NewClosestFirstIterator`, each with its distance from `start` |
+| `Topological(g)` | The vertices in topological order, with an error up front for a cycle or an undirected graph |
+
+A sequence from a start vertex yields nothing when `start` isn't in the graph.
+To get an error instead, check `g.GetVertexByID(start)` first, or use the
+iterator constructors, which return `ErrVertexDoesNotExist`. Each vertex is the
+graph's own vertex, and ranging over a sequence again runs the traversal again.
+In the root package, `gograph.Vertices(g)` and `gograph.Edges(g)` range over
+all the vertices and edges of a graph.
+
 ## BFS
 
 BFS iterator is a technique used to implement the Breadth-First Search (BFS)

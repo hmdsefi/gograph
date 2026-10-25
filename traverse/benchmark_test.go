@@ -1,6 +1,7 @@
 package traverse
 
 import (
+	"iter"
 	"math/rand"
 	"testing"
 
@@ -49,4 +50,38 @@ func BenchmarkDepthFirstIterator(b *testing.B) {
 
 func BenchmarkClosestFirstIterator(b *testing.B) {
 	benchmarkIterator(b, NewClosestFirstIterator[int])
+}
+
+func benchmarkSeq(b *testing.B, seq func(gograph.Graph[int], int) iter.Seq[*gograph.Vertex[int]]) {
+	g := benchGraph(10000, 50000)
+	b.ReportAllocs()
+	for range b.N {
+		n := 0
+		for range seq(g, 0) {
+			n++
+		}
+		if n == 0 {
+			b.Fatal("no vertices")
+		}
+	}
+}
+
+func BenchmarkBFS(b *testing.B) {
+	benchmarkSeq(b, BFS[int])
+}
+
+func BenchmarkDFS(b *testing.B) {
+	benchmarkSeq(b, DFS[int])
+}
+
+func BenchmarkClosestFirst(b *testing.B) {
+	benchmarkSeq(b, func(g gograph.Graph[int], start int) iter.Seq[*gograph.Vertex[int]] {
+		return func(yield func(*gograph.Vertex[int]) bool) {
+			for v := range ClosestFirst(g, start) {
+				if !yield(v) {
+					return
+				}
+			}
+		}
+	})
 }

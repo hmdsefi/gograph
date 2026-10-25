@@ -360,6 +360,19 @@ for it.HasNext() {
 | [`NewClosestFirstIterator`](traverse#closest-first) | By shortest weighted distance from the start | [watch](https://gograph.dev/algorithms/closest-first/school-run) |
 | [`NewRandomWalkIterator`](traverse#random-walk) | A random walk that picks each edge in proportion to its weight in a weighted graph | [watch](https://gograph.dev/algorithms/random-walk/service-calls) |
 
+Each traversal also comes as a sequence for a `range` loop, so `break` stops it
+early and `slices.Collect` gathers it:
+
+```go
+for v, depth := range traverse.BFSWithDepth(g, "A") {
+	fmt.Println(v.Label(), depth) // A 0, B 1, C 1, D 2
+}
+```
+
+`traverse.BFS`, `DFS`, `BFSWithDepth`, `ClosestFirst` and `Topological` follow the
+iterators above, and `gograph.Vertices` and `gograph.Edges` range over a whole graph.
+See [Range over a traversal](traverse#range-over-a-traversal) for details.
+
 ## Algorithms
 
 V is the number of vertices and E the number of edges. Every link in the Demo column
