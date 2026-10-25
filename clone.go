@@ -9,9 +9,9 @@ import "sync/atomic"
 // metadata still refer to the same data. A nil graph panics. The graph must
 // not be modified while it is being copied.
 //
-// The copy keeps its vertices, its edges and its neighbor lists in one array
-// each, so a vertex or edge of the copy that is still referenced keeps that
-// storage alive.
+// The copy keeps its vertices, its edges, its neighbor lists and the lists of
+// edges that end at each vertex in one array each, so a vertex or edge of the
+// copy that is still referenced keeps that storage alive.
 //
 // Time and space are O(V + E).
 func Clone[T comparable](g Graph[T]) Graph[T] {
@@ -50,6 +50,7 @@ func (g *baseGraph[T]) clone() *baseGraph[T] {
 	}
 
 	vertices := make([]Vertex[T], vertexCount)
+	incoming := make([]*Edge[T], edgeCount)
 	for _, v := range g.order {
 		if v == nil {
 			continue
@@ -57,11 +58,13 @@ func (g *baseGraph[T]) clone() *baseGraph[T] {
 		i := slot[v.position]
 		vertices[i] = Vertex[T]{
 			label:      v.label,
-			inDegree:   v.inDegree,
 			properties: v.properties,
 			metadata:   v.metadata,
 			stored:     true,
 			position:   i,
+		}
+		if k := len(v.incoming); k > 0 {
+			vertices[i].incoming, incoming = incoming[:0:k], incoming[k:]
 		}
 		out.order[i] = &vertices[i]
 		out.vertices[v.label] = &vertices[i]
@@ -87,14 +90,16 @@ func (g *baseGraph[T]) clone() *baseGraph[T] {
 		}
 		outgoing := make(map[T]*Edge[T], len(dests))
 		for label, e := range dests {
+			to := &vertices[slot[e.dest.position]]
 			edges[0] = Edge[T]{
 				source:     from,
-				dest:       &vertices[slot[e.dest.position]],
+				dest:       to,
 				properties: e.properties,
 				metadata:   e.metadata,
 				added:      e.added,
 			}
 			outgoing[label] = &edges[0]
+			to.incoming = append(to.incoming, &edges[0])
 			edges = edges[1:]
 		}
 		out.edges[v.label] = outgoing
@@ -133,14 +138,20 @@ func cloneGraph[T comparable](g Graph[T]) *baseGraph[T] {
 	}
 
 	outDegree := make([]int, len(all))
+	inDegree := make([]int, len(all))
 	for _, e := range allEdges {
 		outDegree[out.vertices[e.source.label].position]++
+		inDegree[out.vertices[e.dest.label].position]++
 	}
 	neighbors := make([]*Vertex[T], len(allEdges))
+	incoming := make([]*Edge[T], len(allEdges))
 	for i, k := range outDegree {
 		if k > 0 {
 			out.order[i].neighbors, neighbors = neighbors[:0:k], neighbors[k:]
 			out.edges[out.order[i].label] = make(map[T]*Edge[T], k)
+		}
+		if k := inDegree[i]; k > 0 {
+			out.order[i].incoming, incoming = incoming[:0:k], incoming[k:]
 		}
 	}
 
@@ -148,7 +159,6 @@ func cloneGraph[T comparable](g Graph[T]) *baseGraph[T] {
 	for i, e := range allEdges {
 		from, to := out.vertices[e.source.label], out.vertices[e.dest.label]
 		from.neighbors = append(from.neighbors, to)
-		to.inDegree++
 		edges[i] = Edge[T]{
 			source:     from,
 			dest:       to,
@@ -156,6 +166,7 @@ func cloneGraph[T comparable](g Graph[T]) *baseGraph[T] {
 			metadata:   e.metadata,
 			added:      e.added,
 		}
+		to.incoming = append(to.incoming, &edges[i])
 		out.edges[from.label][to.label] = &edges[i]
 		out.nextEdge = max(out.nextEdge, e.added)
 		out.edgesCount++

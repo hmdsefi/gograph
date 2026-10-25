@@ -219,7 +219,7 @@ func writeEdges[T comparable](
 
 	for i, v := range vertices {
 		wroteLoop := false
-		for _, neighbor := range v.Neighbors() {
+		for neighbor := range v.AllNeighbors() {
 			j := ids[neighbor.Label()]
 			if !g.IsDirected() {
 				// the other direction of the edge is written from the vertex with the lower ID

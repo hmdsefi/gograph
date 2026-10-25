@@ -86,15 +86,19 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 	}
 
 	r.currentStep++
-	neighbors := r.current.Neighbors()
-
 	if r.graph.IsWeighted() {
 		r.current = r.randomVertex(r.current)
 		return r.current
 	}
 
-	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
-	r.current = r.graph.GetVertexByID(neighbors[i.Int64()].Label())
+	i := randomIndex(r.current.OutDegree())
+	for neighbor := range r.current.AllNeighbors() {
+		if i == 0 {
+			r.current = neighbor
+			break
+		}
+		i--
+	}
 
 	return r.current
 }
@@ -124,10 +128,8 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 	}
 
 	var maxWeight float64
-	var edges []*gograph.Edge[T]
-	neighbors := v.Neighbors()
-
-	for _, neighbor := range neighbors {
+	edges := make([]*gograph.Edge[T], 0, v.OutDegree())
+	for neighbor := range v.AllNeighbors() {
 		if edge := r.graph.GetEdge(v, neighbor); edge != nil {
 			edges = append(edges, edge)
 			if edge.Weight() > maxWeight {

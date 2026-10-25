@@ -22,7 +22,7 @@ func TopologySort[T comparable](g Graph[T]) ([]*Vertex[T], error) {
 	inDegrees := make(map[*Vertex[T]]int)
 	vertices := g.GetAllVertices()
 	for _, v := range vertices {
-		inDegrees[v] = v.inDegree
+		inDegrees[v] = v.InDegree()
 	}
 
 	// Initialize a queue with vertices of inDegrees zero
@@ -83,8 +83,8 @@ func StableTopologySort[T comparable](g Graph[T], compare func(a, b T) int) ([]*
 	inDegrees := make(map[*Vertex[T]]int, len(vertices))
 	ready := &vertexHeap[T]{compare: compare}
 	for _, v := range vertices {
-		inDegrees[v] = v.inDegree
-		if v.inDegree == 0 {
+		inDegrees[v] = v.InDegree()
+		if v.InDegree() == 0 {
 			ready.vertices = append(ready.vertices, v)
 		}
 	}

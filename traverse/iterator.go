@@ -44,17 +44,3 @@ func hasEdges[T comparable](v *gograph.Vertex[T]) bool {
 func stored[T comparable](g gograph.Graph[T], v *gograph.Vertex[T]) bool {
 	return g.GetVertexByID(v.Label()) == v
 }
-
-// reached returns the graph's vertex for a label that the traversal reached
-// through an edge, or nil if that vertex is prev, the one seen before with
-// the label. A reached vertex has an in-degree of at least 1, so a seen
-// vertex with a positive in-degree needs no lookup, and one with an
-// in-degree of 0 was removed.
-func reached[T comparable](g gograph.Graph[T], prev *gograph.Vertex[T], label T) *gograph.Vertex[T] {
-	v := g.GetVertexByID(label)
-	if v == nil || v == prev {
-		return nil
-	}
-
-	return v
-}

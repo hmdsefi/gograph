@@ -9,7 +9,7 @@ package gograph
 // returns false without a search. A graph from New takes O(V+E) time and O(V)
 // extra space, and the search stops at the first cycle it finds. Any other
 // graph is read through its methods: TopologySort when it is directed, and
-// Neighbors when it is undirected. It panics if g is nil.
+// AllNeighbors when it is undirected. It panics if g is nil.
 //
 // connectivity.HasCycle calls this.
 func HasCycle[T comparable](g Graph[T]) bool {
@@ -58,7 +58,7 @@ func hasCycleByMethods[T comparable](g Graph[T]) bool {
 			current := stack[len(stack)-1]
 			stack = stack[:len(stack)-1]
 
-			for _, neighbor := range current.vertex.Neighbors() {
+			for neighbor := range current.vertex.AllNeighbors() {
 				label := neighbor.Label()
 				if !visited[label] {
 					visited[label] = true

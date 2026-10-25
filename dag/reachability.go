@@ -2,6 +2,8 @@ package dag
 
 import (
 	"fmt"
+	"iter"
+	"slices"
 
 	"github.com/hmdsefi/gograph"
 )
@@ -21,16 +23,15 @@ func Descendants[T comparable](g gograph.Graph[T], label T) ([]*gograph.Vertex[T
 		return nil, err
 	}
 
-	next := outgoing(g)
-	return reachable(next(start), next), nil
+	return reachable(start.AllNeighbors(), outgoing[T]), nil
 }
 
 // Ancestors returns the vertices that can reach the vertex with the given
 // label, nearest first. The vertex itself is only included if it's on a
 // cycle.
 //
-// The graph doesn't index incoming edges, so it reads all edges once and
-// runs in O(V + E) time.
+// It reads all edges once to find the incoming ones, and runs in O(V + E)
+// time.
 func Ancestors[T comparable](g gograph.Graph[T], label T) ([]*gograph.Vertex[T], error) {
 	if !g.IsDirected() {
 		return nil, gograph.ErrNotDirected
@@ -65,7 +66,7 @@ func Affected[T comparable](g gograph.Graph[T], changed ...T) ([]*gograph.Vertex
 		start = append(start, v)
 	}
 
-	return reachable(start, outgoing(g)), nil
+	return reachable(slices.Values(start), outgoing[T]), nil
 }
 
 // lookup returns the vertex of g with the given label.
@@ -78,37 +79,30 @@ func lookup[T comparable](g gograph.Graph[T], label T) (*gograph.Vertex[T], erro
 	return v, nil
 }
 
-// outgoing returns a function that gives the vertices v has edges to, as
-// the graph's own pointers.
-func outgoing[T comparable](g gograph.Graph[T]) func(v *gograph.Vertex[T]) []*gograph.Vertex[T] {
-	return func(v *gograph.Vertex[T]) []*gograph.Vertex[T] {
-		neighbors := v.Neighbors()
-		for i, n := range neighbors {
-			neighbors[i] = g.GetVertexByID(n.Label())
-		}
-		return neighbors
-	}
+// outgoing gives the vertices v has edges to, as the graph's own pointers.
+func outgoing[T comparable](v *gograph.Vertex[T]) iter.Seq[*gograph.Vertex[T]] {
+	return v.AllNeighbors()
 }
 
 // incoming returns a function that gives the vertices with an edge to v. It
 // indexes the edges of g once.
-func incoming[T comparable](g gograph.Graph[T]) func(v *gograph.Vertex[T]) []*gograph.Vertex[T] {
+func incoming[T comparable](g gograph.Graph[T]) func(v *gograph.Vertex[T]) iter.Seq[*gograph.Vertex[T]] {
 	sources := make(map[T][]*gograph.Vertex[T])
 	for _, e := range g.AllEdges() {
 		dest := e.Destination().Label()
 		sources[dest] = append(sources[dest], e.Source())
 	}
 
-	return func(v *gograph.Vertex[T]) []*gograph.Vertex[T] {
-		return sources[v.Label()]
+	return func(v *gograph.Vertex[T]) iter.Seq[*gograph.Vertex[T]] {
+		return slices.Values(sources[v.Label()])
 	}
 }
 
 // reachable returns first, without repeats, followed by the vertices
 // reachable from it through next, in breadth-first order.
 func reachable[T comparable](
-	first []*gograph.Vertex[T],
-	next func(v *gograph.Vertex[T]) []*gograph.Vertex[T],
+	first iter.Seq[*gograph.Vertex[T]],
+	next func(v *gograph.Vertex[T]) iter.Seq[*gograph.Vertex[T]],
 ) []*gograph.Vertex[T] {
 	seen := make(map[T]bool)
 	var queue []*gograph.Vertex[T]
@@ -119,11 +113,11 @@ func reachable[T comparable](
 		}
 	}
 
-	for _, v := range first {
+	for v := range first {
 		visit(v)
 	}
 	for i := 0; i < len(queue); i++ {
-		for _, v := range next(queue[i]) {
+		for v := range next(queue[i]) {
 			visit(v)
 		}
 	}

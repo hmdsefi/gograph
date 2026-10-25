@@ -7,10 +7,10 @@ import (
 // depthFirstIterator  is an implementation of the Iterator interface
 // for traversing a graph using a depth-first search (DFS) algorithm.
 type depthFirstIterator[T comparable] struct {
-	graph   gograph.Graph[T]         // the graph being traversed.
-	start   T                        // the label of the starting vertex for the DFS traversal.
-	stack   []*gograph.Vertex[T]     // a slice that represents the stack of vertices to visit in DFS traversal order.
-	visited map[T]*gograph.Vertex[T] // the vertex stacked for each label.
+	graph   gograph.Graph[T]            // the graph being traversed.
+	start   T                           // the label of the starting vertex for the DFS traversal.
+	stack   []*gograph.Vertex[T]        // a slice that represents the stack of vertices to visit in DFS traversal order.
+	visited map[*gograph.Vertex[T]]bool // the vertices that were stacked.
 }
 
 // NewDepthFirstIterator creates a new instance of depthFirstIterator
@@ -63,16 +63,10 @@ func (d *depthFirstIterator[T]) Next() *gograph.Vertex[T] {
 		}
 
 		// add unvisited neighbors to the stack
-		neighbors := currentNode.Neighbors()
-		for _, neighbor := range neighbors {
-			label := neighbor.Label()
-			prev := d.visited[label]
-			if prev != nil && prev.InDegree() > 0 {
-				continue
-			}
-			if v := reached(d.graph, prev, label); v != nil {
-				d.stack = append(d.stack, v)
-				d.visited[label] = v
+		for neighbor := range currentNode.AllNeighbors() {
+			if !d.visited[neighbor] {
+				d.stack = append(d.stack, neighbor)
+				d.visited[neighbor] = true
 			}
 		}
 
@@ -100,10 +94,10 @@ func (d *depthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) erro
 // visit.
 func (d *depthFirstIterator[T]) Reset() {
 	d.stack = nil
-	d.visited = make(map[T]*gograph.Vertex[T])
+	d.visited = make(map[*gograph.Vertex[T]]bool)
 
 	if v := d.graph.GetVertexByID(d.start); v != nil {
 		d.stack = append(d.stack, v)
-		d.visited[d.start] = v
+		d.visited[v] = true
 	}
 }
