@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-26
+
 ### Added
 
 - `Clone` returns a copy of a graph that can be changed without changing the
@@ -21,6 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   equally valid communities than before. ([#251])
 - The closest-first iterator can return vertices at equal distances in a
   different order than before. ([#261], [#273])
+- `BellmanFord` and `FloydWarshall` return `ErrNegativeWeightCycle` when a
+  distance reaches `-Inf`, from a `-Inf` weight or from weights that add up
+  below the float64 range. That includes a path through a `-Inf` weight on a
+  graph with no cycle, which [#291] tracks. `DijkstraMultiSource` reports a
+  vertex behind a `+Inf` weight as unreachable, as `Dijkstra` does.
+  ([#262], [#285])
+- The docs say that an undirected edge is stored in both directions and a
+  self-loop once, how the `Weighted` option relates to the edge weights in
+  each shortest-path function, and what each one returns for a vertex it
+  can't reach. Four new examples show them. ([#103], [#248])
+- The doc comments of `DijkstraMultiSource`, `KCenter`, `dag.Descendants`,
+  `dag.Affected`, `dag.Ancestors`, `GetAllEdges` and `EdgesOf`, and the
+  traversal guide in `traverse/README.md`, describe what the code does.
+  ([#268], [#278])
+- A pull request for an issue in a later milestone goes to that milestone's
+  `release/vX.Y.Z` branch. The contributing guide and the pull request
+  template say so. ([#257])
 
 ### Fixed
 
@@ -37,11 +56,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RemoveVertices` clears the neighbors and in-degree of a removed vertex, so
   its `Neighbors`, `OutDegree`, `InDegree` and `HasNeighbor` no longer report
   edges the graph doesn't have. A directed self-loop no longer leaves its
-  in-degree at -1. ([#266], [#275])
+  in-degree at -1. A vertex of another graph with the same label keeps its
+  edges. ([#266], [#275], [#290], [#292])
 - `TopologySort`, `StableTopologySort` and `traverse.NewTopologicalIterator`
   return `ErrNotDirected` when given an undirected graph. Previously,
   graphs with edges reported `ErrDAGHasCycle`, while edge-free graphs
   sorted successfully. ([#264], [#281])
+- `GirvanNewman` counts each shortest path once. On an undirected graph it
+  counted each path twice at every level, so a search 1,024 levels deep
+  overflowed to `+Inf`, every betweenness value turned into NaN, and
+  `GirvanNewman` never returned. It returns an error when two vertices have
+  more shortest paths between them than a float64 can count. One betweenness
+  pass on a path of 1,025 vertices takes 0.4 s instead of 9.1 s.
+  ([#258], [#282])
+- `GirvanNewman` removes the first edge in `AllEdges()` order among the edges
+  tied for the highest betweenness, as its doc says. Values within one part in
+  a billion of the highest count as tied, since float sums added in a
+  different order can differ in the last bits. ([#259], [#283])
+- `GirvanNewman` returns directed communities for a directed graph. When the
+  graph had both `a->b` and `b->a`, the second edge was lost with its weight
+  and label. ([#260], [#284])
+- `FloydWarshall` skips an edge with a NaN weight, as `BellmanFord` and
+  `Dijkstra` do. It kept NaN as the distance even when another path existed.
+  `BellmanFord` finds a negative cycle once its distances reach `-Inf`. The
+  closest-first iterator skips a NaN weight and visits a vertex behind a
+  `+Inf` weight after every vertex at a finite distance, and
+  `util.VertexPriorityQueue` orders a NaN priority after every number.
+  ([#262], [#285])
+- The breadth-first, depth-first and closest-first iterators skip a queued
+  vertex that was removed from the graph. Breadth-first and depth-first
+  panicked in `Next`, closest-first returned the removed vertex, and `HasNext`
+  returned true in all three. After the start vertex is removed, `Reset`
+  leaves nothing to visit. ([#263], [#286])
+- Mermaid labels write `%` as `#37;` and `:` as `#58;`, since Mermaid reads
+  both inside quoted labels. The class names `default` and `node` return the
+  invalid class name error, since Mermaid applies them to every node.
+  ([#269], [#279])
+- `encoding/dot` writes text that Graphviz reads back as given. A value is
+  written as is only when Graphviz reads all of it as one HTML-like string.
+  Quoted strings write `&` as `&amp;` and NUL as U+FFFD, and IDs such as the
+  graph name escape only `"`. A name or attribute name with a backslash at the
+  end, or before a `"` or a line break, returns an error. ([#270], [#280])
 
 ## [0.9.0] - 2026-10-16
 
@@ -317,7 +372,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/hmdsefi/gograph/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/hmdsefi/gograph/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/hmdsefi/gograph/compare/v0.8.0...v0.8.1
@@ -427,3 +483,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#273]: https://github.com/hmdsefi/gograph/pull/273
 [#275]: https://github.com/hmdsefi/gograph/pull/275
 [#281]: https://github.com/hmdsefi/gograph/pull/281
+[#103]: https://github.com/hmdsefi/gograph/issues/103
+[#258]: https://github.com/hmdsefi/gograph/issues/258
+[#259]: https://github.com/hmdsefi/gograph/issues/259
+[#260]: https://github.com/hmdsefi/gograph/issues/260
+[#262]: https://github.com/hmdsefi/gograph/issues/262
+[#263]: https://github.com/hmdsefi/gograph/issues/263
+[#268]: https://github.com/hmdsefi/gograph/issues/268
+[#269]: https://github.com/hmdsefi/gograph/issues/269
+[#270]: https://github.com/hmdsefi/gograph/issues/270
+[#290]: https://github.com/hmdsefi/gograph/issues/290
+[#291]: https://github.com/hmdsefi/gograph/issues/291
+[#248]: https://github.com/hmdsefi/gograph/pull/248
+[#257]: https://github.com/hmdsefi/gograph/pull/257
+[#278]: https://github.com/hmdsefi/gograph/pull/278
+[#279]: https://github.com/hmdsefi/gograph/pull/279
+[#280]: https://github.com/hmdsefi/gograph/pull/280
+[#282]: https://github.com/hmdsefi/gograph/pull/282
+[#283]: https://github.com/hmdsefi/gograph/pull/283
+[#284]: https://github.com/hmdsefi/gograph/pull/284
+[#285]: https://github.com/hmdsefi/gograph/pull/285
+[#286]: https://github.com/hmdsefi/gograph/pull/286
+[#292]: https://github.com/hmdsefi/gograph/pull/292
