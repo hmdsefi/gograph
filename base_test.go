@@ -1401,3 +1401,41 @@ func TestBaseGraph_RemoveVertices_ClearedEdgesAndInDegree(t *testing.T) {
 		})
 	}
 }
+
+func TestBaseGraph_RemoveVertices_KeepsVertexOfAnotherGraph(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		t.Run(fmt.Sprintf("directed=%v", directed), func(t *testing.T) {
+			var opts []GraphOptionFunc
+			if directed {
+				opts = append(opts, Directed())
+			}
+
+			a := New[string](opts...)
+			x := a.AddVertexByLabel("x")
+			y := a.AddVertexByLabel("y")
+			_, _ = a.AddEdge(x, y)
+			_, _ = a.AddEdge(y, x)
+			inDegree, outDegree := x.InDegree(), x.OutDegree()
+
+			b := New[string](opts...)
+			b.AddVertexByLabel("x")
+			b.RemoveVertices(x)
+
+			if b.GetVertexByID("x") != nil {
+				t.Errorf("expected x to be removed from b")
+			}
+			if got := x.InDegree(); got != inDegree {
+				t.Errorf("expected in-degree %d, got %d", inDegree, got)
+			}
+			if got := x.OutDegree(); got != outDegree {
+				t.Errorf("expected out-degree %d, got %d", outDegree, got)
+			}
+			if !x.HasNeighbor(y) {
+				t.Errorf("expected HasNeighbor(y) to be true")
+			}
+			if !a.ContainsEdge(x, y) {
+				t.Errorf("expected ContainsEdge(x, y) to be true")
+			}
+		})
+	}
+}

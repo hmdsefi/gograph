@@ -475,10 +475,6 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 
 	v.neighbors = nil
 	v.inDegree = 0
-	if in != v {
-		in.neighbors = nil
-		in.inDegree = 0
-	}
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge
