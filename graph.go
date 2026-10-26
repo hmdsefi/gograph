@@ -121,7 +121,8 @@ type Graph[T comparable] interface {
 
 	// RemoveVertices removes all the specified vertices from this graph including
 	// all its touching edges if present. A removed vertex reports no neighbors
-	// and an in-degree of 0.
+	// and an in-degree of 0. A vertex of another graph with the same label as a
+	// removed one keeps its edges.
 	RemoveVertices(vertices ...*Vertex[T])
 
 	// ContainsEdge returns 'true' if and only if this graph contains an edge
