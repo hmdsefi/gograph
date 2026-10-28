@@ -70,6 +70,26 @@ func (q *closestFirstQueue[T]) push(entry *closestFirstEntry[T], vertex *gograph
 	}
 }
 
+// relax queues each neighbor of v that wasn't visited yet at dist plus the
+// weight of the edge to it.
+func (q *closestFirstQueue[T]) relax(g gograph.Graph[T], v *gograph.Vertex[T], dist float64) {
+	for neighbor := range v.AllNeighbors() {
+		entry := q.byVertex[neighbor]
+		if entry != nil && entry.index < 0 {
+			continue
+		}
+
+		edge := g.GetEdge(v, neighbor)
+		if edge == nil {
+			continue
+		}
+		// the queue can't order a NaN distance
+		if d := dist + edge.Weight(); !math.IsNaN(d) {
+			q.push(entry, neighbor, d)
+		}
+	}
+}
+
 func (q *closestFirstQueue[T]) peek() *closestFirstEntry[T] {
 	if q.Len() == 0 {
 		return nil
@@ -156,22 +176,7 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 		}
 
 		c.currDist = vp.priority
-
-		for neighbor := range currNode.AllNeighbors() {
-			entry := c.pq.byVertex[neighbor]
-			if entry != nil && entry.index < 0 {
-				continue
-			}
-
-			edge := c.graph.GetEdge(currNode, neighbor)
-			if edge == nil {
-				continue
-			}
-			// the queue can't order a NaN distance
-			if dist := c.currDist + edge.Weight(); !math.IsNaN(dist) {
-				c.pq.push(entry, neighbor, dist)
-			}
-		}
+		c.pq.relax(c.graph, currNode, c.currDist)
 
 		return currNode
 	}
