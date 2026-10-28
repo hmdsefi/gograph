@@ -26,6 +26,23 @@ func ExampleBFS() {
 	// C
 }
 
+func ExampleDFS() {
+	g := gograph.New[string](gograph.Directed())
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("C"))
+	_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("D"))
+
+	// the latest vertex found comes next, so C comes before B
+	for v := range traverse.DFS(g, "A") {
+		fmt.Println(v.Label())
+	}
+	// Output:
+	// A
+	// C
+	// B
+	// D
+}
+
 func ExampleBFSWithDepth() {
 	g := gograph.New[string](gograph.Directed())
 	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))

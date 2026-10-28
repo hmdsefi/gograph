@@ -3,6 +3,7 @@ package traverse
 import (
 	"errors"
 	"iter"
+	"math"
 	"math/rand"
 	"slices"
 	"testing"
@@ -21,6 +22,30 @@ func undirectedTestGraph(n int, m uint32) gograph.Graph[int] {
 	}
 	for g.Size() < m {
 		_, _ = g.AddEdge(vertices[rng.Intn(n)], vertices[rng.Intn(n)])
+	}
+
+	return g
+}
+
+// weightedUndirectedTestGraph returns an undirected weighted graph with n
+// vertices and m random edges, where about one edge in ten weighs NaN and
+// one in ten +Inf.
+func weightedUndirectedTestGraph(n int, m uint32) gograph.Graph[int] {
+	rng := rand.New(rand.NewSource(4)) //nolint:gosec // seeded so failures are reproducible
+	g := gograph.New[int](gograph.Weighted())
+	vertices := make([]*gograph.Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for g.Size() < m {
+		weight := rng.Float64() * 10
+		switch rng.Intn(10) {
+		case 0:
+			weight = math.NaN()
+		case 1:
+			weight = math.Inf(1)
+		}
+		_, _ = g.AddEdge(vertices[rng.Intn(n)], vertices[rng.Intn(n)], gograph.WithEdgeWeight(weight))
 	}
 
 	return g
@@ -73,8 +98,9 @@ func keys[K, V any](seq iter.Seq2[K, V]) []K {
 
 func TestSequences_MatchIterators(t *testing.T) {
 	graphs := map[string]gograph.Graph[int]{
-		"directed":   benchGraph(300, 1200),
-		"undirected": undirectedTestGraph(300, 600),
+		"directed":            benchGraph(300, 1200),
+		"undirected":          undirectedTestGraph(300, 600),
+		"weighted undirected": weightedUndirectedTestGraph(300, 600),
 	}
 	for name, g := range graphs {
 		for start := 0; start < 300; start += 7 {
@@ -338,9 +364,110 @@ func TestSequences_MissingStart(t *testing.T) {
 
 func TestSequences_RunAgain(t *testing.T) {
 	g := benchGraph(100, 300)
-	bfs, dfs := BFS(g, 0), DFS(g, 0)
-	first, second := slices.Collect(bfs), slices.Collect(bfs)
-	checkSame(t, "BFS again", g, second, first)
-	first, second = slices.Collect(dfs), slices.Collect(dfs)
-	checkSame(t, "DFS again", g, second, first)
+	topological, err := Topological(dagForStop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sequences := map[string]iter.Seq[*gograph.Vertex[int]]{
+		"BFS":          BFS(g, 0),
+		"BFSWithDepth": func(yield func(*gograph.Vertex[int]) bool) { BFSWithDepth(g, 0)(withoutValue[int](yield)) },
+		"DFS":          DFS(g, 0),
+		"ClosestFirst": func(yield func(*gograph.Vertex[int]) bool) { ClosestFirst(g, 0)(withoutValue[float64](yield)) },
+		"Topological":  topological,
+	}
+	for name, seq := range sequences {
+		first := slices.Collect(seq)
+		if len(first) < 2 {
+			t.Fatalf("%s yielded %d vertices", name, len(first))
+		}
+		for v := range seq {
+			if v != first[0] {
+				t.Fatalf("%s: a broken loop started at %v, want %v", name, v.Label(), first[0].Label())
+			}
+			break
+		}
+		if second := slices.Collect(seq); !slices.Equal(second, first) {
+			t.Fatalf("%s: the second range yielded %v, want %v", name, labels(second), labels(first))
+		}
+	}
+}
+
+// withoutValue adapts yield to a two-value sequence, dropping the value.
+func withoutValue[V any](yield func(*gograph.Vertex[int]) bool) func(*gograph.Vertex[int], V) bool {
+	return func(v *gograph.Vertex[int], _ V) bool { return yield(v) }
+}
+
+func TestSequences_SkipRemovedVertices(t *testing.T) {
+	build := func() gograph.Graph[string] {
+		g := gograph.New[string](gograph.Directed())
+		for _, e := range [][2]string{{"A", "B"}, {"A", "C"}, {"A", "D"}, {"B", "E"}, {"C", "E"}, {"D", "E"}} {
+			_, _ = g.AddEdge(gograph.NewVertex(e[0]), gograph.NewVertex(e[1]))
+		}
+		return g
+	}
+	// visit ranges over a traversal and, at its second vertex, removes the
+	// neighbors of A it hasn't visited yet, which are already queued
+	visit := func(g gograph.Graph[string], seq iter.Seq[*gograph.Vertex[string]]) []string {
+		var out []string
+		for v := range seq {
+			out = append(out, v.Label())
+			if len(out) == 2 {
+				for _, label := range []string{"B", "C", "D"} {
+					if !slices.Contains(out, label) {
+						g.RemoveVertices(g.GetVertexByID(label))
+					}
+				}
+			}
+		}
+		return out
+	}
+	iteratorSeq := func(it Iterator[string], err error) iter.Seq[*gograph.Vertex[string]] {
+		if err != nil {
+			t.Fatal(err)
+		}
+		return func(yield func(*gograph.Vertex[string]) bool) {
+			for it.HasNext() && yield(it.Next()) {
+			}
+		}
+	}
+
+	for _, tc := range []struct {
+		name string
+		seq  func(g gograph.Graph[string]) iter.Seq[*gograph.Vertex[string]]
+		it   func(g gograph.Graph[string]) (Iterator[string], error)
+	}{
+		{
+			"BFS",
+			func(g gograph.Graph[string]) iter.Seq[*gograph.Vertex[string]] { return BFS(g, "A") },
+			func(g gograph.Graph[string]) (Iterator[string], error) { return NewBreadthFirstIterator(g, "A") },
+		},
+		{
+			"DFS",
+			func(g gograph.Graph[string]) iter.Seq[*gograph.Vertex[string]] { return DFS(g, "A") },
+			func(g gograph.Graph[string]) (Iterator[string], error) { return NewDepthFirstIterator(g, "A") },
+		},
+		{
+			"ClosestFirst",
+			func(g gograph.Graph[string]) iter.Seq[*gograph.Vertex[string]] {
+				return func(yield func(*gograph.Vertex[string]) bool) {
+					for v := range ClosestFirst(g, "A") {
+						if !yield(v) {
+							return
+						}
+					}
+				}
+			},
+			func(g gograph.Graph[string]) (Iterator[string], error) { return NewClosestFirstIterator(g, "A") },
+		},
+	} {
+		g := build()
+		got := visit(g, tc.seq(g))
+		if len(got) != 3 || got[2] != "E" {
+			t.Errorf("%s yielded %v, want two vertices and then E", tc.name, got)
+		}
+		g = build()
+		if want := visit(g, iteratorSeq(tc.it(g))); !slices.Equal(got, want) {
+			t.Errorf("%s yielded %v, and the iterator %v", tc.name, got, want)
+		}
+	}
 }

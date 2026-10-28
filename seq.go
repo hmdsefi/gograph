@@ -2,10 +2,13 @@ package gograph
 
 import "iter"
 
-// Vertices returns the vertices of g in the order of GetAllVertices. For a
-// graph from New, it reads them in place, without the slice GetAllVertices
-// builds. Each vertex is the graph's own vertex. Changing g while ranging
-// over the sequence isn't supported.
+// Vertices returns the vertices of g in the order of GetAllVertices. Each
+// vertex is the graph's own vertex. If g changes during the loop, vertices
+// can be skipped or repeated.
+//
+// For a graph from New, it reads the vertices in place: ranging over all of
+// them takes O(V) time and allocates nothing. For another implementation of
+// Graph, it calls GetAllVertices before the first vertex.
 func Vertices[T comparable](g Graph[T]) iter.Seq[*Vertex[T]] {
 	return func(yield func(*Vertex[T]) bool) {
 		bg, ok := g.(*baseGraph[T])
@@ -26,10 +29,14 @@ func Vertices[T comparable](g Graph[T]) iter.Seq[*Vertex[T]] {
 	}
 }
 
-// Edges returns the edges of g in the order of AllEdges. For a graph from
-// New, it collects the edges of one vertex at a time, without the slice
-// AllEdges builds. Changing g while ranging over the sequence isn't
-// supported.
+// Edges returns the edges of g in the order of AllEdges. In an undirected
+// graph, an edge between two vertices comes once in each direction, and a
+// self-loop once. If g changes during the loop, edges can be skipped or
+// repeated.
+//
+// For a graph from New, it reads the edges in place: ranging over all of
+// them takes O(V+E) time and allocates nothing. For another implementation
+// of Graph, it calls AllEdges before the first edge.
 func Edges[T comparable](g Graph[T]) iter.Seq[*Edge[T]] {
 	return func(yield func(*Edge[T]) bool) {
 		bg, ok := g.(*baseGraph[T])
@@ -42,17 +49,32 @@ func Edges[T comparable](g Graph[T]) iter.Seq[*Edge[T]] {
 			return
 		}
 
-		var edges []*Edge[T]
 		for _, v := range bg.order {
-			if v == nil {
-				continue
-			}
-			edges = bg.outgoingEdges(v, edges[:0])
-			for _, e := range edges {
-				if !yield(e) {
-					return
-				}
+			if v != nil && !bg.yieldOutgoing(v, yield) {
+				return
 			}
 		}
 	}
+}
+
+// yieldOutgoing yields the outgoing edges of v in the order of
+// outgoingEdges, and reports false once yield does.
+func (g *baseGraph[T]) yieldOutgoing(v *Vertex[T], yield func(*Edge[T]) bool) bool {
+	destMap := g.edges[v.label]
+	selfLoop := false
+	for _, neighbor := range v.neighbors {
+		// list a self-loop once, even if v is in its own neighbor list twice
+		if neighbor.label == v.label {
+			if selfLoop {
+				continue
+			}
+			selfLoop = true
+		}
+
+		if edge, ok := destMap[neighbor.label]; ok && !yield(edge) {
+			return false
+		}
+	}
+
+	return true
 }

@@ -65,9 +65,41 @@ func TestVerticesAndEdges_StopEarly(t *testing.T) {
 	}
 }
 
+func TestVerticesAndEdges_RunAgain(t *testing.T) {
+	for name, g := range seqTestGraphs() {
+		vertices, edges := Vertices(g), Edges(g)
+		if first, second := slices.Collect(vertices), slices.Collect(vertices); !slices.Equal(first, second) {
+			t.Fatalf("%s: the second range yielded %d vertices, want %d", name, len(second), len(first))
+		}
+		if first, second := slices.Collect(edges), slices.Collect(edges); !slices.Equal(first, second) {
+			t.Fatalf("%s: the second range yielded %d edges, want %d", name, len(second), len(first))
+		}
+	}
+}
+
+func TestVerticesAndEdges_NoAllocations(t *testing.T) {
+	g := seqTestGraphs()["undirected"]
+	n := 0
+	allocs := testing.AllocsPerRun(10, func() {
+		for range Vertices(g) {
+			n++
+		}
+		for range Edges(g) {
+			n++
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("ranging over Vertices and Edges allocated %v times", allocs)
+	}
+	if n == 0 {
+		t.Fatal("nothing to range over")
+	}
+}
+
 func BenchmarkGetAllVertices(b *testing.B) {
 	g, _ := benchGraph(10000, benchEdges(10000, 50000, false), Directed())
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		n := 0
 		for range g.GetAllVertices() {
@@ -82,6 +114,7 @@ func BenchmarkGetAllVertices(b *testing.B) {
 func BenchmarkVertices(b *testing.B) {
 	g, _ := benchGraph(10000, benchEdges(10000, 50000, false), Directed())
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		n := 0
 		for range Vertices(g) {
@@ -96,6 +129,7 @@ func BenchmarkVertices(b *testing.B) {
 func BenchmarkAllEdges(b *testing.B) {
 	g, _ := benchGraph(10000, benchEdges(10000, 50000, false), Directed())
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		n := 0
 		for range g.AllEdges() {
@@ -110,6 +144,7 @@ func BenchmarkAllEdges(b *testing.B) {
 func BenchmarkEdges(b *testing.B) {
 	g, _ := benchGraph(10000, benchEdges(10000, 50000, false), Directed())
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		n := 0
 		for range Edges(g) {

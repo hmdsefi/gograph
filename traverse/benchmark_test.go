@@ -55,6 +55,7 @@ func BenchmarkClosestFirstIterator(b *testing.B) {
 func benchmarkSeq(b *testing.B, seq func(gograph.Graph[int], int) iter.Seq[*gograph.Vertex[int]]) {
 	g := benchGraph(10000, 50000)
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		n := 0
 		for range seq(g, 0) {

@@ -19,3 +19,18 @@ func ExampleEdges() {
 	fmt.Println(total)
 	// Output: 8
 }
+
+func ExampleVertices() {
+	g := gograph.New[string](gograph.Directed())
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("C"))
+	_, _ = g.AddEdge(gograph.NewVertex("C"), gograph.NewVertex("B"))
+
+	// the vertices with no outgoing edges
+	for v := range gograph.Vertices(g) {
+		if v.OutDegree() == 0 {
+			fmt.Println(v.Label())
+		}
+	}
+	// Output: B
+}
