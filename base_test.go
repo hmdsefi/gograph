@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
 	"sort"
 	"testing"
 )
@@ -1482,6 +1483,7 @@ func BenchmarkAddEdge(b *testing.B) {
 		name    string
 		options []GraphOptionFunc
 	}{
+		{"undirected", nil},
 		{"directed", []GraphOptionFunc{Directed()}},
 		{"acyclic", []GraphOptionFunc{Acyclic()}},
 	}
@@ -1529,6 +1531,50 @@ func BenchmarkEdgesOf(b *testing.B) {
 			for range b.N {
 				for _, v := range vertices {
 					_ = g.EdgesOf(v)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkRemoveEdges removes, one call at a time, the edges between one
+// vertex and n others, in the order they were added or in a random order.
+func BenchmarkRemoveEdges(b *testing.B) {
+	const n = 10000
+	shuffled := rand.New(rand.NewSource(3)).Perm(n) //nolint:gosec // seeded so runs are comparable
+	for _, bc := range []struct {
+		name  string
+		into  bool
+		order []int
+	}{
+		{"into-hub", true, nil},
+		{"out-of-hub", false, nil},
+		{"into-hub-shuffled", true, shuffled},
+		{"out-of-hub-shuffled", false, shuffled},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				b.StopTimer()
+				g := New[int](Directed())
+				hub := g.AddVertexByLabel(0)
+				edges := make([]*Edge[int], n)
+				for i := range edges {
+					from, to := g.AddVertexByLabel(i+1), hub
+					if !bc.into {
+						from, to = to, from
+					}
+					edges[i], _ = g.AddEdge(from, to)
+				}
+				if bc.order != nil {
+					added := slices.Clone(edges)
+					for i, j := range bc.order {
+						edges[i] = added[j]
+					}
+				}
+				b.StartTimer()
+				for _, e := range edges {
+					g.RemoveEdges(e)
 				}
 			}
 		})

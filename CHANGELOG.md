@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
+  For a vertex of a graph, it yields the graph's own vertices without copying
+  them. ([#107], [#287])
+
+### Changed
+
+- Each vertex of a graph from `New` keeps the edges that end at it.
+  `InDegree` reads that list in O(1), `EdgesOf` takes O(d log d) time for a
+  vertex with d edges, and `RemoveVertices` visits only the neighbors of each
+  removed vertex. On a graph with 2,000 vertices and 10,000 edges, calling
+  `EdgesOf` on every vertex takes 0.3 ms instead of 54 ms, and removing every
+  vertex takes 0.7 ms instead of 37 ms. ([#107], [#287])
+- On a graph created with `Acyclic`, `AddEdge` checks a new edge with one
+  search over the vertices reachable from its destination. Building a chain
+  of 4,000 edges takes 1.1 ms instead of 618 ms. ([#107], [#287])
+- The traversal iterators, `Dijkstra`, the strongly connected component
+  functions, the dag helpers and the encoders read the stored neighbors
+  through `AllNeighbors`. The breadth-first and depth-first iterators run
+  about 60% faster on a graph of 10,000 vertices and allocate 99% less
+  often. ([#107], [#287])
+- A vertex takes 16 more bytes, and each edge one more pointer in the list of
+  its destination. Removing an edge takes time proportional to the in-degree
+  of its destination as well as the out-degree of its source. ([#287])
+
 ## [0.9.1] - 2026-10-26
 
 ### Added
@@ -505,3 +531,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#285]: https://github.com/hmdsefi/gograph/pull/285
 [#286]: https://github.com/hmdsefi/gograph/pull/286
 [#292]: https://github.com/hmdsefi/gograph/pull/292
+[#107]: https://github.com/hmdsefi/gograph/issues/107
+[#287]: https://github.com/hmdsefi/gograph/pull/287

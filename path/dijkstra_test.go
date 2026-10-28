@@ -126,6 +126,7 @@ func BenchmarkDijkstra(b *testing.B) {
 	}
 
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		Dijkstra(g, 0)
 	}

@@ -120,6 +120,9 @@ func (g *baseGraph[T]) reaches(v, target *Vertex[T]) bool {
 	if v == target {
 		return true
 	}
+	if len(v.neighbors) == 0 || len(target.incoming) == 0 {
+		return false
+	}
 
 	g.search++
 	if g.search == 0 {
@@ -439,20 +442,34 @@ func (g *baseGraph[T]) unlink(edge *Edge[T]) {
 // removeNeighbor removes neighbor from the neighbors of source, keeping the
 // order of the others.
 func removeNeighbor[T comparable](source, neighbor *Vertex[T]) {
-	if i := slices.Index(source.neighbors, neighbor); i >= 0 {
-		source.neighbors = slices.Delete(source.neighbors, i, i+1)
-	}
+	source.neighbors = removeItem(source.neighbors, neighbor)
 }
 
 // removeIncoming removes edge from the incoming edges of its destination.
 func removeIncoming[T comparable](edge *Edge[T]) {
-	in := edge.dest.incoming
-	if i := slices.Index(in, edge); i >= 0 {
-		last := len(in) - 1
-		in[i] = in[last]
-		in[last] = nil
-		edge.dest.incoming = in[:last]
+	edge.dest.incoming = removeItem(edge.dest.incoming, edge)
+}
+
+// removeItem removes the first x from list, keeping the order of the others,
+// and clears the freed slot. It checks both ends first, so removing the items
+// in the order they were added, or in reverse, takes O(1) time per item.
+func removeItem[E comparable](list []E, x E) []E {
+	var zero E
+	switch n := len(list); {
+	case n == 0:
+		return list
+	case list[0] == x:
+		list[0] = zero
+		return list[1:]
+	case list[n-1] == x:
+		list[n-1] = zero
+		return list[:n-1]
 	}
+	if i := slices.Index(list, x); i >= 0 {
+		return slices.Delete(list, i, i+1)
+	}
+
+	return list
 }
 
 // GetVertexByID returns the vertex with the input label.

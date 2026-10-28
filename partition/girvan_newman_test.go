@@ -344,6 +344,7 @@ func BenchmarkGirvanNewman(b *testing.B) {
 	}
 
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		if _, err := GirvanNewman(g, 2); err != nil {
 			b.Fatal(err)

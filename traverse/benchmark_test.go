@@ -27,6 +27,7 @@ func benchGraph(n int, m uint32) gograph.Graph[int] {
 func benchmarkIterator(b *testing.B, newIterator func(gograph.Graph[int], int) (Iterator[int], error)) {
 	g := benchGraph(10000, 50000)
 	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		it, err := newIterator(g, 0)
 		if err != nil {

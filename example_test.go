@@ -173,3 +173,23 @@ func ExampleWithEdgeLabel() {
 	// Output:
 	// queries
 }
+
+func ExampleVertex_AllNeighbors() {
+	g := gograph.New[string](gograph.Directed())
+	a := g.AddVertexByLabel("A")
+	for _, label := range []string{"B", "C", "D"} {
+		_, _ = g.AddEdge(a, g.AddVertexByLabel(label))
+	}
+
+	// The loop gets the graph's own vertices, and can stop early.
+	for n := range a.AllNeighbors() {
+		fmt.Println(n.Label(), n == g.GetVertexByID(n.Label()))
+		if n.Label() == "C" {
+			break
+		}
+	}
+
+	// Output:
+	// B true
+	// C true
+}

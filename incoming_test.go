@@ -63,6 +63,42 @@ func TestVertex_AllNeighborsUndirectedSelfLoop(t *testing.T) {
 	}
 }
 
+func TestVertex_AllNeighborsRemovedDuringLoop(t *testing.T) {
+	g := New[int](Directed())
+	a := g.AddVertexByLabel(0)
+	for i := 1; i <= 3; i++ {
+		if _, err := g.AddEdge(a, g.AddVertexByLabel(i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for n := range a.AllNeighbors() {
+		if n == nil {
+			t.Fatal("AllNeighbors yielded nil")
+		}
+		g.RemoveVertices(n)
+	}
+}
+
+func TestAddEdge_AcyclicSkipsSearchWithoutPath(t *testing.T) {
+	g := newBaseGraph[int](newProperties(Acyclic()))
+	a, b, c, d := g.AddVertexByLabel(1), g.AddVertexByLabel(2), g.AddVertexByLabel(3), g.AddVertexByLabel(4)
+	if _, err := g.AddEdge(a, b); err != nil {
+		t.Fatal(err)
+	}
+
+	// c has no outgoing edges, and d has no incoming edges
+	for _, e := range [][2]*Vertex[int]{{b, c}, {d, a}} {
+		search := g.search
+		if _, err := g.AddEdge(e[0], e[1]); err != nil {
+			t.Fatal(err)
+		}
+		if g.search != search {
+			t.Fatalf("AddEdge(%d, %d) ran a search", e[0].label, e[1].label)
+		}
+	}
+}
+
 // edgesOfByScan is EdgesOf written against the Graph methods: the outgoing
 // edges in AllEdges order, then the incoming ones in GetAllVertices order.
 func edgesOfByScan[T comparable](g Graph[T], v *Vertex[T]) []*Edge[T] {
@@ -258,5 +294,35 @@ func TestInducedSubgraph_KeepsIncomingEdges(t *testing.T) {
 		checkIncoming(t, bs, "induced")
 		bs.RemoveVertices(bs.GetVertexByID(4))
 		checkIncoming(t, bs, "induced after removal")
+	}
+}
+
+func TestRemoveItem(t *testing.T) {
+	a, b, c, d := NewVertex(1), NewVertex(2), NewVertex(3), NewVertex(4)
+	tests := []struct {
+		name string
+		x    *Vertex[int]
+		want []*Vertex[int]
+	}{
+		{"first", a, []*Vertex[int]{b, c, d}},
+		{"last", d, []*Vertex[int]{a, b, c}},
+		{"middle", b, []*Vertex[int]{a, c, d}},
+		{"missing", NewVertex(5), []*Vertex[int]{a, b, c, d}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			backing := []*Vertex[int]{a, b, c, d}
+			got := removeItem(backing, tc.x)
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+			if kept := slices.DeleteFunc(slices.Clone(backing), func(v *Vertex[int]) bool { return v == nil }); len(kept) != len(tc.want) {
+				t.Errorf("the backing array still holds %d vertices, want %d", len(kept), len(tc.want))
+			}
+		})
+	}
+
+	if got := removeItem[*Vertex[int]](nil, a); got != nil {
+		t.Errorf("got %v from an empty list", got)
 	}
 }

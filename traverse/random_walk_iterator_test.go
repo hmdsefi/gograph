@@ -218,3 +218,32 @@ func TestRandomWalkIterator_RandomVertex(t *testing.T) {
 		t.Errorf("Random vertex %v is outside the range of valid vertices 2,3", randV.Label())
 	}
 }
+
+func TestRandomWalkIterator_UnweightedVisitsEveryNeighbor(t *testing.T) {
+	g := gograph.New[int](gograph.Directed())
+	start := g.AddVertexByLabel(0)
+	for i := 1; i <= 3; i++ {
+		_, _ = g.AddEdge(start, g.AddVertexByLabel(i))
+	}
+
+	// each walk takes one step from 0, so each neighbor is missed with
+	// probability (2/3)^300 at most
+	seen := make(map[int]int)
+	for range 300 {
+		it, err := NewRandomWalkIterator(g, 0, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.Next()
+		seen[it.Next().Label()]++
+	}
+
+	for i := 1; i <= 3; i++ {
+		if seen[i] == 0 {
+			t.Errorf("the walk never stepped to %d: %v", i, seen)
+		}
+	}
+	if len(seen) != 3 {
+		t.Errorf("the walk stepped outside the neighbors of 0: %v", seen)
+	}
+}

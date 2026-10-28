@@ -37,7 +37,9 @@ type Graph[T comparable] interface {
 	//
 	// In a graph created with Acyclic, an edge that would close a cycle
 	// returns ErrDAGCycle without adding the edge. For a graph from New, the
-	// check only visits the vertices reachable from the 'to' vertex.
+	// check only visits the vertices reachable from the 'to' vertex. It takes
+	// O(1) time when the 'to' vertex has no outgoing edges or the 'from'
+	// vertex has no incoming edges, and O(V+E) in the worst case.
 	//
 	// It creates the input vertices if they don't exist in the graph, the
 	// same way AddVertex does, so a vertex from another graph is copied.
@@ -89,7 +91,8 @@ type Graph[T comparable] interface {
 
 	// RemoveEdges removes input edges from the graph from the specified
 	// slice of edges, if they exist. In undirected graph, removes edges
-	// in both directions.
+	// in both directions. For a graph from New, removing an edge takes time
+	// proportional to the degrees of its two vertices.
 	RemoveEdges(edges ...*Edge[T])
 
 	// AddVertexByLabel adds a new vertex with the given label to the graph.
@@ -310,12 +313,17 @@ func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 // AllNeighbors returns an iterator over the vertices this vertex has an edge
 // to, in the order of Neighbors. For a vertex of a graph, it yields the
 // graph's own vertices without copying them, so each one is the vertex
-// GetVertexByID returns for its label. Changing the graph while ranging over
-// the iterator isn't supported.
+// GetVertexByID returns for its label. In an undirected graph it yields each
+// neighbor once, and a vertex with a self-loop yields itself once. A removed
+// vertex yields nothing.
+//
+// Ranging over all neighbors takes O(OutDegree) time and allocates nothing.
+// If the graph changes during the loop, the iterator can skip or repeat a
+// neighbor.
 func (v *Vertex[T]) AllNeighbors() iter.Seq[*Vertex[T]] {
 	return func(yield func(*Vertex[T]) bool) {
-		for _, n := range v.neighbors {
-			if !yield(n) {
+		for i := 0; i < len(v.neighbors); i++ {
+			if !yield(v.neighbors[i]) {
 				return
 			}
 		}
