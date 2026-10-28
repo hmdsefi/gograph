@@ -49,6 +49,12 @@ func (g *baseGraph[T]) clone() *baseGraph[T] {
 		nextEdge:      g.nextEdge,
 	}
 
+	keepOrder := g.properties.isAcyclic && len(g.ord) == len(g.order)
+	if keepOrder {
+		out.ord = make([]int, vertexCount)
+		out.first, out.last = g.first, g.last
+	}
+
 	vertices := make([]Vertex[T], vertexCount)
 	incoming := make([]*Edge[T], edgeCount)
 	for _, v := range g.order {
@@ -56,6 +62,9 @@ func (g *baseGraph[T]) clone() *baseGraph[T] {
 			continue
 		}
 		i := slot[v.position]
+		if keepOrder {
+			out.ord[i] = g.ord[v.position]
+		}
 		vertices[i] = Vertex[T]{
 			label:      v.label,
 			properties: v.properties,

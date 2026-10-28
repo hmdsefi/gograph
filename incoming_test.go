@@ -252,18 +252,19 @@ func TestAddEdge_AcyclicMatchesCycleCheck(t *testing.T) {
 
 func TestAddEdge_AcyclicSearchWraparound(t *testing.T) {
 	g := newBaseGraph[int](newProperties(Acyclic()))
-	a, b, c := g.AddVertexByLabel(1), g.AddVertexByLabel(2), g.AddVertexByLabel(3)
-	for _, e := range [][2]*Vertex[int]{{a, b}, {b, c}} {
+	a, b, c, d := g.AddVertexByLabel(1), g.AddVertexByLabel(2), g.AddVertexByLabel(3), g.AddVertexByLabel(4)
+	for _, e := range [][2]*Vertex[int]{{a, b}, {b, c}, {c, d}} {
 		if _, err := g.AddEdge(e[0], e[1]); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	// the next search number wraps around, and b still holds the mark of search 1
+	// the next search number wraps around, b still holds the mark of search
+	// 1, and c holds no mark
 	g.search = ^uint32(0)
-	b.seen = 1
-	if _, err := g.AddEdge(c, a); !errors.Is(err, ErrDAGCycle) {
-		t.Fatalf("AddEdge(3, 1) error = %v, want ErrDAGCycle", err)
+	b.seen, c.seen = 1, 0
+	if _, err := g.AddEdge(d, a); !errors.Is(err, ErrDAGCycle) {
+		t.Fatalf("AddEdge(4, 1) error = %v, want ErrDAGCycle", err)
 	}
 }
 

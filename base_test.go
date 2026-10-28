@@ -1506,6 +1506,32 @@ func BenchmarkAddEdge(b *testing.B) {
 			})
 		}
 
+		const n = 4000
+		ascending, descending := make([]int, n+1), make([]int, n+1)
+		for i := range ascending {
+			ascending[i], descending[i] = i, n-i
+		}
+		b.Run(gt.name+"/backward-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, ascending, descending[1:])
+			}
+		})
+		b.Run(gt.name+"/reversed-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, descending, ascending[:n])
+			}
+		})
+		for _, size := range []int{1000, 4000} {
+			b.Run(fmt.Sprintf("%s/hub-%d", gt.name, size), func(b *testing.B) {
+				b.ReportAllocs()
+				for range b.N {
+					hubGraph(b, New[int](gt.options...), size, nil)
+				}
+			})
+		}
+
 		edges := benchEdges(2000, 10000, true)
 		b.Run(gt.name+"/random-dag", func(b *testing.B) {
 			b.ReportAllocs()
@@ -1513,6 +1539,64 @@ func BenchmarkAddEdge(b *testing.B) {
 				benchGraph(2000, edges, gt.options...)
 			}
 		})
+
+		shuffled := rand.New(rand.NewSource(2)).Perm(2000) //nolint:gosec // seeded so runs are comparable
+		b.Run(gt.name+"/shuffled-dag", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				g := New[int](gt.options...)
+				vertices := make([]*Vertex[int], len(shuffled))
+				for _, label := range shuffled {
+					vertices[label] = g.AddVertexByLabel(label)
+				}
+				for _, e := range edges {
+					if _, err := g.AddEdge(vertices[e[0]], vertices[e[1]]); err != nil {
+						b.Fatal(err)
+					}
+				}
+			}
+		})
+	}
+}
+
+// hubGraph adds vertices 0 to n-1, then n, then an edge from each i to n,
+// then the edges from i+1 to i, from the top down. From the third of those
+// on, each edge goes against the order, and every vertex above it reaches
+// its source. It calls check, if not nil, after each of those edges.
+func hubGraph(tb testing.TB, g Graph[int], n int, check func(step string)) {
+	tb.Helper()
+
+	vertices := make([]*Vertex[int], n+1)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for i := range n {
+		if _, err := g.AddEdge(vertices[i], vertices[n]); err != nil {
+			tb.Fatal(err)
+		}
+	}
+	for i := n - 2; i >= 0; i-- {
+		if _, err := g.AddEdge(vertices[i+1], vertices[i]); err != nil {
+			tb.Fatal(err)
+		}
+		if check != nil {
+			check(fmt.Sprintf("after %d -> %d", i+1, i))
+		}
+	}
+}
+
+// benchChain adds the vertices in the order of labels, then the edge from i
+// to i+1 for each i in from.
+func benchChain(b *testing.B, options []GraphOptionFunc, labels, from []int) {
+	g := New[int](options...)
+	vertices := make([]*Vertex[int], len(labels))
+	for _, label := range labels {
+		vertices[label] = g.AddVertexByLabel(label)
+	}
+	for _, i := range from {
+		if _, err := g.AddEdge(vertices[i], vertices[i+1]); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
