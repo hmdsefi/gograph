@@ -3,6 +3,8 @@ package path
 import (
 	"errors"
 	"math"
+	"math/rand/v2"
+	"strconv"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -95,6 +97,52 @@ func TestFloydWarshall_NegativeSelfLoop(t *testing.T) {
 	}
 }
 
+func TestFloydWarshall_RoundingIsNoCycle(t *testing.T) {
+	// with the vertices in this order, the distance from 1 to 0 is
+	// 3.3 + (3.3 + 1.1), and (3.3 + 3.3) + 1.1 rounds lower, which a check of
+	// each edge after the main loop read as a negative cycle
+	g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	for _, label := range []string{"0", "1", "2", "3"} {
+		g.AddVertexByLabel(label)
+	}
+	for _, e := range []weightedEdge{{"1", "3", 3.3}, {"3", "2", 3.3}, {"2", "0", 1.1}} {
+		_, _ = g.AddEdge(g.GetVertexByID(e.from), g.GetVertexByID(e.to), gograph.WithEdgeWeight(e.weight))
+	}
+
+	dist, err := FloydWarshall(g)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if d := dist["1"]["0"]; math.Abs(d-7.7) > 1e-9 {
+		t.Errorf("expected a distance of about 7.7 from 1 to 0, got %v", d)
+	}
+}
+
+func TestShortestPaths_PositiveWeightsHaveNoCycle(t *testing.T) {
+	weights := []float64{0.01, 0.1, 0.2, 0.3, 0.7, 1.1, 3.3}
+	for seed := range uint64(300) {
+		rng := rand.New(rand.NewPCG(seed, 285)) //nolint:gosec // seeded so failures are reproducible
+		n := 2 + rng.IntN(8)
+		g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+		for i := range n {
+			g.AddVertexByLabel(strconv.Itoa(i))
+		}
+		for range rng.IntN(n*n + 1) {
+			from, to := g.GetVertexByID(strconv.Itoa(rng.IntN(n))), g.GetVertexByID(strconv.Itoa(rng.IntN(n)))
+			_, _ = g.AddEdge(from, to, gograph.WithEdgeWeight(weights[rng.IntN(len(weights))]))
+		}
+
+		if _, err := FloydWarshall(g); err != nil {
+			t.Fatalf("seed %d, FloydWarshall: unexpected error: %v", seed, err)
+		}
+		for _, v := range g.GetAllVertices() {
+			if _, err := BellmanFord(g, v.Label()); err != nil {
+				t.Fatalf("seed %d, BellmanFord from %s: unexpected error: %v", seed, v.Label(), err)
+			}
+		}
+	}
+}
+
 func TestFloydWarshall_NotWeighted(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
 
@@ -132,5 +180,25 @@ func TestFloydWarshall_NotDirected(t *testing.T) {
 
 	if !errors.Is(err, ErrNotDirected) {
 		t.Errorf("Expected error \"%s\", but got \"%s\"", ErrNotDirected, err)
+	}
+}
+
+func BenchmarkFloydWarshall(b *testing.B) {
+	graphs := []struct {
+		name string
+		g    gograph.Graph[int]
+	}{
+		{name: "random-100x500", g: randomWeighted(100, 500)},
+		{name: "random-300x1500", g: randomWeighted(300, 1500)},
+	}
+	for _, tt := range graphs {
+		b.Run(tt.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				if _, err := FloydWarshall(tt.g); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
 	}
 }

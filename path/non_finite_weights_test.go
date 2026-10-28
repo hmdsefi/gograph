@@ -2,7 +2,11 @@ package path
 
 import (
 	"errors"
+	"maps"
 	"math"
+	"math/rand/v2"
+	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -139,18 +143,27 @@ func TestShortestPaths_PositiveInfinityWeight(t *testing.T) {
 	}
 }
 
-func TestShortestPaths_NegativeInfinityDistance(t *testing.T) {
+func TestShortestPaths_NegativeCycleOrOverflow(t *testing.T) {
+	negInf := math.Inf(-1)
 	tests := []struct {
 		name  string
 		edges []weightedEdge
 	}{
 		{
 			name:  "negative infinite weight in a cycle",
-			edges: []weightedEdge{{"a", "b", math.Inf(-1)}, {"b", "a", 1}},
+			edges: []weightedEdge{{"a", "b", negInf}, {"b", "a", 1}},
 		},
 		{
-			name:  "negative infinite weight",
-			edges: []weightedEdge{{"a", "b", math.Inf(-1)}, {"b", "c", 1}},
+			name:  "negative infinite self-loop",
+			edges: []weightedEdge{{"a", "b", 1}, {"b", "b", negInf}},
+		},
+		{
+			name:  "cycle of negative infinite weights behind one",
+			edges: []weightedEdge{{"a", "b", negInf}, {"b", "c", negInf}, {"c", "b", negInf}},
+		},
+		{
+			name:  "negative cycle that a negative infinite weight leads into",
+			edges: []weightedEdge{{"a", "b", negInf}, {"b", "c", -1}, {"c", "b", -1}},
 		},
 		{
 			name:  "negative cycle that sums below the float64 range",
@@ -175,6 +188,220 @@ func TestShortestPaths_NegativeInfinityDistance(t *testing.T) {
 				t.Errorf("DijkstraMultiSource: expected ErrNegativeWeight, got %v", err)
 			}
 		})
+	}
+}
+
+func TestShortestPaths_NegativeInfinityPath(t *testing.T) {
+	inf := math.Inf(1)
+	tests := []struct {
+		name  string
+		edges []weightedEdge
+		want  map[string]float64 // distances from a
+	}{
+		{
+			name:  "single negative infinite weight",
+			edges: []weightedEdge{{"a", "b", -inf}},
+			want:  map[string]float64{"a": 0, "b": -inf},
+		},
+		{
+			name:  "path through a negative infinite weight",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "c", 1}},
+			want:  map[string]float64{"a": 0, "b": -inf, "c": -inf},
+		},
+		{
+			name:  "two negative infinite weights in a row",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "c", -inf}},
+			want:  map[string]float64{"a": 0, "b": -inf, "c": -inf},
+		},
+		{
+			name:  "positive cycle that a negative infinite weight leads into",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "c", 1}, {"c", "b", 1}},
+			want:  map[string]float64{"a": 0, "b": -inf, "c": -inf},
+		},
+		{
+			name:  "shorter finite path to the same vertex",
+			edges: []weightedEdge{{"a", "c", -5}, {"a", "b", -inf}, {"b", "c", 1}, {"c", "d", 1}},
+			want:  map[string]float64{"a": 0, "b": -inf, "c": -inf, "d": -inf},
+		},
+		{
+			name:  "positive infinite weight after it",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "c", inf}},
+			want:  map[string]float64{"a": 0, "b": -inf, "c": inf},
+		},
+		{
+			name:  "positive infinite weight back to the start",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "a", inf}},
+			want:  map[string]float64{"a": 0, "b": -inf},
+		},
+		{
+			name:  "NaN weight back to the start",
+			edges: []weightedEdge{{"a", "b", -inf}, {"b", "a", math.NaN()}},
+			want:  map[string]float64{"a": 0, "b": -inf},
+		},
+		{
+			name:  "negative infinite weight that the start doesn't reach",
+			edges: []weightedEdge{{"a", "b", 2}, {"c", "b", -inf}, {"b", "d", 1}},
+			want:  map[string]float64{"a": 0, "b": 2, "c": inf, "d": 3},
+		},
+		{
+			name:  "two negative infinite weights into one vertex",
+			edges: []weightedEdge{{"a", "b", 1}, {"a", "c", 1}, {"b", "d", -inf}, {"c", "d", -inf}, {"d", "e", 1}},
+			want:  map[string]float64{"a": 0, "b": 1, "c": 1, "d": -inf, "e": -inf},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := directedWeighted(tt.edges...)
+			dist, err := BellmanFord(g, "a")
+			if err != nil {
+				t.Fatalf("BellmanFord: unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(dist, tt.want) {
+				t.Errorf("BellmanFord: expected %v, got %v", tt.want, dist)
+			}
+
+			all, err := FloydWarshall(g)
+			if err != nil {
+				t.Fatalf("FloydWarshall: unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(all["a"], tt.want) {
+				t.Errorf("FloydWarshall: expected %v from a, got %v", tt.want, all["a"])
+			}
+		})
+	}
+}
+
+func TestShortestPaths_UnreachableNegativeInfinityCycle(t *testing.T) {
+	// a negative cycle counts for BellmanFord only when the start reaches it,
+	// and for FloydWarshall anywhere in the graph
+	g := directedWeighted(
+		weightedEdge{"a", "b", 1},
+		weightedEdge{"c", "d", math.Inf(-1)},
+		weightedEdge{"d", "c", 1},
+	)
+
+	dist, err := BellmanFord(g, "a")
+	if err != nil {
+		t.Fatalf("BellmanFord: unexpected error: %v", err)
+	}
+	want := map[string]float64{"a": 0, "b": 1, "c": math.Inf(1), "d": math.Inf(1)}
+	if !reflect.DeepEqual(dist, want) {
+		t.Errorf("BellmanFord: expected %v, got %v", want, dist)
+	}
+
+	if _, err = BellmanFord(g, "d"); !errors.Is(err, ErrNegativeWeightCycle) {
+		t.Errorf("BellmanFord from d: expected ErrNegativeWeightCycle, got %v", err)
+	}
+	if _, err = FloydWarshall(g); !errors.Is(err, ErrNegativeWeightCycle) {
+		t.Errorf("FloydWarshall: expected ErrNegativeWeightCycle, got %v", err)
+	}
+}
+
+// referenceBellmanFord follows the rules in the BellmanFord doc one by one,
+// without the shortcuts BellmanFord takes. It reports true for a negative
+// cycle that start reaches.
+func referenceBellmanFord(g gograph.Graph[string], start string) (map[string]float64, bool) {
+	usable := func(w float64) bool { return !math.IsNaN(w) && !math.IsInf(w, 1) }
+	reaches := func(from, to string) bool {
+		seen := map[string]bool{from: true}
+		queue := []string{from}
+		for len(queue) > 0 {
+			v := queue[0]
+			queue = queue[1:]
+			if v == to {
+				return true
+			}
+			for _, e := range g.AllEdges() {
+				if e.Source().Label() == v && usable(e.Weight()) && !seen[e.Destination().Label()] {
+					seen[e.Destination().Label()] = true
+					queue = append(queue, e.Destination().Label())
+				}
+			}
+		}
+		return false
+	}
+	weight := func(e *gograph.Edge[string]) float64 {
+		if math.IsInf(e.Weight(), -1) {
+			return 0
+		}
+		return e.Weight()
+	}
+
+	inf := math.Inf(1)
+	dist := make(map[string]float64)
+	for _, v := range g.GetAllVertices() {
+		dist[v.Label()] = inf
+	}
+	dist[start] = 0
+	for range g.Order() {
+		for _, e := range g.AllEdges() {
+			if d := dist[e.Source().Label()]; d != inf && d+weight(e) < dist[e.Destination().Label()] {
+				dist[e.Destination().Label()] = d + weight(e)
+			}
+		}
+	}
+	for _, e := range g.AllEdges() {
+		if d := dist[e.Source().Label()]; d != inf && d+weight(e) < dist[e.Destination().Label()] {
+			return nil, true
+		}
+	}
+
+	out := maps.Clone(dist)
+	for _, e := range g.AllEdges() {
+		if !math.IsInf(e.Weight(), -1) || dist[e.Source().Label()] == inf {
+			continue
+		}
+		if reaches(e.Destination().Label(), e.Source().Label()) {
+			return nil, true
+		}
+		for _, v := range g.GetAllVertices() {
+			if reaches(e.Destination().Label(), v.Label()) {
+				out[v.Label()] = math.Inf(-1)
+			}
+		}
+	}
+
+	return out, false
+}
+
+func TestShortestPaths_MatchReference(t *testing.T) {
+	// integer weights add up exactly, so every correct order of additions
+	// gives the same distances
+	weights := []float64{-3, -1, 0, 1, 2, 5, math.Inf(-1), math.Inf(1), math.NaN()}
+	for seed := range uint64(500) {
+		rng := rand.New(rand.NewPCG(seed, 291)) //nolint:gosec // seeded so failures are reproducible
+		n := 1 + rng.IntN(7)
+		g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+		for i := range n {
+			g.AddVertexByLabel(strconv.Itoa(i))
+		}
+		for range rng.IntN(2*n*n/3 + 1) {
+			from, to := g.GetVertexByID(strconv.Itoa(rng.IntN(n))), g.GetVertexByID(strconv.Itoa(rng.IntN(n)))
+			_, _ = g.AddEdge(from, to, gograph.WithEdgeWeight(weights[rng.IntN(len(weights))]))
+		}
+
+		all, allErr := FloydWarshall(g)
+		anyCycle := false
+		for _, v := range g.GetAllVertices() {
+			want, cycle := referenceBellmanFord(g, v.Label())
+			anyCycle = anyCycle || cycle
+
+			got, err := BellmanFord(g, v.Label())
+			if cycle != errors.Is(err, ErrNegativeWeightCycle) || !reflect.DeepEqual(got, want) {
+				t.Fatalf("seed %d, BellmanFord from %s: expected %v (cycle %v), got %v and %v\nedges: %v",
+					seed, v.Label(), want, cycle, got, err, g.AllEdges())
+			}
+			if allErr == nil && !reflect.DeepEqual(all[v.Label()], want) {
+				t.Fatalf("seed %d, FloydWarshall from %s: expected %v, got %v\nedges: %v",
+					seed, v.Label(), want, all[v.Label()], g.AllEdges())
+			}
+		}
+
+		if anyCycle != errors.Is(allErr, ErrNegativeWeightCycle) {
+			t.Fatalf("seed %d, FloydWarshall: expected a negative cycle %v, got %v\nedges: %v",
+				seed, anyCycle, allErr, g.AllEdges())
+		}
 	}
 }
 
