@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `connectivity.FindCycle` returns the vertices of one cycle in order, such
   as an import cycle to show in an error. It reports a cycle exactly when
   `HasCycle` does, in O(V+E) time. ([#132], [#295])
+- The `gographtest` package helps test code that uses gograph.
+  `IsTopologicalOrder` accepts any valid topological order of a graph, and
+  `SameGroups` compares groups of vertices, such as components or cliques, in
+  any order. `Path`, `Cycle`, `Complete`, `Grid`, `Random` and `RandomDAG`
+  build graphs with the labels 0 to n-1. `Random` and `RandomDAG` take a
+  seeded `*rand.Rand` and run in O(n + m) expected time for m edges: a random
+  directed graph with 10,000 vertices takes 9 ms, where a draw for each pair
+  takes 362 ms. ([#126], [#296])
 
 ### Changed
 
@@ -579,3 +587,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#294]: https://github.com/hmdsefi/gograph/pull/294
 [#132]: https://github.com/hmdsefi/gograph/issues/132
 [#295]: https://github.com/hmdsefi/gograph/pull/295
+[#126]: https://github.com/hmdsefi/gograph/issues/126
+[#296]: https://github.com/hmdsefi/gograph/pull/296
