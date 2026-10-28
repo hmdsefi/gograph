@@ -37,9 +37,15 @@ type Graph[T comparable] interface {
 	//
 	// In a graph created with Acyclic, an edge that would close a cycle
 	// returns ErrDAGCycle without adding the edge. A graph from New keeps a
-	// topological order of its vertices for this check, so an edge that
-	// follows the order is added in O(1), and any other edge only visits the
-	// vertices placed between its endpoints.
+	// topological order of its vertices for this check. An edge that agrees
+	// with the order, an edge from a vertex with no incoming edges, and an
+	// edge to a vertex with no outgoing edges take O(1) time. Any other edge
+	// searches forward from the 'to' vertex and backward from the 'from'
+	// vertex, and moves the vertices it finds. That takes at most O(R log R)
+	// time for the R vertices and edges reachable from the 'to' vertex, and
+	// O((V+E) log V) in the worst case. On a graph that Clone copied from
+	// another implementation of Graph, the first AddEdge also builds the
+	// order in O(V+E) time.
 	//
 	// It creates the input vertices if they don't exist in the graph, the
 	// same way AddVertex does, so a vertex from another graph is copied.

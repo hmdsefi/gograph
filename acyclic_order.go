@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"cmp"
+	"math"
 	"slices"
 )
 
@@ -9,8 +10,23 @@ import (
 // added, with the dynamic topological sort of D. J. Pearce and P. H. J. Kelly,
 // "A Dynamic Topological Sort Algorithm for Directed Acyclic Graphs", ACM
 // Journal of Experimental Algorithmics 11 (2007). An edge that follows the
-// order needs no search, and any other edge only visits the vertices placed
-// between its endpoints. Removing edges or vertices keeps the order valid.
+// order needs no search. For any other edge, a forward search from its
+// destination among the vertices placed before its source finds any cycle.
+// The order then changes in one of two ways: the vertices placed after the
+// destination that reach the source swap places with the ones the forward
+// search found, or everything the destination reaches moves to the end. The
+// searches for the two run side by side and the first to finish is used, so
+// an edge costs at most a constant factor more than one search over the
+// vertices its destination reaches, plus sorting the vertices that move.
+// Removing edges or vertices keeps the order valid.
+
+// A walk is a breadth-first search that can stop after a number of edges and
+// go on later. list holds the vertices found so far, i is the vertex whose
+// edges come next, and j is its next edge.
+type walk[T comparable] struct {
+	list []*Vertex[T]
+	i, j int
+}
 
 // placeEdge updates the order for a new edge from "from" to "to". It reports
 // false, and changes nothing, when the edge would close a cycle.
@@ -18,7 +34,8 @@ func (g *baseGraph[T]) placeEdge(from, to *Vertex[T]) bool {
 	if from == to {
 		return false
 	}
-	if len(g.ord) != len(g.order) {
+	// moving every vertex to the end at once must not overflow last
+	if len(g.ord) != len(g.order) || g.first == math.MinInt || g.last > math.MaxInt-len(g.order) {
 		g.buildOrder()
 	}
 
@@ -38,20 +55,37 @@ func (g *baseGraph[T]) placeEdge(from, to *Vertex[T]) bool {
 		return true
 	}
 
-	ahead, ok := g.forwardRegion(to, from, upper)
+	mark := g.nextSearch()
+	ahead, ok := g.forwardRegion(to, from, upper, mark)
 	if !ok {
 		return false
 	}
-	g.reorder(g.backwardRegion(from, lower), ahead)
 
-	return true
+	// Without a cycle, no vertex that reaches "from" is reachable from "to",
+	// so the walks never meet and can share one search number. The walk that
+	// reaches everything starts over the forward region, so its list keeps
+	// that region as a prefix.
+	from.seen = mark
+	behind := walk[T]{list: append(g.behind[:0], from)}
+	reach := walk[T]{list: ahead}
+	for budget := 2 * len(ahead); ; budget *= 2 {
+		if g.growBehind(&behind, mark, lower, budget) {
+			clear(reach.list[len(ahead):])
+			g.reorder(behind.list, reach.list[:len(ahead)])
+			return true
+		}
+		if g.growReach(&reach, mark, budget) {
+			g.behind = release(behind.list)
+			g.moveToEnd(reach.list)
+			return true
+		}
+	}
 }
 
 // forwardRegion returns the vertices that "to" reaches and that are placed
-// before upper, the place of "from". It reports false if "from" is one of
-// them.
-func (g *baseGraph[T]) forwardRegion(to, from *Vertex[T], upper int) ([]*Vertex[T], bool) {
-	mark := g.nextSearch()
+// before upper, the place of "from", marked with mark. It reports false if
+// "from" is one of them.
+func (g *baseGraph[T]) forwardRegion(to, from *Vertex[T], upper int, mark uint32) ([]*Vertex[T], bool) {
 	to.seen = mark
 	region := g.stack[:0]
 	region = append(region, to)
@@ -71,42 +105,63 @@ func (g *baseGraph[T]) forwardRegion(to, from *Vertex[T], upper int) ([]*Vertex[
 	return region, true
 }
 
-// backwardRegion returns the vertices that reach "from" and that are placed
-// after lower, the place of "to".
-func (g *baseGraph[T]) backwardRegion(from *Vertex[T], lower int) []*Vertex[T] {
-	mark := g.nextSearch()
-	from.seen = mark
-	region := g.behind[:0]
-	region = append(region, from)
-	for i := 0; i < len(region); i++ {
-		for _, edge := range region[i].incoming {
-			if s := edge.source; s.seen != mark && g.ord[s.position] > lower {
+// growBehind goes on with the search for the vertices that reach "from" and
+// are placed after lower, the place of "to", for up to budget edges. It
+// reports whether the search is complete.
+func (g *baseGraph[T]) growBehind(w *walk[T], mark uint32, lower, budget int) bool {
+	for ; w.i < len(w.list); w.i, w.j = w.i+1, 0 {
+		in := w.list[w.i].incoming
+		for ; w.j < len(in); w.j++ {
+			if budget == 0 {
+				return false
+			}
+			budget--
+			if s := in[w.j].source; s.seen != mark && g.ord[s.position] > lower {
 				s.seen = mark
-				region = append(region, s)
+				w.list = append(w.list, s)
 			}
 		}
 	}
 
-	return region
+	return true
+}
+
+// growReach goes on with the search for every vertex that "to" reaches, for
+// up to budget edges. It reports whether the search is complete.
+func (g *baseGraph[T]) growReach(w *walk[T], mark uint32, budget int) bool {
+	for ; w.i < len(w.list); w.i, w.j = w.i+1, 0 {
+		out := w.list[w.i].neighbors
+		for ; w.j < len(out); w.j++ {
+			if budget == 0 {
+				return false
+			}
+			budget--
+			if n := out[w.j]; n.seen != mark {
+				n.seen = mark
+				w.list = append(w.list, n)
+			}
+		}
+	}
+
+	return true
 }
 
 // reorder gives the vertices of behind and ahead the places they hold
 // between them, behind first, and keeps the order within each set.
 func (g *baseGraph[T]) reorder(behind, ahead []*Vertex[T]) {
-	byPlace := func(a, b *Vertex[T]) int {
-		return cmp.Compare(g.ord[a.position], g.ord[b.position])
-	}
-	slices.SortFunc(behind, byPlace)
-	slices.SortFunc(ahead, byPlace)
+	g.sortByPlace(behind)
+	g.sortByPlace(ahead)
 
 	places := g.places[:0]
-	for _, v := range behind {
-		places = append(places, g.ord[v.position])
+	for i, j := 0, 0; i < len(behind) || j < len(ahead); {
+		if j == len(ahead) || i < len(behind) && g.ord[behind[i].position] < g.ord[ahead[j].position] {
+			places = append(places, g.ord[behind[i].position])
+			i++
+		} else {
+			places = append(places, g.ord[ahead[j].position])
+			j++
+		}
 	}
-	for _, v := range ahead {
-		places = append(places, g.ord[v.position])
-	}
-	slices.Sort(places)
 
 	for i, v := range behind {
 		g.ord[v.position] = places[i]
@@ -120,9 +175,26 @@ func (g *baseGraph[T]) reorder(behind, ahead []*Vertex[T]) {
 	g.stack = release(ahead)
 }
 
+// moveToEnd gives the vertices of reached new places after all others, and
+// keeps their order. reached must hold every vertex that its vertices reach.
+func (g *baseGraph[T]) moveToEnd(reached []*Vertex[T]) {
+	g.sortByPlace(reached)
+	for _, v := range reached {
+		g.last++
+		g.ord[v.position] = g.last
+	}
+	g.stack = release(reached)
+}
+
+func (g *baseGraph[T]) sortByPlace(list []*Vertex[T]) {
+	slices.SortFunc(list, func(a, b *Vertex[T]) int {
+		return cmp.Compare(g.ord[a.position], g.ord[b.position])
+	})
+}
+
 // buildOrder sets ord to a topological order found with Kahn's algorithm.
-// It runs when the graph has no order yet, as after Clone or
-// InducedSubgraph.
+// It runs when the graph has no order yet, as after Clone copies another
+// implementation of Graph, and before first or last could overflow.
 func (g *baseGraph[T]) buildOrder() {
 	g.ord = make([]int, len(g.order))
 	remaining := make([]int, len(g.order))

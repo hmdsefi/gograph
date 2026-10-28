@@ -1523,6 +1523,14 @@ func BenchmarkAddEdge(b *testing.B) {
 				benchChain(b, gt.options, descending, ascending[:n])
 			}
 		})
+		for _, size := range []int{1000, 4000} {
+			b.Run(fmt.Sprintf("%s/hub-%d", gt.name, size), func(b *testing.B) {
+				b.ReportAllocs()
+				for range b.N {
+					hubGraph(b, New[int](gt.options...), size, nil)
+				}
+			})
+		}
 
 		edges := benchEdges(2000, 10000, true)
 		b.Run(gt.name+"/random-dag", func(b *testing.B) {
@@ -1548,6 +1556,32 @@ func BenchmarkAddEdge(b *testing.B) {
 				}
 			}
 		})
+	}
+}
+
+// hubGraph adds vertices 0 to n-1, then n, then an edge from each i to n,
+// then the edges from i+1 to i, from the top down. From the third of those
+// on, each edge goes against the order, and every vertex above it reaches
+// its source. It calls check, if not nil, after each of those edges.
+func hubGraph(tb testing.TB, g Graph[int], n int, check func(step string)) {
+	tb.Helper()
+
+	vertices := make([]*Vertex[int], n+1)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for i := range n {
+		if _, err := g.AddEdge(vertices[i], vertices[n]); err != nil {
+			tb.Fatal(err)
+		}
+	}
+	for i := n - 2; i >= 0; i-- {
+		if _, err := g.AddEdge(vertices[i+1], vertices[i]); err != nil {
+			tb.Fatal(err)
+		}
+		if check != nil {
+			check(fmt.Sprintf("after %d -> %d", i+1, i))
+		}
 	}
 }
 

@@ -51,6 +51,14 @@ func inducedSubgraph[T comparable](g *baseGraph[T], labels []T) (*baseGraph[T], 
 		properties: g.properties,
 	}
 	copies := copyInducedVertices(out, selected)
+	if g.properties.isAcyclic && len(g.ord) == len(g.order) {
+		// the order of g, kept to a subset of its vertices, is still topological
+		out.ord = make([]int, len(selected))
+		for i, v := range selected {
+			out.ord[i] = g.ord[v.position]
+		}
+		out.first, out.last = g.first, g.last
+	}
 	degree, inDegree := inducedDegrees(selected, index)
 	allocInducedEdges(out, copies, degree, inDegree)
 	atomic.StoreUint32(&out.edgesCount, copyInducedEdges(g, out, selected, copies, index))

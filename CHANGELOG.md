@@ -21,17 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   removed vertex. On a graph with 2,000 vertices and 10,000 edges, calling
   `EdgesOf` on every vertex takes 0.3 ms instead of 54 ms, and removing every
   vertex takes 0.7 ms instead of 37 ms. ([#107], [#287])
-- On a graph created with `Acyclic`, `AddEdge` checks a new edge with one
-  search over the vertices reachable from its destination. Building a chain
-  of 4,000 edges takes 1.1 ms instead of 618 ms. ([#107], [#287])
+- On a graph created with `Acyclic`, `AddEdge` keeps a topological order of
+  the vertices to check each new edge. An edge that agrees with the order, an
+  edge from a vertex with no incoming edges, and an edge to a vertex with no
+  outgoing edges need no search. Any other edge searches around its
+  endpoints, in at most O(R log R) time for the R vertices and edges reachable
+  from its destination. Building a chain of 4,000 edges takes 1.1 ms instead
+  of 618 ms, and a random DAG with 2,000 vertices and 10,000 edges 1.8 ms
+  instead of 2.2 s. ([#107], [#124], [#287], [#288])
 - The traversal iterators, `Dijkstra`, the strongly connected component
   functions, the dag helpers and the encoders read the stored neighbors
   through `AllNeighbors`. The breadth-first and depth-first iterators run
   about 60% faster on a graph of 10,000 vertices and allocate 99% less
   often. ([#107], [#287])
 - A vertex takes 16 more bytes, and each edge one more pointer in the list of
-  its destination. Removing an edge takes time proportional to the in-degree
-  of its destination as well as the out-degree of its source. ([#287])
+  its destination. An acyclic graph also keeps one int per vertex for its
+  order. Removing an edge takes time proportional to the in-degree of its
+  destination as well as the out-degree of its source. ([#287], [#288])
 
 ## [0.9.1] - 2026-10-26
 
@@ -533,3 +539,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#292]: https://github.com/hmdsefi/gograph/pull/292
 [#107]: https://github.com/hmdsefi/gograph/issues/107
 [#287]: https://github.com/hmdsefi/gograph/pull/287
+[#124]: https://github.com/hmdsefi/gograph/issues/124
+[#288]: https://github.com/hmdsefi/gograph/pull/288

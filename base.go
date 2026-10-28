@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"cmp"
+	"math"
 	"slices"
 	"sync/atomic"
 )
@@ -45,7 +46,8 @@ type baseGraph[T comparable] struct {
 	// position: every edge u -> v has ord[u.position] < ord[v.position].
 	// It is in use while it has one entry per slot of order, and is built
 	// again otherwise. first and last are at or beyond the lowest and the
-	// highest place in use.
+	// highest place in use, and the order is built again before either one
+	// could overflow.
 	ord         []int
 	first, last int
 }
@@ -174,7 +176,7 @@ func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
 	g.vertices[v.label] = v
 	v.position = len(g.order)
 	g.order = append(g.order, v)
-	if g.properties.isAcyclic && len(g.ord) == v.position {
+	if g.properties.isAcyclic && len(g.ord) == v.position && g.last < math.MaxInt {
 		g.last++
 		g.ord = append(g.ord, g.last)
 	}
