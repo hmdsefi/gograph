@@ -9,6 +9,11 @@
 // traversal there, and ranging over the sequence again runs the traversal
 // again from the start. Topological sorts the graph when it is called.
 //
+// DFSEvents and DFSEventsAll report each step of a depth-first search: when
+// a vertex is discovered and finished, and whether each edge is a tree,
+// back, forward or cross edge. Algorithms such as cycle finding and
+// topological sort by finish time are a loop over these events.
+//
 // Each vertex is the graph's own vertex, the one GetVertexByID returns for
 // its label. Changing the graph during a traversal isn't supported, with one
 // exception: a vertex removed from the graph after the traversal queued it

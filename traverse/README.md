@@ -85,6 +85,40 @@ the graph after it was queued. In the root package, `gograph.Vertices(g)` and
 `gograph.Edges(g)` range over all the vertices and edges of a graph without
 allocating.
 
+### Depth-first search events
+
+`DFSEvents(g, start)` and `DFSEventsAll(g)` yield each step of a depth-first
+search as a `DFSEvent`, so an algorithm built on depth-first search is a loop
+over the events. `DFSEventsAll` starts a new search from each vertex not
+discovered yet, in the order of `GetAllVertices`.
+
+| Kind | When |
+|---|---|
+| `DiscoverVertex` | The search enters a vertex for the first time |
+| `FinishVertex` | Every vertex reachable from the vertex has been handled |
+| `TreeEdge` | An edge to an undiscovered vertex, which becomes its child |
+| `BackEdge` | An edge to a vertex still on the current path, which closes a cycle |
+| `ForwardEdge` | An edge to a finished descendant, in a directed graph |
+| `CrossEdge` | An edge to a finished vertex that isn't a descendant, in a directed graph |
+
+```go
+var order []string
+for e := range traverse.DFSEventsAll(g) {
+	if e.Kind == traverse.FinishVertex {
+		order = append(order, e.Vertex.Label())
+	}
+}
+slices.Reverse(order) // a topological order when g has no cycle
+```
+
+The neighbors of each vertex are explored in the order of `Neighbors`, and the
+events of each vertex nest inside those of its parent. In an undirected graph,
+each edge comes once, as a tree edge or as a back edge from the deeper vertex,
+so only those two kinds occur. A self-loop is a back edge. The search keeps
+its own stack, so the goroutine stack stays small on a path of 100,000 vertices.
+`connectivity.FindCycle` uses the first back edge to return the vertices of a
+cycle.
+
 ## BFS
 
 BFS iterator is a technique used to implement the Breadth-First Search (BFS)

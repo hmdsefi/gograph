@@ -44,9 +44,9 @@ strongly connected components and graph partitioning.
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
 - **Graph data structures:** directed, undirected, acyclic (DAG) and weighted graphs, with weights on vertices and edges.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
-- **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators.
+- **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators, and depth-first search events that label each edge as a tree, back, forward or cross edge.
 - **Shortest paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
-- **Connectivity:** connected components and cycle detection, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
+- **Connectivity:** connected components and cycle detection that can return the cycle, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 - **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
@@ -374,6 +374,9 @@ for v, depth := range traverse.BFSWithDepth(g, "A") {
 `traverse.BFS`, `DFS`, `BFSWithDepth`, `ClosestFirst` and `Topological` follow the
 iterators above, and `gograph.Vertices` and `gograph.Edges` range over a whole graph.
 See [Range over a traversal](traverse#range-over-a-traversal) for details.
+`traverse.DFSEvents` and `DFSEventsAll` yield each step of a depth-first search,
+with the kind of each edge, as described in
+[Depth-first search events](traverse#depth-first-search-events).
 
 ## Algorithms
 
@@ -425,6 +428,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 |---|---|---|---|
 | `ConnectedComponents` | Connected components. A directed graph is treated as undirected | O(V+E) | |
 | `HasCycle` | Whether the graph has a cycle, including a self-loop | O(V+E) | |
+| `FindCycle` | The vertices of one cycle, in order | O(V+E) | |
 | `Tarjan` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/tarjan/service-calls) |
 | `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
 | `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
