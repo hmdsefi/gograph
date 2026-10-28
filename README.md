@@ -14,6 +14,7 @@
   <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/hmdsefi/gograph"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/hmdsefi/gograph"></a>
   <a href="https://github.com/avelino/awesome-go#science-and-data-analysis"><img alt="Mentioned in Awesome Go" src="https://awesome.re/mentioned-badge.svg"></a>
+  <a href="https://hub.xerj.org/contributors/hmdsefi"><img alt="XERJ Corpus Hub contributor" src="https://hub.xerj.org/contributors/hmdsefi/badge.svg"></a>
   <a href="https://coderabbit.ai"><img alt="CodeRabbit Pull Request Reviews" src="https://img.shields.io/coderabbit/prs/github/hmdsefi/gograph?utm_source=oss&utm_medium=github&utm_campaign=hmdsefi%2Fgograph&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews"></a>
   <a href="https://github.com/sponsors/hmdsefi"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-hmdsefi-ea4aaa?logo=githubsponsors"></a>
   <a href="https://github.com/hmdsefi/gograph"><img alt="GitHub stars" src="https://img.shields.io/github/stars/hmdsefi/gograph?style=social"></a>
