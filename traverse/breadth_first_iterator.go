@@ -7,11 +7,11 @@ import (
 // breadthFirstIterator is an implementation of the Iterator interface
 // for traversing a graph using a breadth-first search (BFS) algorithm.
 type breadthFirstIterator[T comparable] struct {
-	graph   gograph.Graph[T]         // the graph being traversed.
-	start   T                        // the label of the starting vertex for the BFS traversal.
-	queue   []*gograph.Vertex[T]     // a slice that represents the queue of vertices to visit in BFS traversal order.
-	visited map[T]*gograph.Vertex[T] // the vertex queued for each label.
-	head    int                      // the current head of the queue.
+	graph   gograph.Graph[T]            // the graph being traversed.
+	start   T                           // the label of the starting vertex for the BFS traversal.
+	queue   []*gograph.Vertex[T]        // a slice that represents the queue of vertices to visit in BFS traversal order.
+	visited map[*gograph.Vertex[T]]bool // the vertices that were queued.
+	head    int                         // the current head of the queue.
 }
 
 // NewBreadthFirstIterator creates a new instance of breadthFirstIterator
@@ -66,16 +66,10 @@ func (d *breadthFirstIterator[T]) Next() *gograph.Vertex[T] {
 		}
 
 		// add unvisited neighbors to the queue
-		neighbors := currentNode.Neighbors()
-		for _, neighbor := range neighbors {
-			label := neighbor.Label()
-			prev := d.visited[label]
-			if prev != nil && prev.InDegree() > 0 {
-				continue
-			}
-			if v := reached(d.graph, prev, label); v != nil {
-				d.visited[label] = v
-				d.queue = append(d.queue, v)
+		for neighbor := range currentNode.AllNeighbors() {
+			if !d.visited[neighbor] {
+				d.visited[neighbor] = true
+				d.queue = append(d.queue, neighbor)
 			}
 		}
 
@@ -104,10 +98,10 @@ func (d *breadthFirstIterator[T]) Iterate(f func(v *gograph.Vertex[T]) error) er
 func (d *breadthFirstIterator[T]) Reset() {
 	d.queue = nil
 	d.head = -1
-	d.visited = make(map[T]*gograph.Vertex[T])
+	d.visited = make(map[*gograph.Vertex[T]]bool)
 
 	if v := d.graph.GetVertexByID(d.start); v != nil {
 		d.queue = append(d.queue, v)
-		d.visited[d.start] = v
+		d.visited[v] = true
 	}
 }

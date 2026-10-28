@@ -47,8 +47,7 @@ func DijkstraSimple[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 			}
 		}
 		visited[u.Label()] = true
-		neighbors := u.Neighbors()
-		for _, neighbor := range neighbors {
+		for neighbor := range u.AllNeighbors() {
 			edge := g.GetEdge(u, neighbor)
 			if alt := dist[u.Label()] + edge.Weight(); alt < dist[edge.Destination().Label()] {
 				dist[edge.Destination().Label()] = alt
@@ -124,8 +123,7 @@ func Dijkstra[T comparable](g gograph.Graph[T], start T) map[T]float64 {
 		visited[label] = true
 
 		// Update the distances of its neighbors
-		neighbors := curr.Vertex().Neighbors()
-		for _, v := range neighbors {
+		for v := range curr.Vertex().AllNeighbors() {
 			if !visited[v.Label()] {
 				neighbor := verticesMap[v.Label()]
 				// Get edge from current vertex to neighbor

@@ -1,6 +1,10 @@
 package gograph
 
-import "sync/atomic"
+import (
+	"cmp"
+	"slices"
+	"sync/atomic"
+)
 
 // baseGraph represents a basic implementation of Graph interface. It
 // supports multiple types of graph.
@@ -29,6 +33,11 @@ type baseGraph[T comparable] struct {
 	verticesCount uint32
 	edgesCount    uint32
 	nextEdge      int
+
+	// search numbers the searches in reaches, and stack is their reused
+	// work list.
+	search uint32
+	stack  []*Vertex[T]
 }
 
 func newBaseGraph[T comparable](properties GraphProperties) *baseGraph[T] {
@@ -47,11 +56,12 @@ func (g *baseGraph[T]) addToEdgeMap(from, to *Vertex[T], options ...EdgeOptionFu
 	edge := NewEdge(from, to, options...)
 	g.nextEdge++
 	edge.added = g.nextEdge
-	if _, ok := g.edges[from.label]; !ok {
-		g.edges[from.label] = map[T]*Edge[T]{to.label: edge}
-	} else {
-		g.edges[from.label][to.label] = edge
+	dests := g.edges[from.label]
+	if dests == nil {
+		dests = make(map[T]*Edge[T])
+		g.edges[from.label] = dests
 	}
+	dests[to.label] = edge
 
 	atomic.AddUint32(&g.edgesCount, 1)
 	return edge
@@ -73,47 +83,81 @@ func (g *baseGraph[T]) AddEdge(from, to *Vertex[T], options ...EdgeOptionFunc) (
 		return nil, ErrNilVertices
 	}
 
-	if g.findVertex(from.label) == nil {
-		g.AddVertex(from)
-	}
-
-	if g.findVertex(to.label) == nil {
-		g.AddVertex(to)
-	}
+	from = g.storedVertex(from)
+	to = g.storedVertex(to)
 
 	// prevent edge-multiplicity
-	if g.ContainsEdge(from, to) {
+	if _, ok := g.edges[from.label][to.label]; ok {
 		return nil, ErrEdgeAlreadyExists
 	}
 
-	from = g.vertices[from.label]
-	to = g.vertices[to.label]
+	// in an acyclic graph, the new edge closes a cycle if "to" reaches "from"
+	if g.properties.isAcyclic && g.reaches(to, from) {
+		return nil, ErrDAGCycle
+	}
 
+	// add the edge from "to" to "from" too, if graph is undirected.
+	if !g.properties.isDirected && from != to {
+		g.link(to, from, options...)
+	}
+
+	return g.link(from, to, options...), nil
+}
+
+// link stores the edge from "from" to "to" and returns it.
+func (g *baseGraph[T]) link(from, to *Vertex[T], options ...EdgeOptionFunc) *Edge[T] {
 	from.neighbors = append(from.neighbors, to)
-	to.inDegree++
+	edge := g.addToEdgeMap(from, to, options...)
+	to.incoming = append(to.incoming, edge)
 
-	// prevent cycle creation, if graph is acyclic
-	if g.properties.isAcyclic {
-		// If topological sort returns an error, new edges created a cycle
-		_, err := TopologySort[T](g)
-		if err != nil {
-			// Remove the new edges
-			from.neighbors = from.neighbors[:len(from.neighbors)-1]
-			to.inDegree--
+	return edge
+}
 
-			return nil, ErrDAGCycle
+// reaches reports whether target can be reached from v along the edge
+// directions. It only visits the vertices reachable from v, and marks them
+// with a new search number instead of allocating a visited set.
+func (g *baseGraph[T]) reaches(v, target *Vertex[T]) bool {
+	if v == target {
+		return true
+	}
+	if len(v.neighbors) == 0 || len(target.incoming) == 0 {
+		return false
+	}
+
+	g.search++
+	if g.search == 0 {
+		for _, u := range g.vertices {
+			u.seen = 0
 		}
+		g.search = 1
 	}
 
-	// add "from" to the "to" vertex neighbor slice, if graph is undirected.
-	if !g.properties.isDirected && from.label != to.label {
-		to.neighbors = append(to.neighbors, from)
-		from.inDegree++
-
-		g.addToEdgeMap(to, from, options...)
+	v.seen = g.search
+	stack := g.stack[:0]
+	stack = append(stack, v)
+	peak := 1
+	found := false
+	for len(stack) > 0 && !found {
+		u := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		for _, n := range u.neighbors {
+			if n == target {
+				found = true
+				break
+			}
+			if n.seen != g.search {
+				n.seen = g.search
+				stack = append(stack, n)
+			}
+		}
+		peak = max(peak, len(stack))
 	}
 
-	return g.addToEdgeMap(from, to, options...), nil
+	// drop the pointers, so the reused stack doesn't keep removed vertices alive
+	clear(stack[:peak])
+	g.stack = stack[:0]
+
+	return found
 }
 
 // AddVertexByLabel adds a new vertex with the given label to the graph.
@@ -141,6 +185,16 @@ func (g *baseGraph[T]) AddVertex(v *Vertex[T]) {
 	}
 
 	g.addVertex(v)
+}
+
+// storedVertex returns the vertex of the graph with the label of v. If there
+// isn't one, it adds v the same way AddVertex does.
+func (g *baseGraph[T]) storedVertex(v *Vertex[T]) *Vertex[T] {
+	if stored := g.vertices[v.label]; stored != nil {
+		return stored
+	}
+
+	return g.addVertex(v)
 }
 
 func (g *baseGraph[T]) addVertex(v *Vertex[T]) *Vertex[T] {
@@ -275,20 +329,25 @@ func (g *baseGraph[T]) EdgesOf(v *Vertex[T]) []*Edge[T] {
 		return nil
 	}
 
+	n := len(vertex.neighbors) + len(vertex.incoming)
+	if n == 0 {
+		return nil
+	}
+
 	// find all the edges that start from the input vertex
-	edges := g.outgoingEdges(vertex, nil)
+	edges := g.outgoingEdges(vertex, make([]*Edge[T], 0, n))
 
-	// find all the edges that the input vertex is the
-	// destination of the edge
-	for _, source := range g.order {
-		if source == nil || source.label == vertex.label {
-			continue
-		}
-
-		if edge, ok := g.edges[source.label][vertex.label]; ok {
+	// the edges that end at the input vertex, except a self-loop, which is
+	// already listed, in the order of their source vertices
+	out := len(edges)
+	for _, edge := range vertex.incoming {
+		if edge.source != vertex {
 			edges = append(edges, edge)
 		}
 	}
+	slices.SortFunc(edges[out:], func(a, b *Edge[T]) int {
+		return cmp.Compare(a.source.position, b.source.position)
+	})
 
 	return edges
 }
@@ -351,42 +410,66 @@ func (g *baseGraph[T]) removeAllEdges(edge *Edge[T]) {
 // the internal map is zero, removes the source label from the edges.
 // It does nothing if the graph doesn't contain the edge.
 func (g *baseGraph[T]) removeEdge(edge *Edge[T]) {
-	if destMap, ok := g.edges[edge.source.label]; ok {
-		if _, exists := destMap[edge.dest.label]; !exists {
-			return
-		}
-
-		delete(destMap, edge.dest.label)
-
-		// remove the neighbor vertex from the source neighbors slice.
-		g.removeNeighbor(edge.source.label, edge.dest.label)
-
-		// remove the source vertex label from the edge map, if it
-		// doesn't have any edges.
-		if len(destMap) == 0 {
-			delete(g.edges, edge.source.label)
-		}
-		atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
+	destMap, ok := g.edges[edge.source.label]
+	if !ok {
+		return
 	}
+	stored, ok := destMap[edge.dest.label]
+	if !ok {
+		return
+	}
+
+	g.unlink(stored)
 }
 
-func (g *baseGraph[T]) removeNeighbor(sourceID, neighborLbl T) {
-	source := g.findVertex(sourceID)
-	for i := range source.neighbors {
-		if source.neighbors[i].label == neighborLbl {
-			source.neighbors[i].inDegree--
+// unlink removes a stored edge from the edge map, from the neighbors of its
+// source and from the incoming edges of its destination.
+func (g *baseGraph[T]) unlink(edge *Edge[T]) {
+	destMap := g.edges[edge.source.label]
+	delete(destMap, edge.dest.label)
 
-			if i == 0 {
-				source.neighbors = source.neighbors[1:]
-			} else if i == len(source.neighbors)-1 {
-				source.neighbors = source.neighbors[:len(source.neighbors)-1]
-			} else {
-				source.neighbors = append(source.neighbors[:i], source.neighbors[i+1:]...)
-			}
-
-			break
-		}
+	// remove the source vertex label from the edge map, if it
+	// doesn't have any edges.
+	if len(destMap) == 0 {
+		delete(g.edges, edge.source.label)
 	}
+	atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
+
+	removeNeighbor(edge.source, edge.dest)
+	removeIncoming(edge)
+}
+
+// removeNeighbor removes neighbor from the neighbors of source, keeping the
+// order of the others.
+func removeNeighbor[T comparable](source, neighbor *Vertex[T]) {
+	source.neighbors = removeItem(source.neighbors, neighbor)
+}
+
+// removeIncoming removes edge from the incoming edges of its destination.
+func removeIncoming[T comparable](edge *Edge[T]) {
+	edge.dest.incoming = removeItem(edge.dest.incoming, edge)
+}
+
+// removeItem removes the first x from list, keeping the order of the others,
+// and clears the freed slot. It checks both ends first, so removing the items
+// in the order they were added, or in reverse, takes O(1) time per item.
+func removeItem[E comparable](list []E, x E) []E {
+	var zero E
+	switch n := len(list); {
+	case n == 0:
+		return list
+	case list[0] == x:
+		list[0] = zero
+		return list[1:]
+	case list[n-1] == x:
+		list[n-1] = zero
+		return list[:n-1]
+	}
+	if i := slices.Index(list, x); i >= 0 {
+		return slices.Delete(list, i, i+1)
+	}
+
+	return list
 }
 
 // GetVertexByID returns the vertex with the input label.
@@ -450,23 +533,24 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 
 	g.removeFromOrder(v)
 
-	if g.IsDirected() {
-		for i := range v.neighbors {
-			if v.neighbors[i] != v {
-				v.neighbors[i].inDegree--
+	// the edges that end at v, except a self-loop, which starts at v too
+	for _, edge := range v.incoming {
+		if edge.source != v {
+			destMap := g.edges[edge.source.label]
+			delete(destMap, v.label)
+			if len(destMap) == 0 {
+				delete(g.edges, edge.source.label)
 			}
+			removeNeighbor(edge.source, v)
+			atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
 		}
 	}
 
-	for sourceID := range g.edges {
-		if edge, ok := g.edges[sourceID][v.label]; ok {
-			g.removeAllEdges(edge)
-			delete(g.edges[sourceID], v.label)
+	// the edges that start from v
+	for _, edge := range g.edges[v.label] {
+		if edge.dest != v {
+			removeIncoming(edge)
 		}
-	}
-
-	// In a directed graph, the outgoing edges of v are still in the map.
-	for range g.edges[v.label] {
 		atomic.AddUint32(&g.edgesCount, ^(uint32(1) - 1))
 	}
 	delete(g.edges, v.label)
@@ -474,7 +558,7 @@ func (g *baseGraph[T]) removeVertex(in *Vertex[T]) {
 	atomic.AddUint32(&g.verticesCount, ^(uint32(1) - 1))
 
 	v.neighbors = nil
-	v.inDegree = 0
+	v.incoming = nil
 }
 
 // ContainsEdge returns 'true' if and only if this graph contains an edge

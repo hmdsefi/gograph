@@ -1,6 +1,10 @@
 package connectivity
 
-import "github.com/hmdsefi/gograph"
+import (
+	"slices"
+
+	"github.com/hmdsefi/gograph"
+)
 
 // Kosaraju's Algorithm: This algorithm is also based on depth-first search
 // and is used to find strongly connected components in a graph. The algorithm
@@ -10,6 +14,10 @@ import "github.com/hmdsefi/gograph"
 // kosarajuDFS exposes two different depth-first search methods.
 type kosarajuDFS[T comparable] struct {
 	visited map[T]bool
+
+	// neighbors holds the neighbors of the vertices on the search path, end
+	// to end, so the frames share one array.
+	neighbors []*gograph.Vertex[T]
 }
 
 func newKosarajuSCCS[T comparable]() *kosarajuDFS[T] {
@@ -80,7 +88,7 @@ type kosarajuFrame[T comparable] struct {
 func (k *kosarajuDFS[T]) search(root *gograph.Vertex[T], enter, finish func(v *gograph.Vertex[T])) {
 	k.visited[root.Label()] = true
 	enter(root)
-	path := []kosarajuFrame[T]{{vertex: root, neighbors: root.Neighbors()}}
+	path := []kosarajuFrame[T]{k.frame(root)}
 
 	for len(path) > 0 {
 		frame := &path[len(path)-1]
@@ -90,14 +98,23 @@ func (k *kosarajuDFS[T]) search(root *gograph.Vertex[T], enter, finish func(v *g
 			if !k.visited[neighbor.Label()] {
 				k.visited[neighbor.Label()] = true
 				enter(neighbor)
-				path = append(path, kosarajuFrame[T]{vertex: neighbor, neighbors: neighbor.Neighbors()})
+				path = append(path, k.frame(neighbor))
 			}
 			continue
 		}
 
 		finish(frame.vertex)
+		k.neighbors = k.neighbors[:len(k.neighbors)-len(frame.neighbors)]
 		path = path[:len(path)-1]
 	}
+}
+
+// frame returns the search frame of v, with the neighbors of v added to the
+// end of k.neighbors.
+func (k *kosarajuDFS[T]) frame(v *gograph.Vertex[T]) kosarajuFrame[T] {
+	start := len(k.neighbors)
+	k.neighbors = slices.AppendSeq(k.neighbors, v.AllNeighbors())
+	return kosarajuFrame[T]{vertex: v, neighbors: k.neighbors[start:]}
 }
 
 // dfs1 creates the stack of vertices.
@@ -126,13 +143,10 @@ func (k *kosarajuDFS[T]) reverse(g gograph.Graph[T]) gograph.Graph[T] {
 		reversed.AddVertexByLabel(v.Label())
 	}
 
-	for i := range vertices {
-		neighbors := vertices[i].Neighbors()
-		for j := range neighbors {
-			_, _ = reversed.AddEdge(
-				reversed.GetVertexByID(neighbors[j].Label()),
-				reversed.GetVertexByID(vertices[i].Label()),
-			)
+	for _, v := range vertices {
+		to := reversed.GetVertexByID(v.Label())
+		for neighbor := range v.AllNeighbors() {
+			_, _ = reversed.AddEdge(reversed.GetVertexByID(neighbor.Label()), to)
 		}
 	}
 	return reversed

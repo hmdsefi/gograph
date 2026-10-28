@@ -14,15 +14,15 @@ type closestFirstEntry[T comparable] struct {
 }
 
 // closestFirstQueue is a heap of entries ordered by priority. An entry stays
-// in byLabel once it's popped, with an index of -1, so byLabel also tells
-// which labels were visited.
+// in byVertex once it's popped, with an index of -1, so byVertex also tells
+// which vertices were visited.
 type closestFirstQueue[T comparable] struct {
-	items   []*closestFirstEntry[T]
-	byLabel map[T]*closestFirstEntry[T]
+	items    []*closestFirstEntry[T]
+	byVertex map[*gograph.Vertex[T]]*closestFirstEntry[T]
 }
 
 func newClosestFirstQueue[T comparable]() *closestFirstQueue[T] {
-	return &closestFirstQueue[T]{byLabel: make(map[T]*closestFirstEntry[T])}
+	return &closestFirstQueue[T]{byVertex: make(map[*gograph.Vertex[T]]*closestFirstEntry[T])}
 }
 
 func (q closestFirstQueue[T]) Len() int { return len(q.items) }
@@ -55,22 +55,16 @@ func (q *closestFirstQueue[T]) Pop() any {
 	return entry
 }
 
-// push queues vertex at priority. entry is the one byLabel has for the label
-// of vertex, or nil. A popped entry is queued again, and a queued one only
-// moves to a lower priority, unless vertex replaced the removed vertex it
-// holds, since the old distance doesn't apply to the new vertex.
+// push queues vertex at priority. entry is the one byVertex has for vertex,
+// or nil. A queued entry only moves to a lower priority, and a popped one
+// stays visited.
 func (q *closestFirstQueue[T]) push(entry *closestFirstEntry[T], vertex *gograph.Vertex[T], priority float64) {
 	switch {
 	case entry == nil:
 		entry = &closestFirstEntry[T]{vertex: vertex, priority: priority}
-		q.byLabel[vertex.Label()] = entry
+		q.byVertex[vertex] = entry
 		heap.Push(q, entry)
-	case entry.index < 0:
-		entry.vertex = vertex
-		entry.priority = priority
-		heap.Push(q, entry)
-	case entry.vertex != vertex || priority < entry.priority:
-		entry.vertex = vertex
+	case entry.index >= 0 && priority < entry.priority:
 		entry.priority = priority
 		heap.Fix(q, entry.index)
 	}
@@ -163,34 +157,19 @@ func (c *closestFirstIterator[T]) Next() *gograph.Vertex[T] {
 
 		c.currDist = vp.priority
 
-		neighbors := currNode.Neighbors()
-		for _, neighbor := range neighbors {
-			label := neighbor.Label()
-			entry := c.pq.byLabel[label]
-
-			var v *gograph.Vertex[T]
-			switch {
-			case entry == nil:
-				v = c.graph.GetVertexByID(label)
-			case entry.vertex.InDegree() > 0:
-				if entry.index < 0 {
-					continue
-				}
-				v = entry.vertex
-			default:
-				v = reached(c.graph, entry.vertex, label)
-			}
-			if v == nil {
+		for neighbor := range currNode.AllNeighbors() {
+			entry := c.pq.byVertex[neighbor]
+			if entry != nil && entry.index < 0 {
 				continue
 			}
 
-			edge := c.graph.GetEdge(currNode, v)
+			edge := c.graph.GetEdge(currNode, neighbor)
 			if edge == nil {
 				continue
 			}
 			// the queue can't order a NaN distance
 			if dist := c.currDist + edge.Weight(); !math.IsNaN(dist) {
-				c.pq.push(entry, v, dist)
+				c.pq.push(entry, neighbor, dist)
 			}
 		}
 

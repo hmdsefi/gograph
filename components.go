@@ -17,7 +17,8 @@ package gograph
 // graph that fits in memory. Both use O(V) extra space. Other directed Graph
 // implementations are read through GetAllVertices and AllEdges, also in
 // O((V+E)·α(V)) time. Other undirected Graph implementations are read through
-// GetAllVertices and EdgesOf in O(V²) time. It panics if g is nil.
+// GetAllVertices and EdgesOf, with one EdgesOf call per vertex. It panics if
+// g is nil.
 //
 // connectivity.ConnectedComponents calls this.
 func ConnectedComponents[T comparable](g Graph[T]) [][]*Vertex[T] {
@@ -34,8 +35,7 @@ func ConnectedComponents[T comparable](g Graph[T]) [][]*Vertex[T] {
 	return componentsByEdges(g)
 }
 
-// componentsByEdges searches through EdgesOf. EdgesOf walks every vertex,
-// so this is O(V²).
+// componentsByEdges searches through EdgesOf, calling it once per vertex.
 func componentsByEdges[T comparable](g Graph[T]) [][]*Vertex[T] {
 	if g.IsDirected() {
 		return directedComponentsByEdges(g)

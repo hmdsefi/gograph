@@ -51,8 +51,8 @@ func inducedSubgraph[T comparable](g *baseGraph[T], labels []T) (*baseGraph[T], 
 		properties: g.properties,
 	}
 	copies := copyInducedVertices(out, selected)
-	degree := inducedOutDegree(selected, index)
-	allocInducedEdges(out, copies, degree)
+	degree, inDegree := inducedDegrees(selected, index)
+	allocInducedEdges(out, copies, degree, inDegree)
 	atomic.StoreUint32(&out.edgesCount, copyInducedEdges(g, out, selected, copies, index))
 
 	return out, nil
@@ -98,10 +98,11 @@ func copyInducedVertices[T comparable](out *baseGraph[T], selected []*Vertex[T])
 	return copies
 }
 
-// inducedOutDegree counts the kept outgoing edges of each selected vertex.
-// A self-loop stored twice in the neighbor list counts once.
-func inducedOutDegree[T comparable](selected []*Vertex[T], index map[T]int) []int {
-	degree := make([]int, len(selected))
+// inducedDegrees counts the kept outgoing and incoming edges of each selected
+// vertex. A self-loop stored twice in the neighbor list counts once.
+func inducedDegrees[T comparable](selected []*Vertex[T], index map[T]int) (degree, inDegree []int) {
+	degree = make([]int, len(selected))
+	inDegree = make([]int, len(selected))
 	for i, src := range selected {
 		looped := false
 		for _, nb := range src.neighbors {
@@ -116,22 +117,28 @@ func inducedOutDegree[T comparable](selected []*Vertex[T], index map[T]int) []in
 				looped = true
 			}
 			degree[i]++
+			inDegree[j]++
 		}
 	}
 
-	return degree
+	return degree, inDegree
 }
 
-func allocInducedEdges[T comparable](out *baseGraph[T], copies []*Vertex[T], degree []int) {
-	sources := 0
+func allocInducedEdges[T comparable](out *baseGraph[T], copies []*Vertex[T], degree, inDegree []int) {
+	sources, edges := 0, 0
 	for _, n := range degree {
 		if n > 0 {
 			sources++
+			edges += n
 		}
 	}
 
 	out.edges = make(map[T]map[T]*Edge[T], sources)
+	incoming := make([]*Edge[T], edges)
 	for i, v := range copies {
+		if k := inDegree[i]; k > 0 {
+			v.incoming, incoming = incoming[:0:k], incoming[k:]
+		}
 		if degree[i] == 0 {
 			continue
 		}
@@ -186,7 +193,7 @@ func putInducedEdge[T comparable](g *baseGraph[T], from, to *Vertex[T], src *Edg
 	}
 
 	from.neighbors = append(from.neighbors, to)
-	to.inDegree++
+	to.incoming = append(to.incoming, edge)
 	g.edges[from.label][to.label] = edge
 	g.nextEdge = max(g.nextEdge, edge.added)
 }

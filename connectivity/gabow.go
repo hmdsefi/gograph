@@ -1,6 +1,10 @@
 package connectivity
 
-import "github.com/hmdsefi/gograph"
+import (
+	"slices"
+
+	"github.com/hmdsefi/gograph"
+)
 
 // Gabow's path-based algorithm finds the strongly connected components of a
 // directed graph in O(V+E) time with a single depth-first search. Instead of
@@ -56,6 +60,7 @@ func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		stack      []*gabowVertex[T] // S
 		roots      []*gabowVertex[T] // P
 		path       []gabowFrame[T]
+		neighbors  []*gograph.Vertex[T] // the neighbor lists of the frames on path, end to end
 	)
 
 	enter := func(v *gabowVertex[T]) {
@@ -64,7 +69,9 @@ func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 		v.onStack = true
 		stack = append(stack, v)
 		roots = append(roots, v)
-		path = append(path, gabowFrame[T]{vertex: v, neighbors: v.Neighbors()})
+		start := len(neighbors)
+		neighbors = slices.AppendSeq(neighbors, v.AllNeighbors())
+		path = append(path, gabowFrame[T]{vertex: v, neighbors: neighbors[start:]})
 	}
 
 	for _, root := range graphVertices {
@@ -89,6 +96,7 @@ func Gabow[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 			}
 
 			v := frame.vertex
+			neighbors = neighbors[:len(neighbors)-len(frame.neighbors)]
 			path = path[:len(path)-1]
 			if roots[len(roots)-1] != v {
 				continue

@@ -2,6 +2,7 @@ package traverse
 
 import (
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -77,6 +78,31 @@ func TestClosestFirstIterator_Next(t *testing.T) {
 	v := it.Next()
 	if v != nil {
 		t.Errorf("Expected Next returns nil, but got %+v", v)
+	}
+}
+
+func TestClosestFirstIterator_LowersQueuedDistance(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	vA := g.AddVertexByLabel("A")
+	vB := g.AddVertexByLabel("B")
+	vC := g.AddVertexByLabel("C")
+	vD := g.AddVertexByLabel("D")
+	// B is queued at 10 from A, then found at 2 through C, ahead of D at 5
+	_, _ = g.AddEdge(vA, vB, gograph.WithEdgeWeight(10))
+	_, _ = g.AddEdge(vA, vC, gograph.WithEdgeWeight(1))
+	_, _ = g.AddEdge(vA, vD, gograph.WithEdgeWeight(5))
+	_, _ = g.AddEdge(vC, vB, gograph.WithEdgeWeight(1))
+
+	it, err := NewClosestFirstIterator(g, "A")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for it.HasNext() {
+		got = append(got, it.Next().Label())
+	}
+	if want := []string{"A", "C", "B", "D"}; !slices.Equal(got, want) {
+		t.Fatalf("order = %v, want %v", got, want)
 	}
 }
 

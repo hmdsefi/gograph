@@ -1,6 +1,10 @@
 package connectivity
 
-import "github.com/hmdsefi/gograph"
+import (
+	"slices"
+
+	"github.com/hmdsefi/gograph"
+)
 
 // Tarjan's algorithm is based on depth-first search and is widely used for
 // finding strongly connected components in a graph. The algorithm is efficient
@@ -24,6 +28,10 @@ func newTarjanVertex[T comparable](vertex *gograph.Vertex[T]) *tarjanVertex[T] {
 
 type tarjanSCCS[T comparable] struct {
 	vertices map[T]*tarjanVertex[T]
+
+	// neighbors holds the neighbors of the vertices on the search path, end
+	// to end, so the frames share one array.
+	neighbors []*gograph.Vertex[T]
 }
 
 func newTarjanSCCS[T comparable](vertices map[T]*tarjanVertex[T]) *tarjanSCCS[T] {
@@ -101,7 +109,9 @@ func (t *tarjanSCCS[T]) visit(
 		*index++
 		*stack = append(*stack, v)
 		v.onStack = true
-		path = append(path, tarjanFrame[T]{vertex: v, neighbors: v.Neighbors()})
+		start := len(t.neighbors)
+		t.neighbors = slices.AppendSeq(t.neighbors, v.AllNeighbors())
+		path = append(path, tarjanFrame[T]{vertex: v, neighbors: t.neighbors[start:]})
 	}
 
 	enter(root)
@@ -120,6 +130,7 @@ func (t *tarjanSCCS[T]) visit(
 			continue
 		}
 
+		t.neighbors = t.neighbors[:len(t.neighbors)-len(frame.neighbors)]
 		path = path[:len(path)-1]
 		if len(path) > 0 {
 			parent := path[len(path)-1].vertex
