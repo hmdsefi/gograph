@@ -183,6 +183,9 @@ func TestRandom_Bounds(t *testing.T) {
 		if got, want := edgeList(RandomDAG(6, p, nil)), edgeList(Complete(6, gograph.Acyclic())); !reflect.DeepEqual(got, want) {
 			t.Fatalf("p %v, DAG: edges %v, want %v", p, got, want)
 		}
+		if got, want := edgeList(Random(6, p, nil, gograph.Acyclic())), edgeList(Complete(6, gograph.Acyclic())); !reflect.DeepEqual(got, want) {
+			t.Fatalf("p %v, acyclic: edges %v, want %v", p, got, want)
+		}
 	}
 
 	checkLabels(t, Random(0, 0.5, rand.New(rand.NewPCG(1, 1))), 0)     //nolint:gosec // seeded so failures are reproducible
