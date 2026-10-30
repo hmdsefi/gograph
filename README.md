@@ -50,6 +50,7 @@ strongly connected components and graph partitioning.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 - **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
+- **Testing:** `gographtest` checks topological orders and groups of vertices in tests, and builds paths, cycles, grids and seeded random graphs.
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby),
 including the Cilium project's [ariane](https://github.com/cilium/ariane),
@@ -74,6 +75,7 @@ same author.
 * [Algorithms](#algorithms)
 * [Diagrams](#diagrams)
 * [Determinism](#determinism)
+* [Testing](#testing)
 * [Performance](#performance)
 * [Examples](#examples)
 * [Stability](#stability)
@@ -493,6 +495,26 @@ picks the smallest vertex that is ready.
 `EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
 `GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
 built the same way.
+
+## Testing
+
+`gographtest` helps test code that uses gograph. `IsTopologicalOrder` accepts any valid
+topological order, and `SameGroups` compares components, cliques or communities in any
+order, so a test keeps passing when an algorithm returns another valid answer. Its
+generators build paths, cycles, complete graphs, grids and seeded random graphs with the
+labels 0 to n-1:
+
+```go
+func TestBuildOrder(t *testing.T) {
+	g := gographtest.RandomDAG(500, 0.02, rand.New(rand.NewPCG(1, 2)))
+
+	order, err := gograph.TopologySort(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gographtest.IsTopologicalOrder(t, g, order)
+}
+```
 
 ## Performance
 
