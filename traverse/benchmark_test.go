@@ -75,6 +75,20 @@ func BenchmarkDFS(b *testing.B) {
 	benchmarkSeq(b, DFS[int])
 }
 
+func BenchmarkDFSEvents(b *testing.B) {
+	g := benchGraph(10000, 50000)
+	b.ReportAllocs()
+	for b.Loop() {
+		n := 0
+		for range DFSEvents(g, 0) {
+			n++
+		}
+		if n == 0 {
+			b.Fatal("no events")
+		}
+	}
+}
+
 func BenchmarkClosestFirst(b *testing.B) {
 	benchmarkSeq(b, func(g gograph.Graph[int], start int) iter.Seq[*gograph.Vertex[int]] {
 		return func(yield func(*gograph.Vertex[int]) bool) {

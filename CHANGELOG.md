@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a graph from `New` they allocate nothing: ranging over the edges of a graph
   with 10,000 vertices and 50,000 edges takes 0.44 ms, where `AllEdges` takes
   0.93 ms and 2 MiB. ([#115], [#289])
+- `traverse.DFSEvents` and `DFSEventsAll` give the steps of a depth-first
+  search as a sequence: each vertex when the search discovers and finishes
+  it, and each edge as a tree, back, forward or cross edge, with its depth.
+  They keep their own stack, so a path of 100,000 vertices is safe to search,
+  and a `range` loop can stop at any event. ([#132], [#295])
+- `connectivity.FindCycle` returns the vertices of one cycle in order, such
+  as an import cycle to show in an error. It reports a cycle exactly when
+  `HasCycle` does, in O(V+E) time. ([#132], [#295])
 
 ### Changed
 
@@ -569,3 +577,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#115]: https://github.com/hmdsefi/gograph/issues/115
 [#289]: https://github.com/hmdsefi/gograph/pull/289
 [#294]: https://github.com/hmdsefi/gograph/pull/294
+[#132]: https://github.com/hmdsefi/gograph/issues/132
+[#295]: https://github.com/hmdsefi/gograph/pull/295

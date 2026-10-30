@@ -2,6 +2,7 @@ package connectivity_test
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hmdsefi/gograph"
 	"github.com/hmdsefi/gograph/connectivity"
@@ -39,4 +40,23 @@ func ExampleHasCycle() {
 	// Output:
 	// false
 	// true
+}
+
+func ExampleFindCycle() {
+	g := gograph.New[string](gograph.Directed())
+	for _, e := range [][2]string{{"api", "auth"}, {"auth", "db"}, {"db", "cache"}, {"cache", "auth"}} {
+		_, _ = g.AddEdge(gograph.NewVertex(e[0]), gograph.NewVertex(e[1]))
+	}
+
+	cycle, ok := connectivity.FindCycle(g)
+	if !ok {
+		fmt.Println("no cycle")
+		return
+	}
+	var path []string
+	for _, v := range cycle {
+		path = append(path, v.Label())
+	}
+	fmt.Println("import cycle:", strings.Join(path, " -> "), "->", path[0])
+	// Output: import cycle: auth -> db -> cache -> auth
 }
