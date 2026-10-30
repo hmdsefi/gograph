@@ -46,6 +46,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its destination. An acyclic graph also keeps one int per vertex for its
   order. Removing an edge takes time proportional to the in-degree of its
   destination as well as the out-degree of its source. ([#287], [#288])
+- `BellmanFord` keeps its distances in slices and stops after a pass that
+  changes none of them. `FloydWarshall` keeps its distances in one flat
+  matrix and skips each row with no path to the middle vertex. On a random
+  graph with 10,000 vertices and 50,000 edges, `BellmanFord` takes 2.7 ms
+  instead of 11.9 s, and `FloydWarshall` on 300 vertices takes 9 ms instead
+  of 1.66 s. ([#294])
+
+### Fixed
+
+- `BellmanFord` and `FloydWarshall` give `-Inf` for a path through a `-Inf`
+  weight on a graph with no cycle, as v0.9.0 did. A cycle through a `-Inf`
+  weight, and a negative cycle that a `-Inf` weight leads into, return
+  `ErrNegativeWeightCycle`. ([#291], [#294])
+- `FloydWarshall` returns `ErrNegativeWeightCycle` only for a negative cycle.
+  A check after the main loop added the weights in another order, and its
+  rounding reported a cycle on some graphs with none, such as the path
+  1 -> 3 -> 2 -> 0 with weights 3.3, 3.3 and 1.1. ([#294])
 
 ## [0.9.1] - 2026-10-26
 
@@ -551,3 +568,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#288]: https://github.com/hmdsefi/gograph/pull/288
 [#115]: https://github.com/hmdsefi/gograph/issues/115
 [#289]: https://github.com/hmdsefi/gograph/pull/289
+[#294]: https://github.com/hmdsefi/gograph/pull/294
