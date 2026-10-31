@@ -193,3 +193,55 @@ func ExampleVertex_AllNeighbors() {
 	// B true
 	// C true
 }
+
+func ExampleDiff() {
+	before := gograph.New[string](gograph.Directed())
+	app := before.AddVertexByLabel("app")
+	_, _ = before.AddEdge(app, gograph.NewVertex("db"), gograph.WithEdgeLabel("reads"))
+	_, _ = before.AddEdge(app, gograph.NewVertex("log"))
+
+	after := gograph.Clone(before)
+	after.RemoveVertices(after.GetVertexByID("log"))
+	_, _ = after.AddEdge(after.GetVertexByID("app"), gograph.NewVertex("cache"), gograph.WithEdgeWeight(2))
+	after.RemoveEdges(after.GetEdge(after.GetVertexByID("app"), after.GetVertexByID("db")))
+	_, _ = after.AddEdge(after.GetVertexByID("app"), after.GetVertexByID("db"), gograph.WithEdgeLabel("writes"))
+
+	d, err := gograph.Diff(before, after)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(d)
+
+	// Output:
+	// + vertex cache
+	// - vertex log
+	// + edge app -> cache weight 2
+	// - edge app -> log
+	// ~ edge app -> db label "reads" -> "writes"
+}
+
+func ExampleGraphDiff_Apply() {
+	v1 := gograph.New[string](gograph.Acyclic())
+	_, _ = v1.AddEdge(gograph.NewVertex("parse"), gograph.NewVertex("check"))
+
+	v2 := gograph.Clone(v1)
+	_, _ = v2.AddEdge(v2.GetVertexByID("check"), gograph.NewVertex("emit"))
+
+	d, _ := gograph.Diff(v1, v2)
+	patched, err := d.Apply(v1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rest, _ := gograph.Diff(patched, v2)
+	fmt.Println(v1.Order(), patched.Order(), rest.IsEmpty())
+
+	// Applying it again finds the new vertex already there.
+	_, err = d.Apply(patched)
+	fmt.Println(errors.Is(err, gograph.ErrDiffMismatch))
+
+	// Output:
+	// 2 3 true
+	// true
+}
