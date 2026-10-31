@@ -68,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   graph with 10,000 vertices and 50,000 edges, `BellmanFord` takes 2.7 ms
   instead of 11.9 s, and `FloydWarshall` on 300 vertices takes 9 ms instead
   of 1.66 s. ([#294])
+- `.agents/skills/gograph/SKILL.md` has a row for each function added in this
+  release, and the `connectivity.HasCycle` row points to `FindCycle`. Eight
+  rows link to the gograph.dev pages added since v0.9.0. ([#221], [#299])
 
 ### Fixed
 
@@ -585,6 +588,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#115]: https://github.com/hmdsefi/gograph/issues/115
 [#289]: https://github.com/hmdsefi/gograph/pull/289
 [#294]: https://github.com/hmdsefi/gograph/pull/294
+[#221]: https://github.com/hmdsefi/gograph/issues/221
+[#299]: https://github.com/hmdsefi/gograph/pull/299
 [#132]: https://github.com/hmdsefi/gograph/issues/132
 [#295]: https://github.com/hmdsefi/gograph/pull/295
 [#126]: https://github.com/hmdsefi/gograph/issues/126
