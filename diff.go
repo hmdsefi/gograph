@@ -366,10 +366,12 @@ func labelText(label string) string {
 // removed or changed vertex or edge has to be in base, an added one can't
 // be, and an added edge needs both of its vertices. When d changes the
 // properties, base has to have the old ones. The first difference that
-// doesn't fit returns ErrDiffMismatch, wrapped with what it found. Added
-// edges that close a cycle in an acyclic graph return ErrDAGCycle, and
-// making a graph with a cycle acyclic returns ErrDAGHasCycle. On an error it
-// returns nil. A nil diff returns a copy of base.
+// doesn't fit returns ErrDiffMismatch, wrapped with what it found. New
+// properties that change whether the graph is directed, or that make an
+// undirected graph acyclic, return ErrIncompatibleGraphs. Added edges that
+// close a cycle in an acyclic graph return ErrDAGCycle, and making a graph
+// with a cycle acyclic returns ErrDAGHasCycle. On an error it returns nil. A
+// nil diff returns a copy of base.
 //
 // Copying base takes O(V+E) time and space. A removed edge or vertex then
 // costs what RemoveEdges or RemoveVertices does, and every other difference

@@ -262,6 +262,9 @@ func TestSameGroups_ListsMissingBeforeUnexpected(t *testing.T) {
 	r.check(t, groupsDiffer+"\n\tmissing [1]\n\tmissing [2]\n\tunexpected [3]")
 }
 
+// wrapper is a Graph that isn't a pointer, and *wrapper one that can be nil.
+type wrapper struct{ gograph.Graph[string] }
+
 func TestEqual(t *testing.T) {
 	// reversed builds dag with its vertices and edges in reverse order
 	reversed := func() gograph.Graph[string] {
@@ -291,6 +294,10 @@ func TestEqual(t *testing.T) {
 		{name: "both nil"},
 		{name: "nil want", got: dag(), fail: graphsDiffer + "\n\twant is nil"},
 		{name: "nil got", want: dag(), fail: graphsDiffer + "\n\tgot is nil"},
+		{name: "nil pointer want", want: (*wrapper)(nil), got: dag(), fail: graphsDiffer + "\n\twant is nil"},
+		{name: "nil pointer got", want: dag(), got: (*wrapper)(nil), fail: graphsDiffer + "\n\tgot is nil"},
+		{name: "both nil pointers", want: (*wrapper)(nil), got: (*wrapper)(nil)},
+		{name: "graph that isn't a pointer", want: wrapper{dag()}, got: reversed()},
 		{name: "different weight", want: weighted(1), got: weighted(1.5), fail: graphsDiffer + "\n\t~ vertex a weight 1 -> 1.5"},
 		{name: "weight within the tolerance", want: weighted(1), got: weighted(1.5), opts: []gograph.DiffOption{gograph.WithWeightTolerance(0.5)}},
 		{name: "missing vertex", want: dag(), got: gograph.New[string](gograph.Directed()), fail: graphsDiffer +

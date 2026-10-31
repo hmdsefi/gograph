@@ -3,6 +3,7 @@ package gographtest
 import (
 	"encoding/binary"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -161,19 +162,20 @@ func SameGroups[T comparable](t testing.TB, want [][]T, got [][]*gograph.Vertex[
 // The failure lists the differences that turn want into got, one per line
 // as gograph.GraphDiff.String writes them, up to 10 problems. A directed
 // graph and an undirected one fail with gograph.ErrIncompatibleGraphs. Two
-// nil graphs are equal, and a nil graph differs from any other.
+// nil graphs are equal, and a nil graph differs from any other. A graph
+// holding a nil pointer counts as nil.
 //
-// It takes the time of gograph.Diff, O(V+E) for graphs from gograph.New,
-// and space for the differences it finds.
+// It takes the time and space of gograph.Diff: for graphs from gograph.New,
+// O(V+E) time and space for the differences it finds.
 func Equal[T comparable](t testing.TB, want, got gograph.Graph[T], opts ...gograph.DiffOption) {
 	t.Helper()
-	switch {
-	case want == nil && got == nil:
+	switch wantNil, gotNil := isNil(want), isNil(got); {
+	case wantNil && gotNil:
 		return
-	case want == nil:
+	case wantNil:
 		fail(t, "graphs differ", []string{"want is nil"})
 		return
-	case got == nil:
+	case gotNil:
 		fail(t, "graphs differ", []string{"got is nil"})
 		return
 	}
@@ -186,6 +188,15 @@ func Equal[T comparable](t testing.TB, want, got gograph.Graph[T], opts ...gogra
 	if !d.IsEmpty() {
 		fail(t, "graphs differ", strings.Split(d.String(), "\n"))
 	}
+}
+
+// isNil reports whether g is nil or holds a nil pointer.
+func isNil[T comparable](g gograph.Graph[T]) bool {
+	if g == nil {
+		return true
+	}
+	v := reflect.ValueOf(g)
+	return v.Kind() == reflect.Pointer && v.IsNil()
 }
 
 // fail reports the problems as one failure, if there are any.
