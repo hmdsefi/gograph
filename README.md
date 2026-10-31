@@ -49,8 +49,9 @@ strongly connected components and graph partitioning.
 - **Connectivity:** connected components and cycle detection that can return the cycle, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
+- **Diffs:** `Diff` lists the vertices, edges, weights and edge labels that changed between two graphs, one per line or as JSON, and `Apply` makes the same changes to a copy.
 - **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
-- **Testing:** `gographtest` checks topological orders and groups of vertices in tests, and builds paths, cycles, grids and seeded random graphs.
+- **Testing:** `gographtest` checks topological orders, groups of vertices and whole graphs in tests, and builds paths, cycles, grids and seeded random graphs.
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby),
 including the Cilium project's [ariane](https://github.com/cilium/ariane),
@@ -393,6 +394,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `StableTopologySort` | The same, picking the smallest ready vertex by your compare function | O((V+E) log V) | [watch](https://gograph.dev/algorithms/stable-topological-sort/build-pipeline) |
 | `InducedSubgraph` | A chosen set of vertices and the edges between them | O(k+D) for k labels with D outgoing edges | |
 | `Clone` | A copy of the graph you can change without changing the original | O(V+E) | |
+| `Diff` | The vertices, edges, weights and edge labels that changed between two graphs | O(V+E) | |
 
 **Dependencies** (`dag` package)
 
@@ -500,9 +502,10 @@ built the same way.
 
 `gographtest` helps test code that uses gograph. `IsTopologicalOrder` accepts any valid
 topological order, and `SameGroups` compares components, cliques or communities in any
-order, so a test keeps passing when an algorithm returns another valid answer. Its
-generators build paths, cycles, complete graphs, grids and seeded random graphs with the
-labels 0 to n-1:
+order, so a test keeps passing when an algorithm returns another valid answer. `Equal`
+compares two graphs whatever order they were built in, and lists the vertices and edges
+that differ. Its generators build paths, cycles, complete graphs, grids and seeded random
+graphs with the labels 0 to n-1:
 
 ```go
 func TestBuildOrder(t *testing.T) {

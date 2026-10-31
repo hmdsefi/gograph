@@ -56,6 +56,30 @@ func ExampleSameGroups() {
 	// 	unexpected [c d]
 }
 
+func ExampleEqual() {
+	t := printer{}
+
+	want := gograph.New[string](gograph.Directed(), gograph.Weighted())
+	_, _ = want.AddEdge(gograph.NewVertex("a"), gograph.NewVertex("b"), gograph.WithEdgeWeight(0.3))
+	_, _ = want.AddEdge(gograph.NewVertex("b"), gograph.NewVertex("c"), gograph.WithEdgeWeight(1))
+
+	// 0.1 + 0.2 at run time is 0.30000000000000004, close to 0.3
+	x, y := 0.1, 0.2
+	got := gograph.Clone(want)
+	got.RemoveEdges(got.GetEdge(got.GetVertexByID("a"), got.GetVertexByID("b")))
+	_, _ = got.AddEdge(got.GetVertexByID("a"), got.GetVertexByID("b"), gograph.WithEdgeWeight(x+y))
+
+	gographtest.Equal(t, want, got, gograph.WithWeightTolerance(1e-9))
+
+	got.RemoveVertices(got.GetVertexByID("c"))
+	gographtest.Equal(t, want, got, gograph.WithWeightTolerance(1e-9))
+
+	// Output:
+	// gographtest: graphs differ:
+	// 	- vertex c
+	// 	- edge b -> c weight 1
+}
+
 func ExampleGrid() {
 	g := gographtest.Grid(3, 4, gograph.Directed())
 	fmt.Println(g.Order(), "vertices,", g.Size(), "edges")

@@ -151,6 +151,43 @@ func SameGroups[T comparable](t testing.TB, want [][]T, got [][]*gograph.Vertex[
 	fail(t, "groups differ", problems)
 }
 
+// Equal fails the test unless got has the same vertices, edges, weights,
+// edge labels and properties as want, as gograph.Diff compares them: it
+// matches vertices by label and edges by the labels of their two vertices,
+// and leaves out metadata, insertion order and edge insertion indexes. The
+// options go to gograph.Diff, so gograph.WithWeightTolerance accepts weights
+// that differ by rounding.
+//
+// The failure lists the differences that turn want into got, one per line
+// as gograph.GraphDiff.String writes them, up to 10 problems. A directed
+// graph and an undirected one fail with gograph.ErrIncompatibleGraphs. Two
+// nil graphs are equal, and a nil graph differs from any other.
+//
+// It takes the time of gograph.Diff, O(V+E) for graphs from gograph.New,
+// and space for the differences it finds.
+func Equal[T comparable](t testing.TB, want, got gograph.Graph[T], opts ...gograph.DiffOption) {
+	t.Helper()
+	switch {
+	case want == nil && got == nil:
+		return
+	case want == nil:
+		fail(t, "graphs differ", []string{"want is nil"})
+		return
+	case got == nil:
+		fail(t, "graphs differ", []string{"got is nil"})
+		return
+	}
+
+	d, err := gograph.Diff(want, got, opts...)
+	if err != nil {
+		t.Errorf("gographtest: %v", err)
+		return
+	}
+	if !d.IsEmpty() {
+		fail(t, "graphs differ", strings.Split(d.String(), "\n"))
+	}
+}
+
 // fail reports the problems as one failure, if there are any.
 func fail(t testing.TB, title string, problems []string) {
 	t.Helper()
