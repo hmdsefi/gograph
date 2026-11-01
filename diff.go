@@ -110,9 +110,9 @@ func (o diffOptions) sameWeight(x, y float64) bool {
 //
 // For graphs from New, it takes O(V+E) time for the vertices and edges of
 // both graphs, and allocates only the diff it returns. Any other Graph is
-// read through Vertices, Edges, GetVertexByID and GetEdge, and an undirected
-// one also through GetAllVertices, with a map of O(V) space. It panics if a
-// or b is nil.
+// read through GetAllVertices, AllEdges, GetVertexByID and GetEdge, so it
+// also takes the O(V+E) space of the slices they return, and an undirected
+// one a map of O(V) more. It panics if a or b is nil.
 func Diff[T comparable](a, b Graph[T], opts ...DiffOption) (*GraphDiff[T], error) {
 	if isNilGraph(a) || isNilGraph(b) {
 		panic("gograph: Diff requires non-nil graphs")

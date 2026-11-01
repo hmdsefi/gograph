@@ -166,7 +166,7 @@ func SameGroups[T comparable](t testing.TB, want [][]T, got [][]*gograph.Vertex[
 // holding a nil pointer counts as nil.
 //
 // It takes the time and space of gograph.Diff: for graphs from gograph.New,
-// O(V+E) time and space for the differences it finds.
+// O(V+E) time, and space for the differences it finds.
 func Equal[T comparable](t testing.TB, want, got gograph.Graph[T], opts ...gograph.DiffOption) {
 	t.Helper()
 	switch wantNil, gotNil := isNil(want), isNil(got); {
