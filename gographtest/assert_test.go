@@ -47,6 +47,7 @@ func (r *recorder) check(t *testing.T, want string) {
 const (
 	notTopological = "gographtest: not a topological order of the graph:"
 	groupsDiffer   = "gographtest: groups differ:"
+	graphsDiffer   = "gographtest: graphs differ:"
 )
 
 // dag returns a -> b, a -> c, b -> d, c -> d.
@@ -259,4 +260,75 @@ func TestSameGroups_ListsMissingBeforeUnexpected(t *testing.T) {
 	r := &recorder{}
 	SameGroups(r, [][]int{{1}, {2}}, [][]*gograph.Vertex[int]{{gograph.NewVertex(3)}})
 	r.check(t, groupsDiffer+"\n\tmissing [1]\n\tmissing [2]\n\tunexpected [3]")
+}
+
+// wrapper is a Graph that isn't a pointer, and *wrapper one that can be nil.
+type wrapper struct{ gograph.Graph[string] }
+
+func TestEqual(t *testing.T) {
+	// reversed builds dag with its vertices and edges in reverse order
+	reversed := func() gograph.Graph[string] {
+		g := gograph.New[string](gograph.Directed())
+		for _, label := range []string{"d", "c", "b", "a"} {
+			g.AddVertexByLabel(label)
+		}
+		for _, e := range [][2]string{{"c", "d"}, {"b", "d"}, {"a", "c"}, {"a", "b"}} {
+			_, _ = g.AddEdge(g.GetVertexByID(e[0]), g.GetVertexByID(e[1]))
+		}
+		return g
+	}
+	weighted := func(w float64) gograph.Graph[string] {
+		g := gograph.New[string](gograph.Directed())
+		_, _ = g.AddEdge(g.AddVertexByLabel("a", gograph.WithVertexWeight(w)), gograph.NewVertex("b"))
+		return g
+	}
+
+	tests := []struct {
+		name      string
+		want, got gograph.Graph[string]
+		opts      []gograph.DiffOption
+		fail      string
+	}{
+		{name: "same graph", want: dag(), got: dag()},
+		{name: "another order", want: dag(), got: reversed()},
+		{name: "both nil"},
+		{name: "nil want", got: dag(), fail: graphsDiffer + "\n\twant is nil"},
+		{name: "nil got", want: dag(), fail: graphsDiffer + "\n\tgot is nil"},
+		{name: "nil pointer want", want: (*wrapper)(nil), got: dag(), fail: graphsDiffer + "\n\twant is nil"},
+		{name: "nil pointer got", want: dag(), got: (*wrapper)(nil), fail: graphsDiffer + "\n\tgot is nil"},
+		{name: "both nil pointers", want: (*wrapper)(nil), got: (*wrapper)(nil)},
+		{name: "graph that isn't a pointer", want: wrapper{dag()}, got: reversed()},
+		{name: "different weight", want: weighted(1), got: weighted(1.5), fail: graphsDiffer + "\n\t~ vertex a weight 1 -> 1.5"},
+		{name: "weight within the tolerance", want: weighted(1), got: weighted(1.5), opts: []gograph.DiffOption{gograph.WithWeightTolerance(0.5)}},
+		{name: "missing vertex", want: dag(), got: gograph.New[string](gograph.Directed()), fail: graphsDiffer +
+			"\n\t- vertex a\n\t- vertex b\n\t- vertex c\n\t- vertex d" +
+			"\n\t- edge a -> b\n\t- edge a -> c\n\t- edge b -> d\n\t- edge c -> d"},
+		{
+			name: "directed and undirected",
+			want: dag(),
+			got:  gograph.New[string](),
+			fail: "gographtest: graphs are not both directed or both undirected: a is directed: true, b is directed: false",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &recorder{}
+			Equal(r, tt.want, tt.got, tt.opts...)
+			r.check(t, tt.fail)
+		})
+	}
+}
+
+func TestEqual_ListsTenProblems(t *testing.T) {
+	r := &recorder{}
+	Equal(r, gograph.New[int](), Path(12))
+
+	var fail strings.Builder
+	fail.WriteString(graphsDiffer)
+	for i := range 10 {
+		fmt.Fprintf(&fail, "\n\t+ vertex %d", i)
+	}
+	fail.WriteString("\n\tand 13 more")
+	r.check(t, fail.String())
 }
