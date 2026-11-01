@@ -242,7 +242,7 @@ func TestNegativeCycle_MatchesExactCheck(t *testing.T) {
 		absent      = math.MaxInt64
 		negativeInf = -1 << 40
 	)
-	rng := rand.New(rand.NewPCG(1, 2))
+	rng := rand.New(rand.NewPCG(1, 2)) //nolint:gosec // seeded so failures are reproducible
 
 	for range 5000 {
 		n := 1 + rng.IntN(7)
