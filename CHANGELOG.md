@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `path.NegativeCycle` returns one cycle whose edge weights sum to less than
-  zero, searching the whole graph. ([#186])
+  zero, searching the whole graph. ([#186], [#300])
 - `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
   For a vertex of a graph, it yields the graph's own vertices without copying
   them. ([#107], [#287])
@@ -598,3 +598,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#295]: https://github.com/hmdsefi/gograph/pull/295
 [#126]: https://github.com/hmdsefi/gograph/issues/126
 [#296]: https://github.com/hmdsefi/gograph/pull/296
+[#300]: https://github.com/hmdsefi/gograph/pull/300

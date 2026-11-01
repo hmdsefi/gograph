@@ -4,28 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand/v2"
 	"reflect"
+	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
 )
-
-func negativeCycleGraph(t *testing.T, edges []weightedEdge) gograph.Graph[string] {
-	t.Helper()
-	g := gograph.New[string](gograph.Weighted(), gograph.Directed())
-	vertex := func(label string) *gograph.Vertex[string] {
-		if v := g.GetVertexByID(label); v != nil {
-			return v
-		}
-		return g.AddVertexByLabel(label)
-	}
-	for _, e := range edges {
-		if _, err := g.AddEdge(vertex(e.from), vertex(e.to), gograph.WithEdgeWeight(e.weight)); err != nil {
-			t.Fatalf("AddEdge(%s, %s): %v", e.from, e.to, err)
-		}
-	}
-	return g
-}
 
 // assertNegativeCycle walks the cycle through the graph's edges, including the
 // one that closes it, and checks that the weights sum to less than zero.
@@ -115,14 +101,32 @@ func TestNegativeCycle(t *testing.T) {
 			want:  2,
 		},
 		{
+			name:  "infinite tail with the edges in the other order",
+			edges: []weightedEdge{{"B", "A", -2}, {"A", "B", 1}, {"S", "A", math.Inf(-1)}},
+			want:  2,
+		},
+		{
 			name:  "tail large enough to swallow the cycle's weights",
 			edges: []weightedEdge{{"X", "A", -1e20}, {"A", "B", 1}, {"B", "A", -3}},
 			want:  2,
 		},
+		{
+			name:  "cycle through an infinite weight that another one reaches first",
+			edges: []weightedEdge{{"S", "B", math.Inf(-1)}, {"A", "B", math.Inf(-1)}, {"B", "A", 6}},
+			want:  2,
+		},
+		{
+			name: "tail that overflows",
+			edges: []weightedEdge{
+				{"S", "T", -math.MaxFloat64}, {"T", "A", -math.MaxFloat64},
+				{"A", "B", 1}, {"B", "A", -2},
+			},
+			want: 2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := negativeCycleGraph(t, tt.edges)
+			g := directedWeighted(tt.edges...)
 
 			cycle, err := NegativeCycle(g)
 			if err != nil {
@@ -131,9 +135,7 @@ func TestNegativeCycle(t *testing.T) {
 			if len(cycle) != tt.want {
 				t.Fatalf("cycle = %v, want %d vertices", labels(cycle), tt.want)
 			}
-			if tt.name != "infinite self-loop" {
-				assertNegativeCycle(t, g, cycle)
-			}
+			assertNegativeCycle(t, g, cycle)
 		})
 	}
 }
@@ -146,12 +148,17 @@ func TestNegativeCycle_NoCycle(t *testing.T) {
 		{name: "positive cycle", edges: []weightedEdge{{"A", "B", 1}, {"B", "C", 1}, {"C", "A", 1}}},
 		{name: "cycle summing to zero", edges: []weightedEdge{{"A", "B", 2}, {"B", "A", -2}}},
 		{name: "negative edge without a cycle", edges: []weightedEdge{{"A", "B", -5}, {"B", "C", -5}}},
+		{
+			name:  "cycle summing to exactly zero with rounded weights",
+			edges: []weightedEdge{{"A", "B", 0.1}, {"B", "C", 0.1}, {"C", "D", 0.2}, {"D", "A", -0.4}},
+		},
 		{name: "NaN weight", edges: []weightedEdge{{"A", "B", math.NaN()}, {"B", "A", 1}}},
+		{name: "cycle through a +Inf weight", edges: []weightedEdge{{"A", "B", math.Inf(1)}, {"B", "A", math.Inf(-1)}}},
 		{name: "no edges", edges: nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cycle, err := NegativeCycle(negativeCycleGraph(t, tt.edges))
+			cycle, err := NegativeCycle(directedWeighted(tt.edges...))
 			if err != nil {
 				t.Fatalf("NegativeCycle() error = %v", err)
 			}
@@ -190,7 +197,7 @@ func TestNegativeCycle_SameCycleOnEveryRun(t *testing.T) {
 		{"C", "D", -1}, {"D", "C", -1},
 		{"E", "F", -1}, {"F", "G", -1}, {"G", "E", -1},
 	}
-	g := negativeCycleGraph(t, edges)
+	g := directedWeighted(edges...)
 
 	first, err := NegativeCycle(g)
 	if err != nil {
@@ -203,6 +210,84 @@ func TestNegativeCycle_SameCycleOnEveryRun(t *testing.T) {
 		}
 		if !reflect.DeepEqual(labels(next), labels(first)) {
 			t.Fatalf("cycle changed from %v to %v", labels(first), labels(next))
+		}
+	}
+}
+
+// exactNegativeCycle runs Floyd-Warshall on int64 weights, so nothing is
+// rounded. weights[i][j] is the edge from i to j, and absent means no edge.
+func exactNegativeCycle(weights [][]int64, absent int64) bool {
+	dist := make([][]int64, len(weights))
+	for i := range weights {
+		dist[i] = slices.Clone(weights[i])
+	}
+	for k := range dist {
+		for i := range dist {
+			for j := range dist {
+				if dist[i][k] != absent && dist[k][j] != absent &&
+					(dist[i][j] == absent || dist[i][k]+dist[k][j] < dist[i][j]) {
+					dist[i][j] = dist[i][k] + dist[k][j]
+				}
+			}
+			if dist[i][i] != absent && dist[i][i] < 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func TestNegativeCycle_MatchesExactCheck(t *testing.T) {
+	const (
+		absent      = math.MaxInt64
+		negativeInf = -1 << 40
+	)
+	rng := rand.New(rand.NewPCG(1, 2))
+
+	for range 5000 {
+		n := 1 + rng.IntN(7)
+		weights := make([][]int64, n)
+		for i := range weights {
+			weights[i] = make([]int64, n)
+			for j := range weights[i] {
+				weights[i][j] = absent
+			}
+		}
+
+		g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+		for range rng.IntN(n*n + 1) {
+			i, j := rng.IntN(n), rng.IntN(n)
+			from, to := gograph.NewVertex(strconv.Itoa(i)), gograph.NewVertex(strconv.Itoa(j))
+			if g.ContainsEdge(from, to) {
+				continue
+			}
+
+			w := float64(rng.IntN(16) - 5)
+			switch rng.IntN(24) {
+			case 0:
+				w = math.NaN()
+			case 1:
+				w = math.Inf(1)
+			case 2:
+				w = math.Inf(-1)
+				weights[i][j] = negativeInf
+			default:
+				weights[i][j] = int64(w)
+			}
+			if _, err := g.AddEdge(from, to, gograph.WithEdgeWeight(w)); err != nil {
+				t.Fatalf("AddEdge(%d, %d): %v", i, j, err)
+			}
+		}
+
+		cycle, err := NegativeCycle(g)
+		if err != nil {
+			t.Fatalf("NegativeCycle() error = %v", err)
+		}
+		if want := exactNegativeCycle(weights, absent); (cycle != nil) != want {
+			t.Fatalf("cycle = %v, want a cycle: %v, weights %v", labels(cycle), want, weights)
+		}
+		if cycle != nil {
+			assertNegativeCycle(t, g, cycle)
 		}
 	}
 }
@@ -223,6 +308,11 @@ func ExampleNegativeCycle() {
 		return
 	}
 
-	fmt.Println(len(cycle))
-	// Output: 3
+	for _, v := range cycle {
+		fmt.Println(v.Label())
+	}
+	// Output:
+	// EUR
+	// GBP
+	// USD
 }
