@@ -2,6 +2,7 @@ package gograph
 
 import (
 	"errors"
+	"iter"
 )
 
 var (
@@ -36,6 +37,17 @@ type Graph[T comparable] interface {
 	// This method accepts additional edge options such as weight and adds
 	// them to the new edge.
 	//
+	// In a graph created with Acyclic, an edge that would close a cycle
+	// returns ErrDAGCycle without adding the edge. A graph from New keeps a
+	// topological order of its vertices for this check. An edge that agrees
+	// with the order, an edge from a vertex with no incoming edges, and an
+	// edge to a vertex with no outgoing edges take O(1) time. Any other edge
+	// searches forward from the 'to' vertex and backward from the 'from'
+	// vertex, and moves the vertices it finds. That takes at most O(R log R)
+	// time for the R vertices and edges reachable from the 'to' vertex, and
+	// O((V+E) log V) in the worst case. On a graph that Clone copied from
+	// another implementation of Graph, the first AddEdge also builds the
+	// order in O(V+E) time.
 	//
 	// It creates the input vertices if they don't exist in the graph, the
 	// same way AddVertex does, so a vertex from another graph is copied.
@@ -50,14 +62,14 @@ type Graph[T comparable] interface {
 	//
 	// If any of the specified vertices is nil, returns nil.
 	// If any of the vertices does not exist, returns nil.
-	// If both vertices exist but no edges found, returns an empty set.
+	// If both vertices exist but no edges found, returns nil.
 	GetAllEdges(from, to *Vertex[T]) []*Edge[T]
 
 	// AllEdges returns all the edges in the graph. The edges are grouped by
 	// source vertex in the order of GetAllVertices, and the edges of each
 	// source vertex are in the order they were added. In an undirected
-	// graph, each edge is stored in both directions, so it appears in the
-	// group of both its vertices.
+	// graph, an edge between distinct vertices is stored in both directions,
+	// so it appears in the group of both its vertices. A self-loop is stored once.
 	AllEdges() []*Edge[T]
 
 	// GetEdge returns an edge connecting source vertex to target vertex
@@ -71,11 +83,15 @@ type Graph[T comparable] interface {
 	GetEdge(from, to *Vertex[T]) *Edge[T]
 
 	// EdgesOf returns a slice of all edges touching the specified vertex.
-	// If no edges are touching the specified vertex returns an empty slice.
+	// If no edges are touching the specified vertex returns nil.
+	//
+	// An undirected edge between distinct vertices appears in both directions.
+	// Use v.OutDegree() for the number of neighbors in an undirected graph.
 	//
 	// The edges that start from the vertex come first, in the order they
 	// were added. The edges that end at the vertex follow, in the order of
-	// their source vertices in GetAllVertices.
+	// their source vertices in GetAllVertices. For a graph from New, it takes
+	// O(d log d) time for a vertex with d edges.
 	//
 	// If the input vertex is nil, returns nil.
 	// If the input vertex does not exist, returns nil.
@@ -83,7 +99,8 @@ type Graph[T comparable] interface {
 
 	// RemoveEdges removes input edges from the graph from the specified
 	// slice of edges, if they exist. In undirected graph, removes edges
-	// in both directions.
+	// in both directions. For a graph from New, removing an edge takes time
+	// proportional to the degrees of its two vertices.
 	RemoveEdges(edges ...*Edge[T])
 
 	// AddVertexByLabel adds a new vertex with the given label to the graph.
@@ -119,7 +136,10 @@ type Graph[T comparable] interface {
 	GetAllVertices() []*Vertex[T]
 
 	// RemoveVertices removes all the specified vertices from this graph including
-	// all its touching edges if present.
+	// all its touching edges if present. A removed vertex reports no neighbors
+	// and an in-degree of 0. A vertex of another graph with the same label as a
+	// removed one keeps its edges. For a graph from New, removing a vertex
+	// takes time proportional to the degrees of its neighbors.
 	RemoveVertices(vertices ...*Vertex[T])
 
 	// ContainsEdge returns 'true' if and only if this graph contains an edge
@@ -137,7 +157,8 @@ type Graph[T comparable] interface {
 	// Order returns the number of vertices in the graph.
 	Order() uint32
 
-	// Size returns the number of edges in the graph
+	// Size returns the number of stored edges in the graph. An undirected edge
+	// between distinct vertices is stored in both directions and counts twice.
 	Size() uint32
 }
 
@@ -222,11 +243,12 @@ func (e Edge[T]) Metadata() any {
 type Vertex[T comparable] struct {
 	label      T            // uniquely identifies each vertex
 	neighbors  []*Vertex[T] // stores pointers to its neighbors
-	inDegree   int          // number of incoming edges to this vertex
+	incoming   []*Edge[T]   // stored edges that end at this vertex, in no particular order
 	properties VertexProperties
-	metadata   any  // optional metadata associated with the vertex
-	stored     bool // whether a graph has stored this vertex
-	position   int  // index of the vertex in the insertion order of its graph
+	metadata   any    // optional metadata associated with the vertex
+	stored     bool   // whether a graph has stored this vertex
+	seen       uint32 // the last search of its graph that reached this vertex
+	position   int    // index of the vertex in the insertion order of its graph
 }
 
 // NewVertex creates a vertex with the given label and applies the options,
@@ -264,7 +286,7 @@ func (v *Vertex[T]) HasNeighbor(vertex *Vertex[T]) bool {
 
 // InDegree returns the number of incoming edges to the current vertex.
 func (v *Vertex[T]) InDegree() int {
-	return v.inDegree
+	return len(v.incoming)
 }
 
 // OutDegree returns the number of outgoing edges to the current vertex.
@@ -273,13 +295,18 @@ func (v *Vertex[T]) OutDegree() int {
 }
 
 // Degree returns the total degree of the vertex which is the sum of
-// in and out degrees.
+// in and out degrees. In an undirected graph this counts incoming and outgoing
+// edges separately; use OutDegree for the number of neighbors.
 func (v *Vertex[T]) Degree() int {
-	return v.inDegree + v.OutDegree()
+	return v.InDegree() + v.OutDegree()
 }
 
 // Neighbors returns a copy of neighbor slice. If the caller changed the
-// result slice, it won't impact the graph or the vertex.
+// result slice, it won't impact the graph or the vertex. The returned
+// vertices are snapshots that share their own neighbor lists with the graph,
+// so their Neighbors, OutDegree and HasNeighbor aren't reliable once the
+// graph changes. Use GetVertexByID to read the current neighbors of a vertex,
+// and AllNeighbors to read them without copies.
 func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 	var neighbors []*Vertex[T]
 	for i := range v.neighbors {
@@ -289,6 +316,26 @@ func (v *Vertex[T]) Neighbors() []*Vertex[T] {
 	}
 
 	return neighbors
+}
+
+// AllNeighbors returns an iterator over the vertices this vertex has an edge
+// to, in the order of Neighbors. For a vertex of a graph, it yields the
+// graph's own vertices without copying them, so each one is the vertex
+// GetVertexByID returns for its label. In an undirected graph it yields each
+// neighbor once, and a vertex with a self-loop yields itself once. A removed
+// vertex yields nothing.
+//
+// Ranging over all neighbors takes O(OutDegree) time and allocates nothing.
+// If the graph changes during the loop, the iterator can skip or repeat a
+// neighbor.
+func (v *Vertex[T]) AllNeighbors() iter.Seq[*Vertex[T]] {
+	return func(yield func(*Vertex[T]) bool) {
+		for i := 0; i < len(v.neighbors); i++ {
+			if !yield(v.neighbors[i]) {
+				return
+			}
+		}
+	}
 }
 
 // Label returns vertex label.

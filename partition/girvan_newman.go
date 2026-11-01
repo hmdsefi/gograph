@@ -2,23 +2,30 @@ package partition
 
 import (
 	"errors"
+	"math"
 
 	"github.com/hmdsefi/gograph"
 	"github.com/hmdsefi/gograph/connectivity"
 )
 
+// errTooManyPaths is returned when two vertices have more shortest paths
+// between them than a float64 can count.
+var errTooManyPaths = errors.New("too many shortest paths between two vertices to count")
+
 // GirvanNewman implements the Girvan-Newman community detection algorithm for
-// undirected graphs. It partitions a graph into communities by iteratively
-// removing edges with the highest betweenness centrality until either the
-// specified number of connected components `k` is reached, or no edges remain
-// if k <= 0.
+// undirected graphs, and splits a directed graph as if it were undirected.
+// It partitions a graph into communities by iteratively removing edges with
+// the highest betweenness centrality until either the specified number of
+// connected components `k` is reached, or no edges remain if k <= 0.
 //
 // The algorithm proceeds as follows:
 //  1. Compute edge betweenness centrality for all edges using Brandes algorithm.
 //     - BFS is used from each vertex to determine the shortest paths.
 //     - Dependencies are accumulated to assign betweenness values to edges.
 //  2. Identify the edge with the highest betweenness. When several edges tie,
-//     take the first one in the order of AllEdges().
+//     take the first one in the order of AllEdges(). Values within one part
+//     in a billion of the highest count as tied, since sums of the same
+//     paths added in a different order can round differently.
 //  3. Remove that edge.
 //  4. Update connected components using a non-recursive BFS traversal.
 //  5. Repeat steps 1-4 until the desired number of components (`k`) is reached.
@@ -30,6 +37,9 @@ import (
 // returned as they are. If g has fewer than k vertices, every vertex ends up
 // in its own community.
 //
+// The communities of a directed graph are directed, and each edge of g in a
+// community keeps its own direction, weight and label.
+//
 // Important details:
 //   - High betweenness edges typically act as bridges between clusters and are
 //     removed first, effectively separating communities.
@@ -38,7 +48,7 @@ import (
 //   - The input graph `g` is cloned internally to prevent mutation.
 //
 // Parameters:
-//   - g: An instance of gograph.Graph[T] representing the undirected input graph.
+//   - g: The input graph, directed or undirected.
 //   - k: The desired number of communities (connected components). If k <= 0,
 //     the algorithm continues removing edges until no edges remain.
 //
@@ -49,7 +59,8 @@ import (
 //     Each community has every edge of g between its vertices, including
 //     edges the algorithm removed while splitting the graph. The communities
 //     keep the vertex and edge weights, and are weighted if g is weighted.
-//   - An error if the operation fails.
+//   - An error if g is nil, or if two vertices have more shortest paths
+//     between them than a float64 can count (about 1.8e308).
 //
 // Time Complexity:
 //   - Each iteration requires computing betweenness for all edges using BFS from each node.
@@ -68,9 +79,8 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 		return nil, errors.New("input graph is nil")
 	}
 
-	// The betweenness below walks the edges in both directions but only
-	// credits an edge walked forward, so a directed g needs an undirected
-	// copy, where a->b and b->a are one edge.
+	// A directed g splits as if it were undirected, so the betweenness below
+	// runs on an undirected copy, where a->b and b->a are one edge.
 	var working gograph.Graph[T]
 	if g.IsDirected() {
 		working = undirectedCopy(g)
@@ -81,26 +91,19 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	components := connectivity.ConnectedComponents(working)
 	for (k > 0 && len(components) < k) || (k <= 0 && working.Size() > 0) {
 		// Compute edge betweenness
-		betweenness := calculateEdgeBetweenness(working)
+		betweenness, err := calculateEdgeBetweenness(working)
+		if err != nil {
+			return nil, err
+		}
 		if len(betweenness) == 0 {
 			break
 		}
 
-		// Find max betweenness, going through the edges in graph order so
-		// the result doesn't depend on map iteration. Only one edge is
-		// removed per iteration: removing every tied edge at once can split
-		// the graph into more than k components.
-		maxVal := -1.0
-		var edgeToRemove *gograph.Edge[T]
-		for _, e := range working.AllEdges() {
-			val, ok := betweenness[e]
-			if !ok {
-				continue
-			}
-			if val > maxVal {
-				maxVal = val
-				edgeToRemove = e
-			}
+		// Only one edge is removed per iteration: removing every tied edge at
+		// once can split the graph into more than k components.
+		edgeToRemove := mostCentralEdge(working, betweenness)
+		if edgeToRemove == nil {
+			break
 		}
 
 		working.RemoveEdges(edgeToRemove)
@@ -114,6 +117,9 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	var options []gograph.GraphOptionFunc
 	if g.IsWeighted() {
 		options = append(options, gograph.Weighted())
+	}
+	if g.IsDirected() {
+		options = append(options, gograph.Directed())
 	}
 
 	// Convert components to Graph[T] objects
@@ -143,6 +149,40 @@ func GirvanNewman[T comparable](g gograph.Graph[T], k int) ([]gograph.Graph[T], 
 	return result, nil
 }
 
+// tieTolerance is the relative difference within which two betweenness
+// values count as tied.
+const tieTolerance = 1e-9
+
+// mostCentralEdge returns the first edge in AllEdges order whose betweenness
+// is within tieTolerance of the highest, or nil when no edge has a value.
+// Going through the edges in graph order keeps the result independent of
+// map iteration. An undirected edge gets the sum of its two stored
+// directions, so both directions have the same value.
+func mostCentralEdge[T comparable](g gograph.Graph[T], betweenness map[*gograph.Edge[T]]float64) *gograph.Edge[T] {
+	edges := g.AllEdges()
+	values := make([]float64, len(edges))
+	maxVal := -1.0
+	for i, e := range edges {
+		values[i] = -1
+		if forward, ok := betweenness[e]; ok {
+			values[i] = forward + betweenness[g.GetEdge(e.Destination(), e.Source())]
+		}
+		if values[i] > maxVal {
+			maxVal = values[i]
+		}
+	}
+	if maxVal < 0 {
+		return nil
+	}
+
+	for i, e := range edges {
+		if values[i] >= maxVal*(1-tieTolerance) {
+			return e
+		}
+	}
+	return nil
+}
+
 // undirectedCopy copies a directed g into an undirected graph. When g has
 // both a->b and b->a, the copy keeps the weight and label of the first one
 // in AllEdges.
@@ -164,10 +204,19 @@ func undirectedCopy[T comparable](g gograph.Graph[T]) gograph.Graph[T] {
 	return clone
 }
 
-// calculateEdgeBetweenness computes edge betweenness centrality using Brandes' algorithm
-func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edge[T]]float64 {
+// calculateEdgeBetweenness computes edge betweenness centrality using Brandes'
+// algorithm. It returns errTooManyPaths when the number of shortest paths to
+// a vertex is too large for a float64.
+func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) (map[*gograph.Edge[T]]float64, error) {
 	betweenness := make(map[*gograph.Edge[T]]float64)
 	vertices := g.GetAllVertices()
+
+	// The search must reach each neighbor once, or sigma counts a path more
+	// than once. EdgesOf lists both stored directions of an undirected edge.
+	outgoing := make(map[*gograph.Vertex[T]][]*gograph.Edge[T], len(vertices))
+	for _, e := range g.AllEdges() {
+		outgoing[e.Source()] = append(outgoing[e.Source()], e)
+	}
 
 	for _, s := range vertices {
 		// BFS structures
@@ -192,17 +241,17 @@ func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edg
 			queue = queue[1:]
 			stack = append(stack, v)
 
-			for _, e := range g.EdgesOf(v) {
-				w := e.OtherVertex(v.Label())
-				if w == nil {
-					continue
-				}
+			for _, e := range outgoing[v] {
+				w := e.Destination()
 				if distance[w] < 0 {
 					distance[w] = distance[v] + 1
 					queue = append(queue, w)
 				}
 				if distance[w] == distance[v]+1 {
 					sigma[w] += sigma[v]
+					if math.IsInf(sigma[w], 1) {
+						return nil, errTooManyPaths
+					}
 					pred[w] = append(pred[w], v)
 				}
 			}
@@ -229,5 +278,5 @@ func calculateEdgeBetweenness[T comparable](g gograph.Graph[T]) map[*gograph.Edg
 		betweenness[e] /= 2
 	}
 
-	return betweenness
+	return betweenness, nil
 }

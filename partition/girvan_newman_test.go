@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"math/rand"
 	"reflect"
 	"slices"
 	"testing"
@@ -316,5 +317,37 @@ func TestGirvanNewman_EmptyGraph(t *testing.T) {
 
 	if len(components) != 0 {
 		t.Fatalf("expected 0 components for empty graph, got %d", len(components))
+	}
+}
+
+// BenchmarkGirvanNewman splits two random clusters of 60 vertices that three
+// edges join.
+func BenchmarkGirvanNewman(b *testing.B) {
+	const size = 60
+	rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so runs are comparable
+	g := gograph.New[int]()
+	vertices := make([]*gograph.Vertex[int], 2*size)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for c := 0; c < 2; c++ {
+		for i := c * size; i < (c+1)*size; i++ {
+			for j := i + 1; j < (c+1)*size; j++ {
+				if rng.Float64() < 0.15 {
+					_, _ = g.AddEdge(vertices[i], vertices[j])
+				}
+			}
+		}
+	}
+	for i := 0; i < 3; i++ {
+		_, _ = g.AddEdge(vertices[rng.Intn(size)], vertices[size+rng.Intn(size)])
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		if _, err := GirvanNewman(g, 2); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

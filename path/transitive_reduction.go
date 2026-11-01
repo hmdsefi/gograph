@@ -67,13 +67,13 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 	for _, u := range vertices {
 		// Get the neighbors of the current vertex
 		neighbors := make(map[T]bool)
-		for _, neighbor := range u.Neighbors() {
+		for neighbor := range u.AllNeighbors() {
 			neighbors[neighbor.Label()] = true
 		}
 
 		// For each neighbor of u, remove its descendants from consideration
 		// as direct neighbors in the transitive reduction
-		for _, v := range u.Neighbors() {
+		for v := range u.AllNeighbors() {
 			// Skip if we've already removed this neighbor
 			if _, exists := neighbors[v.Label()]; !exists {
 				continue
@@ -95,12 +95,12 @@ func TransitiveReduction[T comparable](g gograph.Graph[T]) (gograph.Graph[T], er
 		// Add edges from u to its remaining neighbors in the reduced graph,
 		// in the order of u's neighbors
 		uVertex := reducedGraph.GetVertexByID(u.Label())
-		for _, neighbor := range u.Neighbors() {
+		for neighbor := range u.AllNeighbors() {
 			if !neighbors[neighbor.Label()] {
 				continue
 			}
 			vVertex := reducedGraph.GetVertexByID(neighbor.Label())
-			originalEdge := g.GetEdge(u, g.GetVertexByID(neighbor.Label()))
+			originalEdge := g.GetEdge(u, neighbor)
 
 			_, err := reducedGraph.AddEdge(
 				uVertex,

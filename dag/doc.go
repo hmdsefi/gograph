@@ -72,9 +72,10 @@
 //
 // Every function returns each vertex once, as the graph's own vertex
 // pointers. The results of Descendants, Ancestors and Affected are in
-// breadth-first order, nearest first. For vertices at the same distance,
-// Descendants and Affected follow the order the edges were added, and
-// Ancestors follows the order of the graph's AllEdges.
+// breadth-first order, nearest first. The search visits the outgoing edges
+// of each vertex in the order they were added (Descendants, Affected), or
+// its incoming edges in AllEdges order (Ancestors), so vertices at the same
+// distance are grouped by the vertex that reached them first.
 //
 // All searches are iterative, so long chains don't grow the call stack.
 package dag
