@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `path.NegativeCycle` returns one cycle whose edge weights sum to less than
+  zero, searching the whole graph. ([#186])
 - `Clone` returns a copy of a graph that can be changed without changing the
   original. It keeps the directed, weighted and acyclic properties, the
   weights, edge labels and metadata, and the order of vertices and edges.
@@ -370,6 +372,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#186]: https://github.com/hmdsefi/gograph/issues/186
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
