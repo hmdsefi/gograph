@@ -36,6 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   seeded `*rand.Rand` and run in O(n + m) expected time for m edges: a random
   directed graph with 10,000 vertices takes 9 ms, where a draw for each pair
   takes 362 ms. ([#126], [#296])
+- `Diff` returns the vertices, edges, weights and edge labels that changed
+  between two graphs, and whether they became weighted or acyclic. It matches
+  vertices by label, so the graphs can be built in any order.
+  `GraphDiff.String` prints one change per line, the diff encodes as JSON,
+  and `Apply` makes the same changes to a copy of a graph.
+  `WithWeightTolerance` treats close weights as equal. On a graph with 10,000
+  vertices and 50,000 edges, `Diff` takes 3.2 ms and allocates only the diff
+  it returns. ([#125], [#298])
+- `gographtest.Equal` fails a test unless two graphs have the same vertices,
+  edges, weights, edge labels and properties, and lists what differs, one
+  change per line. ([#126], [#298])
 
 ### Changed
 
@@ -589,3 +600,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#295]: https://github.com/hmdsefi/gograph/pull/295
 [#126]: https://github.com/hmdsefi/gograph/issues/126
 [#296]: https://github.com/hmdsefi/gograph/pull/296
+[#125]: https://github.com/hmdsefi/gograph/issues/125
+[#298]: https://github.com/hmdsefi/gograph/pull/298
