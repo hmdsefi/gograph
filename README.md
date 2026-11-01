@@ -14,6 +14,7 @@
   <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/hmdsefi/gograph"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/hmdsefi/gograph"></a>
   <a href="https://github.com/avelino/awesome-go#science-and-data-analysis"><img alt="Mentioned in Awesome Go" src="https://awesome.re/mentioned-badge.svg"></a>
+  <a href="https://hub.xerj.org/contributors/hmdsefi"><img alt="XERJ Corpus Hub contributor" src="https://hub.xerj.org/contributors/hmdsefi/badge.svg"></a>
   <a href="https://coderabbit.ai"><img alt="CodeRabbit Pull Request Reviews" src="https://img.shields.io/coderabbit/prs/github/hmdsefi/gograph?utm_source=oss&utm_medium=github&utm_campaign=hmdsefi%2Fgograph&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews"></a>
   <a href="https://github.com/sponsors/hmdsefi"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-hmdsefi-ea4aaa?logo=githubsponsors"></a>
   <a href="https://github.com/hmdsefi/gograph"><img alt="GitHub stars" src="https://img.shields.io/github/stars/hmdsefi/gograph?style=social"></a>
@@ -43,12 +44,13 @@ strongly connected components and graph partitioning.
 - **Generic:** vertex labels can be any comparable type, such as strings, integers or your own structs.
 - **Graph data structures:** directed, undirected, acyclic (DAG) and weighted graphs, with weights on vertices and edges.
 - **Dependency graphs:** `Acyclic()` graphs reject cycles, `TopologySort` returns a valid order, and the `dag` package finds what depends on what and what can run in parallel.
-- **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators.
+- **Traversal:** BFS (breadth-first search), DFS (depth-first search), topological sort, closest-first and random-walk iterators, and depth-first search events that label each edge as a tree, back, forward or cross edge.
 - **Shortest paths:** Dijkstra, Bellman-Ford, Floyd-Warshall, multi-source Dijkstra, k-center and transitive reduction.
-- **Connectivity:** connected components and cycle detection, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
+- **Connectivity:** connected components and cycle detection that can return the cycle, strongly connected components with Tarjan, Kosaraju and Gabow, and condensation into a DAG.
 - **Partitioning:** maximal cliques (Bron-Kerbosch), Girvan-Newman communities and randomized k-cut.
 - **Diagrams:** `encoding/mermaid` writes a graph as a Mermaid flowchart that GitHub renders in Markdown, and `encoding/dot` writes it in the Graphviz DOT language for larger graphs.
 - **Deterministic:** a graph built the same way gives the same topological order, components and cliques on every run.
+- **Testing:** `gographtest` checks topological orders and groups of vertices in tests, and builds paths, cycles, grids and seeded random graphs.
 
 Imported by [20+ public Go modules](https://pkg.go.dev/github.com/hmdsefi/gograph?tab=importedby),
 including the Cilium project's [ariane](https://github.com/cilium/ariane),
@@ -73,6 +75,7 @@ same author.
 * [Algorithms](#algorithms)
 * [Diagrams](#diagrams)
 * [Determinism](#determinism)
+* [Testing](#testing)
 * [Performance](#performance)
 * [Examples](#examples)
 * [Stability](#stability)
@@ -152,7 +155,10 @@ of graph:
 
 - `gograph.Directed()` creates a directed graph. Without it, graphs are undirected.
 - `gograph.Acyclic()` creates a directed graph that rejects edges that would create a cycle.
-- `gograph.Weighted()` marks the graph as weighted. `BellmanFord` and `FloydWarshall` require it.
+- `gograph.Weighted()` marks the graph as weighted. This flag is separate from weights
+  supplied with `WithEdgeWeight`: Dijkstra uses those weights even without it.
+  `BellmanFord` and `FloydWarshall` require the flag or return `ErrNotWeighted`;
+  random walks use edge weights only when the flag is set.
 
 Every graph implements the `Graph[T]` interface. See the
 [package documentation](https://pkg.go.dev/github.com/hmdsefi/gograph#Graph) for the full list
@@ -246,6 +252,20 @@ _, _ = g.AddEdge(b, d)
 // Every undirected edge can be followed both ways.
 fmt.Println(g.ContainsEdge(a, b), g.ContainsEdge(b, a)) // true true
 ```
+
+An undirected edge between distinct vertices is stored in both directions.
+For two undirected edges `A - B` and `A - C`:
+
+| Call | Result |
+| --- | --- |
+| `g.Size()` / `len(g.AllEdges())` | 4 |
+| `a.Degree()` | 4 |
+| `a.InDegree()` / `a.OutDegree()` | 2 |
+| `len(g.EdgesOf(a))` | 4 |
+| `len(g.GetAllEdges(a, b))` | 2 |
+
+Use `OutDegree()` to count neighbors in an undirected graph. A self-loop has the
+same source and destination, so it has only one stored direction.
 
 ### Weighted
 
@@ -343,6 +363,23 @@ for it.HasNext() {
 | [`NewClosestFirstIterator`](traverse#closest-first) | By shortest weighted distance from the start | [watch](https://gograph.dev/algorithms/closest-first/school-run) |
 | [`NewRandomWalkIterator`](traverse#random-walk) | A random walk that picks each edge in proportion to its weight in a weighted graph | [watch](https://gograph.dev/algorithms/random-walk/service-calls) |
 
+The breadth-first, depth-first, closest-first and topological traversals also
+come as sequences for a `range` loop, so `break` stops one early and
+`slices.Collect` gathers it:
+
+```go
+for v, depth := range traverse.BFSWithDepth(g, "A") {
+	fmt.Println(v.Label(), depth) // A 0, B 1, C 1, D 2
+}
+```
+
+`traverse.BFS`, `DFS`, `BFSWithDepth`, `ClosestFirst` and `Topological` follow the
+iterators above, and `gograph.Vertices` and `gograph.Edges` range over a whole graph.
+See [Range over a traversal](traverse#range-over-a-traversal) for details.
+`traverse.DFSEvents` and `DFSEventsAll` yield each step of a depth-first search,
+with the kind of each edge, as described in
+[Depth-first search events](traverse#depth-first-search-events).
+
 ## Algorithms
 
 V is the number of vertices and E the number of edges. Every link in the Demo column
@@ -372,6 +409,12 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 **Shortest paths** (`path` package)
 
+| Shortest-path algorithm | Unreachable distance | Requirement |
+| --- | --- | --- |
+| `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
+| `path.BellmanFord` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, reachable negative cycles rejected |
+| `path.FloydWarshall` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
+
 | Function | Answers | Time | Demo |
 |---|---|---|---|
 | [`Dijkstra`](path/dijkstra.md) | Distances from one vertex, no negative weights | O((V+E) log V) | [watch](https://gograph.dev/algorithms/dijkstra/new-york) |
@@ -388,6 +431,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 |---|---|---|---|
 | `ConnectedComponents` | Connected components. A directed graph is treated as undirected | O(V+E) | |
 | `HasCycle` | Whether the graph has a cycle, including a self-loop | O(V+E) | |
+| `FindCycle` | The vertices of one cycle, in order | O(V+E) | |
 | `Tarjan` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/tarjan/service-calls) |
 | `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
 | `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
@@ -454,6 +498,26 @@ picks the smallest vertex that is ready.
 `EdgesOf` follow the same order. `Tarjan`, `Kosaraju`, `Gabow`, `MaximalCliques`,
 `GirvanNewman` and `TransitiveReduction` give the same result on every run for a graph
 built the same way.
+
+## Testing
+
+`gographtest` helps test code that uses gograph. `IsTopologicalOrder` accepts any valid
+topological order, and `SameGroups` compares components, cliques or communities in any
+order, so a test keeps passing when an algorithm returns another valid answer. Its
+generators build paths, cycles, complete graphs, grids and seeded random graphs with the
+labels 0 to n-1:
+
+```go
+func TestBuildOrder(t *testing.T) {
+	g := gographtest.RandomDAG(500, 0.02, rand.New(rand.NewPCG(1, 2)))
+
+	order, err := gograph.TopologySort(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gographtest.IsTopologicalOrder(t, g, order)
+}
+```
 
 ## Performance
 

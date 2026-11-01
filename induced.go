@@ -9,9 +9,10 @@ import (
 // of g whose endpoints are both in that set.
 //
 // The result has the same directed, weighted, and acyclic properties as g.
-// Vertex weights, edge weights, edge labels, and metadata are copied. The
-// result does not share vertices or edges with g. Duplicate labels are
-// ignored, and vertex order follows the first occurrence of each label.
+// Vertex weights, edge weights, edge labels, metadata, and edge insertion
+// indexes are copied. The result does not share vertices or edges with g.
+// Duplicate labels are ignored, and vertex order follows the first occurrence
+// of each label.
 // No labels returns an empty graph with the same properties.
 //
 // A label that is not in g returns ErrVertexDoesNotExist wrapped with that
@@ -50,8 +51,16 @@ func inducedSubgraph[T comparable](g *baseGraph[T], labels []T) (*baseGraph[T], 
 		properties: g.properties,
 	}
 	copies := copyInducedVertices(out, selected)
-	degree := inducedOutDegree(selected, index)
-	allocInducedEdges(out, copies, degree)
+	if g.properties.isAcyclic && len(g.ord) == len(g.order) {
+		// the order of g, kept to a subset of its vertices, is still topological
+		out.ord = make([]int, len(selected))
+		for i, v := range selected {
+			out.ord[i] = g.ord[v.position]
+		}
+		out.first, out.last = g.first, g.last
+	}
+	degree, inDegree := inducedDegrees(selected, index)
+	allocInducedEdges(out, copies, degree, inDegree)
 	atomic.StoreUint32(&out.edgesCount, copyInducedEdges(g, out, selected, copies, index))
 
 	return out, nil
@@ -97,10 +106,11 @@ func copyInducedVertices[T comparable](out *baseGraph[T], selected []*Vertex[T])
 	return copies
 }
 
-// inducedOutDegree counts the kept outgoing edges of each selected vertex.
-// A self-loop stored twice in the neighbor list counts once.
-func inducedOutDegree[T comparable](selected []*Vertex[T], index map[T]int) []int {
-	degree := make([]int, len(selected))
+// inducedDegrees counts the kept outgoing and incoming edges of each selected
+// vertex. A self-loop stored twice in the neighbor list counts once.
+func inducedDegrees[T comparable](selected []*Vertex[T], index map[T]int) (degree, inDegree []int) {
+	degree = make([]int, len(selected))
+	inDegree = make([]int, len(selected))
 	for i, src := range selected {
 		looped := false
 		for _, nb := range src.neighbors {
@@ -115,22 +125,28 @@ func inducedOutDegree[T comparable](selected []*Vertex[T], index map[T]int) []in
 				looped = true
 			}
 			degree[i]++
+			inDegree[j]++
 		}
 	}
 
-	return degree
+	return degree, inDegree
 }
 
-func allocInducedEdges[T comparable](out *baseGraph[T], copies []*Vertex[T], degree []int) {
-	sources := 0
+func allocInducedEdges[T comparable](out *baseGraph[T], copies []*Vertex[T], degree, inDegree []int) {
+	sources, edges := 0, 0
 	for _, n := range degree {
 		if n > 0 {
 			sources++
+			edges += n
 		}
 	}
 
 	out.edges = make(map[T]map[T]*Edge[T], sources)
+	incoming := make([]*Edge[T], edges)
 	for i, v := range copies {
+		if k := inDegree[i]; k > 0 {
+			v.incoming, incoming = incoming[:0:k], incoming[k:]
+		}
 		if degree[i] == 0 {
 			continue
 		}
@@ -179,11 +195,13 @@ func putInducedEdge[T comparable](g *baseGraph[T], from, to *Vertex[T], src *Edg
 		dest:   to,
 	}
 	if src != nil {
+		edge.added = src.added
 		edge.properties = src.properties
 		edge.metadata = src.metadata
 	}
 
 	from.neighbors = append(from.neighbors, to)
-	to.inDegree++
+	to.incoming = append(to.incoming, edge)
 	g.edges[from.label][to.label] = edge
+	g.nextEdge = max(g.nextEdge, edge.added)
 }

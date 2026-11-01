@@ -2,6 +2,7 @@ package util
 
 import (
 	"container/heap"
+	"math"
 	"reflect"
 	"testing"
 
@@ -125,5 +126,29 @@ func TestVertexPriorityQueue_PushNil(t *testing.T) {
 
 	if expected := []string{"A", "B"}; !reflect.DeepEqual(items, expected) {
 		t.Errorf("VertexPriorityQueue Pop() order = %v; want %v", items, expected)
+	}
+}
+
+func TestVertexPriorityQueue_NaN(t *testing.T) {
+	vpq := NewVertexPriorityQueue[string]()
+	priorities := []struct {
+		label    string
+		priority float64
+	}{
+		{"A", 3}, {"N", math.NaN()}, {"B", 1}, {"C", 4}, {"M", math.NaN()}, {"D", 0}, {"E", 2},
+	}
+	for _, p := range priorities {
+		vpq.Push(NewVertexWithPriority(gograph.NewVertex(p.label), p.priority))
+	}
+
+	var got []string
+	for vpq.Len() > 0 {
+		got = append(got, vpq.Pop().Vertex().Label())
+	}
+	if want := []string{"D", "B", "E", "A", "C"}; !reflect.DeepEqual(got[:5], want) {
+		t.Fatalf("expected the numbers in order %v before any NaN, got %v", want, got)
+	}
+	if last := got[5:]; !reflect.DeepEqual(last, []string{"N", "M"}) && !reflect.DeepEqual(last, []string{"M", "N"}) {
+		t.Fatalf("expected the NaN priorities last, got %v", got)
 	}
 }

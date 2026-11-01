@@ -11,13 +11,18 @@ import "container/heap"
 // same result on every run. Use StableTopologySort to choose the order of
 // the vertices that the edges don't order.
 //
-// It returns error if it finds a cycle in the graph.
+// It returns ErrNotDirected if the graph is not directed, and ErrDAGHasCycle
+// if it finds a cycle in the graph.
 func TopologySort[T comparable](g Graph[T]) ([]*Vertex[T], error) {
+	if !g.IsDirected() {
+		return nil, ErrNotDirected
+	}
+
 	// Initialize a map to store the inDegree of each vertex
 	inDegrees := make(map[*Vertex[T]]int)
 	vertices := g.GetAllVertices()
 	for _, v := range vertices {
-		inDegrees[v] = v.inDegree
+		inDegrees[v] = v.InDegree()
 	}
 
 	// Initialize a queue with vertices of inDegrees zero
@@ -67,15 +72,19 @@ func TopologySort[T comparable](g Graph[T]) ([]*Vertex[T], error) {
 // on the order the vertices and edges were added. As in TopologySort, an
 // edge from A to B puts A before B.
 //
-// It returns ErrDAGHasCycle if the graph has a cycle. It runs in
-// O((V + E) log V) time.
+// It returns ErrNotDirected if the graph is not directed, and ErrDAGHasCycle
+// if the graph has a cycle. It runs in O((V + E) log V) time.
 func StableTopologySort[T comparable](g Graph[T], compare func(a, b T) int) ([]*Vertex[T], error) {
+	if !g.IsDirected() {
+		return nil, ErrNotDirected
+	}
+
 	vertices := g.GetAllVertices()
 	inDegrees := make(map[*Vertex[T]]int, len(vertices))
 	ready := &vertexHeap[T]{compare: compare}
 	for _, v := range vertices {
-		inDegrees[v] = v.inDegree
-		if v.inDegree == 0 {
+		inDegrees[v] = v.InDegree()
+		if v.InDegree() == 0 {
 			ready.vertices = append(ready.vertices, v)
 		}
 	}

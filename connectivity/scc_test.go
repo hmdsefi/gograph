@@ -226,3 +226,32 @@ func TestSCCs_LongPath(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkSCCs(b *testing.B) {
+	const n, m = 10000, 50000
+	rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so runs are comparable
+	g := gograph.New[int](gograph.Directed())
+	vertices := make([]*gograph.Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for g.Size() < m {
+		_, _ = g.AddEdge(vertices[rng.Intn(n)], vertices[rng.Intn(n)])
+	}
+
+	for _, bc := range []struct {
+		name string
+		fn   func(gograph.Graph[int]) [][]*gograph.Vertex[int]
+	}{
+		{"Tarjan", Tarjan[int]},
+		{"Kosaraju", Kosaraju[int]},
+		{"Gabow", Gabow[int]},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				bc.fn(g)
+			}
+		})
+	}
+}

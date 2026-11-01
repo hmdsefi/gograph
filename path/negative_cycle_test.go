@@ -10,11 +10,6 @@ import (
 	"github.com/hmdsefi/gograph"
 )
 
-type weightedEdge struct {
-	from, to string
-	weight   float64
-}
-
 func negativeCycleGraph(t *testing.T, edges []weightedEdge) gograph.Graph[string] {
 	t.Helper()
 	g := gograph.New[string](gograph.Weighted(), gograph.Directed())

@@ -68,9 +68,10 @@ func (n *NearestSources[T]) reached(v T) (int, bool) {
 //
 // Distances run from the sources along the edges. On a directed graph that
 // is the distance from a source to the vertex. Undirected edges work both
-// ways. Edge weights are read the way Dijkstra reads them. The graph does
-// not have to be created with Weighted, and an edge without a weight counts
-// as 0.
+// ways. Edge weights are read the way Dijkstra reads them: an edge with a
+// NaN weight is skipped, and a path through a +Inf weight is as long as no
+// path. The graph does not have to be created with Weighted, and an edge
+// without a weight counts as 0.
 //
 // A negative edge weight returns ErrNegativeWeight. The check covers every
 // edge, including edges no source reaches. A source that is not in the graph
@@ -81,10 +82,10 @@ func (n *NearestSources[T]) reached(v T) (int, bool) {
 // When two sources are equally close, the one earlier in sources wins. A
 // source is at distance 0 from itself, so it is its own nearest source,
 // unless a zero-weight path from an earlier source reaches it. Equal paths
-// from the same source follow the edge that was added to the graph earlier.
-// A vertex reached by an earlier edge is taken before one reached by a
-// later edge, so the same graph and the same sources give the same paths
-// on every run. Returned vertices are the graph's own pointers.
+// keep the one found first. Vertices are settled in order of distance, then
+// source position, then the insertion index of the edge that reached them,
+// so the same graph and the same sources give the same paths on every run.
+// Returned vertices are the graph's own pointers.
 //
 // Time is O((V+E) log V) however many sources there are. Extra space is
 // O(V+E). Each vertex is extracted from the heap at most once.
@@ -229,7 +230,7 @@ func continueNearest(adj sourceAdj, dist []float64, rank, origin, pred []int, st
 		for e := adj.off[v]; e < adj.off[v+1]; e++ {
 			to := adj.to[e]
 			next := dist[v] + adj.weight[e]
-			if !closerSource(next, rank[v], dist[to], rank[to]) {
+			if math.IsInf(next, 1) || !closerSource(next, rank[v], dist[to], rank[to]) {
 				continue
 			}
 			dist[to] = next

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
 	"sort"
 	"testing"
 )
@@ -1003,6 +1004,18 @@ func TestBaseGraph_RemoveVerticesUndirected(t *testing.T) {
 	}
 }
 
+func TestBaseGraph_NoEdgesReturnsNil(t *testing.T) {
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("a")
+	b := g.AddVertexByLabel("b")
+	if edges := g.GetAllEdges(a, b); edges != nil {
+		t.Errorf("GetAllEdges = %v, want nil", edges)
+	}
+	if edges := g.EdgesOf(a); edges != nil {
+		t.Errorf("EdgesOf = %v, want nil", edges)
+	}
+}
+
 func TestBaseGraph_GetAllEdges(t *testing.T) {
 	g := newBaseGraph[int](newProperties())
 	v1 := g.AddVertexByLabel(1)
@@ -1282,8 +1295,8 @@ func TestBaseGraph_AddVertexAfterRemoval(t *testing.T) {
 	if added.OutDegree() != 0 || g.ContainsEdge(added, b) {
 		t.Errorf("A came back with neighbors %v", neighborLabels(added))
 	}
-	if a.OutDegree() != 1 {
-		t.Errorf("the removed vertex lost its neighbors: %v", neighborLabels(a))
+	if a.OutDegree() != 0 {
+		t.Errorf("the removed vertex kept its neighbors: %v", neighborLabels(a))
 	}
 	assertNeighborsInGraph(t, "g", g)
 }
@@ -1351,5 +1364,316 @@ func TestBaseGraph_AddVertexKeepsNewVertex(t *testing.T) {
 	}
 	if edge.Source() != from || edge.Destination() != to {
 		t.Error("the edge doesn't point to the graph's vertices")
+	}
+}
+
+func TestBaseGraph_RemoveVertices_ClearedEdgesAndInDegree(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		t.Run(fmt.Sprintf("directed=%v", directed), func(t *testing.T) {
+			var g Graph[string]
+			if directed {
+				g = New[string](Directed())
+			} else {
+				g = New[string]()
+			}
+
+			a := g.AddVertexByLabel("a")
+			b := g.AddVertexByLabel("b")
+			_, _ = g.AddEdge(a, a)
+			_, _ = g.AddEdge(a, b)
+
+			g.RemoveVertices(a)
+
+			if in := a.InDegree(); in != 0 {
+				t.Errorf("expected in-degree 0, got %d", in)
+			}
+			if out := a.OutDegree(); out != 0 {
+				t.Errorf("expected out-degree 0, got %d", out)
+			}
+			if a.HasNeighbor(b) {
+				t.Errorf("expected HasNeighbor(b) to be false")
+			}
+			if len(a.Neighbors()) != 0 {
+				t.Errorf("expected 0 neighbors, got %d", len(a.Neighbors()))
+			}
+			if g.ContainsEdge(a, b) {
+				t.Errorf("expected ContainsEdge(a, b) to be false")
+			}
+		})
+	}
+}
+
+func TestBaseGraph_RemoveVertices_KeepsVertexOfAnotherGraph(t *testing.T) {
+	for _, directed := range []bool{true, false} {
+		t.Run(fmt.Sprintf("directed=%v", directed), func(t *testing.T) {
+			var opts []GraphOptionFunc
+			if directed {
+				opts = append(opts, Directed())
+			}
+
+			a := New[string](opts...)
+			x := a.AddVertexByLabel("x")
+			y := a.AddVertexByLabel("y")
+			_, _ = a.AddEdge(x, y)
+			_, _ = a.AddEdge(y, x)
+			inDegree, outDegree := x.InDegree(), x.OutDegree()
+
+			b := New[string](opts...)
+			b.AddVertexByLabel("x")
+			b.RemoveVertices(x)
+
+			if b.GetVertexByID("x") != nil {
+				t.Errorf("expected x to be removed from b")
+			}
+			if got := x.InDegree(); got != inDegree {
+				t.Errorf("expected in-degree %d, got %d", inDegree, got)
+			}
+			if got := x.OutDegree(); got != outDegree {
+				t.Errorf("expected out-degree %d, got %d", outDegree, got)
+			}
+			if !x.HasNeighbor(y) {
+				t.Errorf("expected HasNeighbor(y) to be true")
+			}
+			if !a.ContainsEdge(x, y) {
+				t.Errorf("expected ContainsEdge(x, y) to be true")
+			}
+		})
+	}
+}
+
+// benchEdges returns m distinct edges between n vertices, without self-loops,
+// in random order. With dag set, every edge goes from a lower label to a
+// higher one.
+func benchEdges(n, m int, dag bool) [][2]int {
+	rng := rand.New(rand.NewSource(1)) //nolint:gosec // seeded so runs are comparable
+	seen := make(map[[2]int]bool, m)
+	edges := make([][2]int, 0, m)
+	for len(edges) < m {
+		e := [2]int{rng.Intn(n), rng.Intn(n)}
+		if e[0] == e[1] {
+			continue
+		}
+		if dag && e[0] > e[1] {
+			e[0], e[1] = e[1], e[0]
+		}
+		if !seen[e] {
+			seen[e] = true
+			edges = append(edges, e)
+		}
+	}
+
+	return edges
+}
+
+func benchGraph(n int, edges [][2]int, options ...GraphOptionFunc) (Graph[int], []*Vertex[int]) {
+	g := New[int](options...)
+	vertices := make([]*Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for _, e := range edges {
+		_, _ = g.AddEdge(vertices[e[0]], vertices[e[1]])
+	}
+
+	return g, vertices
+}
+
+func BenchmarkAddEdge(b *testing.B) {
+	graphTypes := []struct {
+		name    string
+		options []GraphOptionFunc
+	}{
+		{"undirected", nil},
+		{"directed", []GraphOptionFunc{Directed()}},
+		{"acyclic", []GraphOptionFunc{Acyclic()}},
+	}
+
+	for _, gt := range graphTypes {
+		for _, n := range []int{1000, 4000} {
+			b.Run(fmt.Sprintf("%s/chain-%d", gt.name, n), func(b *testing.B) {
+				b.ReportAllocs()
+				for range b.N {
+					g := New[int](gt.options...)
+					prev := g.AddVertexByLabel(0)
+					for i := 1; i <= n; i++ {
+						next := g.AddVertexByLabel(i)
+						if _, err := g.AddEdge(prev, next); err != nil {
+							b.Fatal(err)
+						}
+						prev = next
+					}
+				}
+			})
+		}
+
+		const n = 4000
+		ascending, descending := make([]int, n+1), make([]int, n+1)
+		for i := range ascending {
+			ascending[i], descending[i] = i, n-i
+		}
+		b.Run(gt.name+"/backward-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, ascending, descending[1:])
+			}
+		})
+		b.Run(gt.name+"/reversed-chain-4000", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchChain(b, gt.options, descending, ascending[:n])
+			}
+		})
+		for _, size := range []int{1000, 4000} {
+			b.Run(fmt.Sprintf("%s/hub-%d", gt.name, size), func(b *testing.B) {
+				b.ReportAllocs()
+				for range b.N {
+					hubGraph(b, New[int](gt.options...), size, nil)
+				}
+			})
+		}
+
+		edges := benchEdges(2000, 10000, true)
+		b.Run(gt.name+"/random-dag", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				benchGraph(2000, edges, gt.options...)
+			}
+		})
+
+		shuffled := rand.New(rand.NewSource(2)).Perm(2000) //nolint:gosec // seeded so runs are comparable
+		b.Run(gt.name+"/shuffled-dag", func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				g := New[int](gt.options...)
+				vertices := make([]*Vertex[int], len(shuffled))
+				for _, label := range shuffled {
+					vertices[label] = g.AddVertexByLabel(label)
+				}
+				for _, e := range edges {
+					if _, err := g.AddEdge(vertices[e[0]], vertices[e[1]]); err != nil {
+						b.Fatal(err)
+					}
+				}
+			}
+		})
+	}
+}
+
+// hubGraph adds vertices 0 to n-1, then n, then an edge from each i to n,
+// then the edges from i+1 to i, from the top down. From the third of those
+// on, each edge goes against the order, and every vertex above it reaches
+// its source. It calls check, if not nil, after each of those edges.
+func hubGraph(tb testing.TB, g Graph[int], n int, check func(step string)) {
+	tb.Helper()
+
+	vertices := make([]*Vertex[int], n+1)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for i := range n {
+		if _, err := g.AddEdge(vertices[i], vertices[n]); err != nil {
+			tb.Fatal(err)
+		}
+	}
+	for i := n - 2; i >= 0; i-- {
+		if _, err := g.AddEdge(vertices[i+1], vertices[i]); err != nil {
+			tb.Fatal(err)
+		}
+		if check != nil {
+			check(fmt.Sprintf("after %d -> %d", i+1, i))
+		}
+	}
+}
+
+// benchChain adds the vertices in the order of labels, then the edge from i
+// to i+1 for each i in from.
+func benchChain(b *testing.B, options []GraphOptionFunc, labels, from []int) {
+	g := New[int](options...)
+	vertices := make([]*Vertex[int], len(labels))
+	for _, label := range labels {
+		vertices[label] = g.AddVertexByLabel(label)
+	}
+	for _, i := range from {
+		if _, err := g.AddEdge(vertices[i], vertices[i+1]); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkEdgesOf(b *testing.B) {
+	edges := benchEdges(2000, 10000, false)
+	for _, directed := range []bool{true, false} {
+		var options []GraphOptionFunc
+		name := "undirected"
+		if directed {
+			options = append(options, Directed())
+			name = "directed"
+		}
+		g, vertices := benchGraph(2000, edges, options...)
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				for _, v := range vertices {
+					_ = g.EdgesOf(v)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkRemoveEdges removes, one call at a time, the edges between one
+// vertex and n others, in the order they were added or in a random order.
+func BenchmarkRemoveEdges(b *testing.B) {
+	const n = 10000
+	shuffled := rand.New(rand.NewSource(3)).Perm(n) //nolint:gosec // seeded so runs are comparable
+	for _, bc := range []struct {
+		name  string
+		into  bool
+		order []int
+	}{
+		{"into-hub", true, nil},
+		{"out-of-hub", false, nil},
+		{"into-hub-shuffled", true, shuffled},
+		{"out-of-hub-shuffled", false, shuffled},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				b.StopTimer()
+				g := New[int](Directed())
+				hub := g.AddVertexByLabel(0)
+				edges := make([]*Edge[int], n)
+				for i := range edges {
+					from, to := g.AddVertexByLabel(i+1), hub
+					if !bc.into {
+						from, to = to, from
+					}
+					edges[i], _ = g.AddEdge(from, to)
+				}
+				if bc.order != nil {
+					added := slices.Clone(edges)
+					for i, j := range bc.order {
+						edges[i] = added[j]
+					}
+				}
+				b.StartTimer()
+				for _, e := range edges {
+					g.RemoveEdges(e)
+				}
+			}
+		})
+	}
+}
+
+func BenchmarkRemoveVertices(b *testing.B) {
+	edges := benchEdges(2000, 10000, false)
+	b.ReportAllocs()
+	for range b.N {
+		b.StopTimer()
+		g, vertices := benchGraph(2000, edges, Directed())
+		b.StartTimer()
+		for _, v := range vertices {
+			g.RemoveVertices(v)
+		}
 	}
 }
