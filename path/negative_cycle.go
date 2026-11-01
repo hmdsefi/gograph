@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/hmdsefi/gograph"
+	"github.com/hmdsefi/gograph/connectivity"
 )
 
 // NegativeCycle returns one cycle whose edge weights sum to less than zero.
@@ -19,6 +20,9 @@ import (
 //
 // It returns ErrNotWeighted or ErrNotDirected for a graph that BellmanFord
 // doesn't accept either. Edges with a NaN weight are never relaxed.
+//
+// Weights add up as float64, so a cycle can still be missed when another cycle
+// through the same vertices has weights large enough to swallow its own.
 //
 // Time complexity is O(V*E).
 func NegativeCycle[T comparable](g gograph.Graph[T]) ([]*gograph.Vertex[T], error) {
@@ -36,6 +40,16 @@ func NegativeCycle[T comparable](g gograph.Graph[T]) ([]*gograph.Vertex[T], erro
 		index[v.Label()] = i
 	}
 
+	// A cycle never leaves its strongly connected component. Skipping the edges
+	// between components stops a huge or -Inf weight on the way into a cycle
+	// from swallowing the cycle's own weights.
+	component := make([]int, len(vertices))
+	for i, scc := range connectivity.Tarjan(g) {
+		for _, v := range scc {
+			component[index[v.Label()]] = i
+		}
+	}
+
 	// Starting every distance at 0 is the same as a temporary source with a
 	// zero-weight edge to every vertex, so no vertex is out of reach.
 	dist := make([]float64, len(vertices))
@@ -49,6 +63,9 @@ func NegativeCycle[T comparable](g gograph.Graph[T]) ([]*gograph.Vertex[T], erro
 		changed := false
 		for _, edge := range edges {
 			from, to := index[edge.Source().Label()], index[edge.Destination().Label()]
+			if component[from] != component[to] {
+				continue
+			}
 			if d := dist[from] + edge.Weight(); d < dist[to] {
 				dist[to] = d
 				parent[to] = from

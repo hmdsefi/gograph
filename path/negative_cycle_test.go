@@ -114,6 +114,16 @@ func TestNegativeCycle(t *testing.T) {
 			},
 			want: 4,
 		},
+		{
+			name:  "infinite tail leading into the cycle",
+			edges: []weightedEdge{{"X", "A", math.Inf(-1)}, {"A", "B", 1}, {"B", "A", -3}},
+			want:  2,
+		},
+		{
+			name:  "tail large enough to swallow the cycle's weights",
+			edges: []weightedEdge{{"X", "A", -1e20}, {"A", "B", 1}, {"B", "A", -3}},
+			want:  2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -126,7 +136,7 @@ func TestNegativeCycle(t *testing.T) {
 			if len(cycle) != tt.want {
 				t.Fatalf("cycle = %v, want %d vertices", labels(cycle), tt.want)
 			}
-			if !math.IsInf(tt.edges[0].weight, -1) {
+			if tt.name != "infinite self-loop" {
 				assertNegativeCycle(t, g, cycle)
 			}
 		})
