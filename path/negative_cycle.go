@@ -12,7 +12,9 @@ import (
 // back to the first closes the cycle. A negative self-loop is a cycle of one
 // vertex. The vertices are the graph's own pointers.
 //
-// A nil slice and a nil error mean there is no negative cycle.
+// A nil slice and a nil error mean the search found no negative cycle. When
+// every finite weight is a whole number no larger than 2^53/(V+E) in absolute
+// value, that answer is exact.
 //
 // The search covers the whole graph, not only what one start vertex reaches.
 // When several cycles exist, the order of g.AllEdges decides which one is
@@ -31,8 +33,8 @@ import (
 //
 // Distances are float64. Inside one strongly connected component, finite
 // weights that add up past the float64 range, or that are large enough to
-// swallow smaller ones, can hide a cycle, and BellmanFord can report one where
-// NegativeCycle returns nil.
+// swallow smaller ones, can hide any cycle, even a negative self-loop, and
+// BellmanFord can report one where NegativeCycle returns nil.
 //
 // Time complexity is O(V*E) when E >= V, and it usually stops after a few
 // passes when there is a negative cycle. Space complexity is O(V+E).

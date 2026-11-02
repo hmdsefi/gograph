@@ -292,6 +292,63 @@ func TestNegativeCycle_MatchesExactCheck(t *testing.T) {
 	}
 }
 
+func TestNegativeCycle_ExactForWholeNumbersWithinBound(t *testing.T) {
+	const absent = math.MaxInt64
+	rng := rand.New(rand.NewPCG(3, 4)) //nolint:gosec // seeded so failures are reproducible
+
+	// Weights close to 2^53/(V+E) on cycles that sum to nearly zero are where
+	// rounding would hide a cycle.
+	for range 5000 {
+		n := 1 + rng.IntN(7)
+		var pairs [][2]int
+		for i := range n {
+			for j := range n {
+				if rng.IntN(3) == 0 {
+					pairs = append(pairs, [2]int{i, j})
+				}
+			}
+		}
+		if len(pairs) == 0 {
+			continue
+		}
+
+		bound := int64(1<<53) / int64(n+len(pairs))
+		potential := make([]int64, n)
+		for i := range potential {
+			potential[i] = rng.Int64N(bound-4) - (bound-4)/2
+		}
+
+		weights := make([][]int64, n)
+		for i := range weights {
+			weights[i] = make([]int64, n)
+			for j := range weights[i] {
+				weights[i][j] = absent
+			}
+		}
+		g := gograph.New[string](gograph.Directed(), gograph.Weighted())
+		for _, p := range pairs {
+			i, j := p[0], p[1]
+			w := potential[i] - potential[j] + int64(rng.IntN(5)-2)
+			weights[i][j] = w
+			from, to := gograph.NewVertex(strconv.Itoa(i)), gograph.NewVertex(strconv.Itoa(j))
+			if _, err := g.AddEdge(from, to, gograph.WithEdgeWeight(float64(w))); err != nil {
+				t.Fatalf("AddEdge(%d, %d): %v", i, j, err)
+			}
+		}
+
+		cycle, err := NegativeCycle(g)
+		if err != nil {
+			t.Fatalf("NegativeCycle() error = %v", err)
+		}
+		if want := exactNegativeCycle(weights, absent); (cycle != nil) != want {
+			t.Fatalf("cycle = %v, want a cycle: %v, weights %v", labels(cycle), want, weights)
+		}
+		if cycle != nil {
+			assertNegativeCycle(t, g, cycle)
+		}
+	}
+}
+
 func ExampleNegativeCycle() {
 	g := gograph.New[string](gograph.Weighted(), gograph.Directed())
 	usd := g.AddVertexByLabel("USD")
