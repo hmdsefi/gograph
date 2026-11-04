@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `path.Bidirectional` returns the cheapest path from one vertex to another
+  and its cost, searching forward from the start and backward from the goal
+  until they meet. A caller-supplied cost replaces the edge weight, and the
+  new `path.ErrUnreachable` reports a goal the start can't reach. ([#199])
 - `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
   For a vertex of a graph, it yields the graph's own vertices without copying
   them. ([#107], [#287])
@@ -613,3 +617,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#296]: https://github.com/hmdsefi/gograph/pull/296
 [#125]: https://github.com/hmdsefi/gograph/issues/125
 [#298]: https://github.com/hmdsefi/gograph/pull/298
+[#199]: https://github.com/hmdsefi/gograph/issues/199
