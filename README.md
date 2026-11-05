@@ -421,6 +421,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 |---|---|---|---|
 | [`Dijkstra`](path/dijkstra.md) | Distances from one vertex, no negative weights | O((V+E) log V) | [watch](https://gograph.dev/algorithms/dijkstra/new-york) |
 | [`BellmanFord`](path/bellman-ford.md) | Distances from one vertex, negative weights allowed | O(V·E) | [watch](https://gograph.dev/algorithms/bellman-ford/school-run) |
+| `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
 | `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |

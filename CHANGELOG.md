@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and its cost, searching forward from the start and backward from the goal
   until they meet. A caller-supplied cost replaces the edge weight, and the
   new `path.ErrUnreachable` reports a goal the start can't reach. ([#199], [#302])
+- `path.NegativeCycle` returns one cycle whose edge weights sum to less than
+  zero, searching the whole graph. ([#186], [#300])
 - `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
   For a vertex of a graph, it yields the graph's own vertices without copying
   them. ([#107], [#287])
@@ -540,6 +542,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#186]: https://github.com/hmdsefi/gograph/issues/186
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
@@ -615,6 +618,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#295]: https://github.com/hmdsefi/gograph/pull/295
 [#126]: https://github.com/hmdsefi/gograph/issues/126
 [#296]: https://github.com/hmdsefi/gograph/pull/296
+[#300]: https://github.com/hmdsefi/gograph/pull/300
 [#125]: https://github.com/hmdsefi/gograph/issues/125
 [#298]: https://github.com/hmdsefi/gograph/pull/298
 [#199]: https://github.com/hmdsefi/gograph/issues/199
