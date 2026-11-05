@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-01
+
 ### Added
 
 - `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
@@ -59,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On a graph created with `Acyclic`, `AddEdge` keeps a topological order of
   the vertices to check each new edge. An edge that agrees with the order, an
   edge from a vertex with no incoming edges, and an edge to a vertex with no
-  outgoing edges need no search. Any other edge searches around its
+  outgoing edges go in at once. Any other edge searches around its
   endpoints, in at most O(R log R) time for the R vertices and edges reachable
   from its destination. Building a chain of 4,000 edges takes 1.1 ms instead
   of 618 ms, and a random DAG with 2,000 vertices and 10,000 edges 1.8 ms
@@ -459,7 +461,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/hmdsefi/gograph/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/hmdsefi/gograph/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/hmdsefi/gograph/compare/v0.8.1...v0.8.2
