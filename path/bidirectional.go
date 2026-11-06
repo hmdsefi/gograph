@@ -31,8 +31,8 @@ var ErrUnreachable = errors.New("goal is not reachable from start")
 // goal last. Ties break by the order vertices and edges were added, so the
 // same graph gives the same path on every run.
 //
-// Time is O((V+E) log V) in the worst case. Extra space is O(V) for the
-// vertices the searches reach.
+// Time is O((V+E) log V) in the worst case. Extra space is O(V+E) in the
+// worst case, because the queues can hold stale entries.
 func Bidirectional[T comparable](
 	g gograph.Graph[T],
 	start, goal T,
