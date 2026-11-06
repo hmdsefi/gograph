@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the remaining cost. Extra space is O(V). A heuristic that isn't consistent
   still gives the cheapest path, in O(V²) expansions where plain A* can take
   exponentially many. On a 300 by 300 grid, a Manhattan-distance heuristic takes
-  0.19 ms and 165 KB, where no heuristic takes 34 ms and 10.5 MB. ([#185])
+  0.19 ms and 165 KB, where no heuristic takes 34 ms and 10.5 MB. ([#185], [#303])
 - `path.Bidirectional` returns the cheapest path from one vertex to another
   and its cost, searching forward from the start and backward from the goal
   until they meet. A caller-supplied cost replaces the edge weight, and the
@@ -630,3 +630,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#199]: https://github.com/hmdsefi/gograph/issues/199
 [#302]: https://github.com/hmdsefi/gograph/pull/302
 [#185]: https://github.com/hmdsefi/gograph/issues/185
+[#303]: https://github.com/hmdsefi/gograph/pull/303
