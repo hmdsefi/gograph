@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   at most k-1 candidate paths and skips a branch that can't beat the worst of
   them, so extra space is O(V+E) plus the size of the result. On a 100 by 100
   grid, 100 paths take 8 ms and 5 MB, where Dijkstra branch searches take
-  613 ms and an unbounded candidate list 8.4 MB. ([#189])
+  613 ms and an unbounded candidate list 8.4 MB. ([#189], [#304])
 - `path.Bidirectional` returns the cheapest path from one vertex to another
   and its cost, searching forward from the start and backward from the goal
   until they meet. A caller-supplied cost replaces the edge weight, and the
@@ -631,3 +631,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#199]: https://github.com/hmdsefi/gograph/issues/199
 [#302]: https://github.com/hmdsefi/gograph/pull/302
 [#189]: https://github.com/hmdsefi/gograph/issues/189
+[#304]: https://github.com/hmdsefi/gograph/pull/304
