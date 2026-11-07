@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `path.KShortest` returns up to k cheapest simple paths from one vertex to
+  another, cheapest first. It's Yen's algorithm with Lawler's change, and each
+  branch search is A* guided by the exact cost to the goal, found once. It keeps
+  at most k-1 candidate paths and skips a branch that can't beat the worst of
+  them, so extra space is O(V+E) plus the size of the result. On a 100 by 100
+  grid, 100 paths take 8 ms and 5 MB, where Dijkstra branch searches take
+  613 ms and an unbounded candidate list 8.4 MB. ([#189])
 - `path.Bidirectional` returns the cheapest path from one vertex to another
   and its cost, searching forward from the start and backward from the goal
   until they meet. A caller-supplied cost replaces the edge weight, and the
@@ -623,3 +630,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#298]: https://github.com/hmdsefi/gograph/pull/298
 [#199]: https://github.com/hmdsefi/gograph/issues/199
 [#302]: https://github.com/hmdsefi/gograph/pull/302
+[#189]: https://github.com/hmdsefi/gograph/issues/189
