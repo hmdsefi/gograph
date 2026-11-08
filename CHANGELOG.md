@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `path.Beam` returns a path from one vertex to another, keeping at most
+  `width` partial paths at each step, ranked by a caller-supplied score. A small
+  width can miss the cheapest path. Extra space is O(L·width) for a path of L
+  edges: the kept paths share their common starts, and a step never holds more
+  than `width` candidates. On a graph of 30 layers of 300 vertices, width 100
+  takes 48 ms and 0.19 MB, where sorting every candidate takes 121 ms and
+  80 MB. The new `path.ErrInvalidWidth` reports a width below 1. ([#200])
 - `path.Bidirectional` returns the cheapest path from one vertex to another
   and its cost, searching forward from the start and backward from the goal
   until they meet. A caller-supplied cost replaces the edge weight, and the
@@ -623,3 +630,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#298]: https://github.com/hmdsefi/gograph/pull/298
 [#199]: https://github.com/hmdsefi/gograph/issues/199
 [#302]: https://github.com/hmdsefi/gograph/pull/302
+[#200]: https://github.com/hmdsefi/gograph/issues/200
