@@ -34,8 +34,8 @@ import (
 // branch that can't beat the worst of them is skipped.
 //
 // Time is O(k·V·(V+E) log V) in the worst case. Extra space is O(V+E) for the
-// part of the graph start can reach, plus O(k·V) for the candidate paths, which
-// is the size of the result. V and E count only what start can reach.
+// part of the graph start can reach, plus O(k·V) for the at most k-1 candidate
+// paths of up to V vertices each. V and E count only what start can reach.
 func KShortest[T comparable](
 	g gograph.Graph[T],
 	start, goal T,
