@@ -424,6 +424,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
+| `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
 | `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |
 | `KShortest` | The k cheapest simple paths between two vertices, cheapest first | O(k·V·(V+E) log V) | |
 | `KCenter` | k centers that keep every vertex close to one, within twice the best radius on undirected graphs | O(k (V+E) log V) | |
