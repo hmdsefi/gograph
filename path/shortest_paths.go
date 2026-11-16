@@ -191,9 +191,11 @@ func BFSPaths[T comparable](g gograph.Graph[T], start T) (*ShortestPaths[T], err
 // vertex that a path through a -Inf weight reaches has a distance of -Inf, and
 // PathTo returns such a path.
 //
-// Among the shortest paths to a vertex, PathTo returns one with the fewest
-// edges, and after that the one whose edges come first in the order of
-// g.AllEdges, so the same graph gives the same paths on every run. The weights
+// Among the shortest paths to a vertex with a finite distance, PathTo returns
+// one with the fewest edges, and after that the one whose edges come first in
+// the order of g.AllEdges. The path to a vertex at -Inf follows the shortest
+// path to the -Inf weight it goes through, so another path at -Inf can have
+// fewer edges. The same graph gives the same paths on every run. The weights
 // along a path add up to its distance. Rounding is the one exception: with
 // weights such as 0.1, a cycle that sums to zero can round to slightly below
 // zero, and the path of a vertex on it can then add up to slightly more than

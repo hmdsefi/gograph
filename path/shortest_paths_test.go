@@ -596,6 +596,12 @@ func TestBellmanFordPaths_NegativeInfinity(t *testing.T) {
 			want:  map[string][]string{"d": {"a", "b", "d"}, "e": {"a", "b", "d", "e"}},
 		},
 		{
+			// a, c, d has fewer edges, but the path to c is the shortest one
+			name:  "the path to the -Inf weight is the shortest, not the one with the fewest edges",
+			edges: []weightedEdge{{"a", "c", 10}, {"a", "b", 1}, {"b", "c", 1}, {"c", "d", -inf}},
+			want:  map[string][]string{"d": {"a", "b", "c", "d"}},
+		},
+		{
 			name:  "a positive cycle behind a -Inf weight",
 			edges: []weightedEdge{{"a", "b", -inf}, {"b", "c", 1}, {"c", "b", 1}},
 			want:  map[string][]string{"b": {"a", "b"}, "c": {"a", "b", "c"}},
