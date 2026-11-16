@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
   `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
   `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
-  ([#222])
+  ([#222], [#307])
 
 ### Fixed
 
@@ -656,3 +656,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#189]: https://github.com/hmdsefi/gograph/issues/189
 [#304]: https://github.com/hmdsefi/gograph/pull/304
 [#222]: https://github.com/hmdsefi/gograph/issues/222
+[#307]: https://github.com/hmdsefi/gograph/pull/307
