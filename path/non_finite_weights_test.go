@@ -89,6 +89,26 @@ var shortestPaths = []struct {
 			return nearest.Distance, nil
 		},
 	},
+	{
+		name: "DijkstraPaths",
+		run: func(g gograph.Graph[string], start string) (distanceFunc, error) {
+			paths, err := DijkstraPaths(g, start)
+			if err != nil {
+				return nil, err
+			}
+			return paths.Distance, nil
+		},
+	},
+	{
+		name: "BellmanFordPaths",
+		run: func(g gograph.Graph[string], start string) (distanceFunc, error) {
+			paths, err := BellmanFordPaths(g, start)
+			if err != nil {
+				return nil, err
+			}
+			return paths.Distance, nil
+		},
+	},
 }
 
 func TestShortestPaths_NaNWeight(t *testing.T) {
