@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DijkstraPaths` takes 3.9 ms and 2.4 MB where `Dijkstra` takes 4.7 ms and
   2.7 MB, and 0.008 ms where the start reaches 100 of the vertices.
   `BellmanFordPaths` gives the distances and errors of `BellmanFord`, and its
-  paths never loop when rounding makes a zero cycle look negative. ([#110])
+  paths never loop when rounding makes a zero cycle look negative. ([#110], [#306])
 - `path.KShortest` returns up to k cheapest simple paths from one vertex to
   another, cheapest first. It's Yen's algorithm with Lawler's change, and each
   branch search is A* guided by the exact cost to the goal, found once. It keeps
@@ -660,3 +660,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#189]: https://github.com/hmdsefi/gograph/issues/189
 [#304]: https://github.com/hmdsefi/gograph/pull/304
 [#110]: https://github.com/hmdsefi/gograph/issues/110
+[#306]: https://github.com/hmdsefi/gograph/pull/306
