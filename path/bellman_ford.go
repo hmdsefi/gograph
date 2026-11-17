@@ -57,6 +57,34 @@ var (
 //
 // If the start vertex isn't in the graph, it returns gograph.ErrVertexDoesNotExist.
 func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, error) {
+	b, err := bellmanFordDistances(g, start)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[T]float64, len(b.vertices))
+	for i, v := range b.vertices {
+		out[v.Label()] = b.dist[i]
+	}
+
+	return out, nil
+}
+
+// bellmanFordResult is what one Bellman-Ford search knows: the vertices of the
+// graph and the index of each label, the edges as arcs with each -Inf weight
+// read as 0 and listed in negInf, the index of the start vertex, and the
+// distance of each vertex from it.
+type bellmanFordResult[T comparable] struct {
+	vertices     []*gograph.Vertex[T]
+	index        map[T]int
+	arcs, negInf []arc
+	start        int
+	dist         []float64
+}
+
+// bellmanFordDistances checks g and start the way BellmanFord documents, and
+// runs the search.
+func bellmanFordDistances[T comparable](g gograph.Graph[T], start T) (*bellmanFordResult[T], error) {
 	if !g.IsWeighted() {
 		return nil, ErrNotWeighted
 	}
@@ -88,12 +116,14 @@ func BellmanFord[T comparable](g gograph.Graph[T], start T) (map[T]float64, erro
 		return nil, ErrNegativeWeightCycle
 	}
 
-	out := make(map[T]float64, len(vertices))
-	for i, v := range vertices {
-		out[v.Label()] = dist[i]
-	}
-
-	return out, nil
+	return &bellmanFordResult[T]{
+		vertices: vertices,
+		index:    index,
+		arcs:     arcs,
+		negInf:   negInf,
+		start:    index[start],
+		dist:     dist,
+	}, nil
 }
 
 // relax runs the passes of Bellman-Ford over arcs, and reports false when a
