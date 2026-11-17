@@ -416,13 +416,23 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `path.Dijkstra` / `path.DijkstraSimple` | `math.MaxFloat64` | Non-negative weights; not checked |
 | `path.BellmanFord` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, reachable negative cycles rejected |
 | `path.FloydWarshall` | `math.Inf(1)` | Directed and `Weighted()`; negative weights allowed, negative cycles anywhere in the graph rejected |
+| `path.DijkstraPaths` / `path.BFSPaths` | `Distance` and `PathTo` report `false` | Non-negative weights, or `path.ErrNegativeWeight`; `BFSPaths` counts edges and ignores weights |
+| `path.BellmanFordPaths` | `Distance` and `PathTo` report `false` | The requirements and errors of `path.BellmanFord` |
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
 | [`Dijkstra`](path/dijkstra.md) | Distances from one vertex, no negative weights | O((V+E) log V) | [watch](https://gograph.dev/algorithms/dijkstra/new-york) |
 | [`BellmanFord`](path/bellman-ford.md) | Distances from one vertex, negative weights allowed | O(V·E) | [watch](https://gograph.dev/algorithms/bellman-ford/school-run) |
+| `DijkstraPaths` | The shortest path from one vertex to each vertex it reaches, no negative weights | O((V+E) log V) over what the start reaches | |
+| `BellmanFordPaths` | The same paths, negative weights allowed | O(V·E) | |
+| `BFSPaths` | The path with the fewest edges from one vertex to each vertex it reaches | O(V+E) over what the start reaches | |
+| `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
+| `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
+| `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |
+| `KShortest` | The k cheapest simple paths between two vertices, cheapest first | O(k·V·(V+E) log V) | |
+| `Beam` | A path between two vertices that keeps only the best few partial paths at each step; may miss the cheapest | O(L·w·(L + d log w)) for L steps, width w, out-degree d | |
 | `KCenter` | k centers that keep every vertex close to one, within twice the best radius on undirected graphs | O(k (V+E) log V) | |
 | [`TransitiveReduction`](path/transitive-reduction.md) | The fewest edges that keep every path | O(V·(V+E)) | [watch](https://gograph.dev/algorithms/transitive-reduction/build-pipeline) |
 
@@ -437,6 +447,8 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `Kosaraju` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/kosaraju/service-calls) |
 | `Gabow` | Strongly connected components | O(V+E) | [watch](https://gograph.dev/algorithms/gabow/service-calls) |
 | [`Condense`](connectivity#condensation) | The DAG of components, one vertex per component | O(V+E) | |
+| [`Bridges`](connectivity#bridges-and-articulation-points) | The edges whose removal disconnects an undirected graph | O(V+E) | |
+| [`ArticulationPoints`](connectivity#bridges-and-articulation-points) | The vertices whose removal disconnects an undirected graph | O(V+E) | |
 
 **Partitioning** (`partition` package)
 

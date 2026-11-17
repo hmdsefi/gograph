@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-17
+
+### Added
+
+- `path.DijkstraPaths`, `path.BellmanFordPaths` and `path.BFSPaths` return a
+  `path.ShortestPaths` with the shortest path from one vertex to each vertex it
+  reaches. `Distance` and `PathTo` report `false` for a vertex out of reach,
+  where `Dijkstra` gives `math.MaxFloat64` and `BellmanFord` `+Inf`.
+  `DijkstraPaths` and `BFSPaths` read only what the start reaches and use O(V)
+  extra space for it. On a graph of 10,000 vertices and 50,000 edges,
+  `DijkstraPaths` takes 3.9 ms and 2.4 MB where `Dijkstra` takes 4.7 ms and
+  2.7 MB, and 0.008 ms where the start reaches 100 of the vertices.
+  `BellmanFordPaths` gives the distances and errors of `BellmanFord`, and its
+  paths never loop when rounding makes a zero cycle look negative.
+  ([#110], [#306])
+- `path.KShortest` returns up to k cheapest simple paths from one vertex to
+  another, cheapest first. It's Yen's algorithm with Lawler's change, and each
+  branch search is A* guided by the exact cost to the goal, found once. It keeps
+  at most k-1 candidate paths and skips a branch that can't beat the worst of
+  them, so extra space is O(V+E+k·V). On a 100 by 100 grid, 100 paths take
+  8 ms and 5 MB, where Dijkstra branch searches take 613 ms and an unbounded
+  candidate list 8.4 MB. ([#189], [#304])
+- `path.Beam` returns a path from one vertex to another, keeping at most
+  `width` partial paths at each step, ranked by a caller-supplied score. A small
+  width can miss the cheapest path. Extra space is O(L·width) for a path of L
+  edges: the kept paths share their common starts, and a step never holds more
+  than `width` candidates. On a graph of 30 layers of 300 vertices, width 100
+  takes 48 ms and 0.19 MB, where sorting every candidate takes 121 ms and
+  80 MB. The new `path.ErrInvalidWidth` reports a width below 1. ([#200], [#305])
+- `path.AStar` returns the cheapest path from one vertex to another and its
+  cost, stopping at the goal. The caller supplies the edge cost and a heuristic
+  for the remaining cost. Extra space is O(V). A heuristic that isn't consistent
+  still gives the cheapest path, in O(V²) expansions where plain A* can take
+  exponentially many. On a 300 by 300 grid, a Manhattan-distance heuristic takes
+  0.19 ms and 165 KB, where no heuristic takes 34 ms and 10.5 MB. ([#185], [#303])
+- `path.Bidirectional` returns the cheapest path from one vertex to another
+  and its cost, searching forward from the start and backward from the goal
+  until they meet. A caller-supplied cost replaces the edge weight, and the
+  new `path.ErrUnreachable` reports a goal the start can't reach. ([#199], [#302])
+- `path.NegativeCycle` returns one cycle whose edge weights sum to less than
+  zero, searching the whole graph. ([#186], [#300])
+- `connectivity.Bridges` and `connectivity.ArticulationPoints` find the edges
+  and vertices whose removal splits an undirected graph into more pieces, in
+  O(V+E). `gograph.UndirectedCuts` returns both from one search. A directed
+  graph returns the new `gograph.ErrNotUndirected`. ([#113], [#235])
+
+### Changed
+
+- `.agents/skills/gograph/SKILL.md` has a row for each function added for
+  v0.11.0 that had none: `UndirectedCuts`, and in `path`, `DijkstraPaths`,
+  `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
+  `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
+  `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
+  ([#222], [#307])
+
 ## [0.10.0] - 2026-11-01
 
 ### Added
@@ -461,7 +516,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/hmdsefi/gograph/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/hmdsefi/gograph/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/hmdsefi/gograph/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
@@ -535,6 +591,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#186]: https://github.com/hmdsefi/gograph/issues/186
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
@@ -563,6 +620,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
+[#113]: https://github.com/hmdsefi/gograph/issues/113
+[#235]: https://github.com/hmdsefi/gograph/pull/235
 [#261]: https://github.com/hmdsefi/gograph/issues/261
 [#264]: https://github.com/hmdsefi/gograph/issues/264
 [#265]: https://github.com/hmdsefi/gograph/issues/265
@@ -608,5 +667,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#295]: https://github.com/hmdsefi/gograph/pull/295
 [#126]: https://github.com/hmdsefi/gograph/issues/126
 [#296]: https://github.com/hmdsefi/gograph/pull/296
+[#300]: https://github.com/hmdsefi/gograph/pull/300
 [#125]: https://github.com/hmdsefi/gograph/issues/125
 [#298]: https://github.com/hmdsefi/gograph/pull/298
+[#199]: https://github.com/hmdsefi/gograph/issues/199
+[#302]: https://github.com/hmdsefi/gograph/pull/302
+[#185]: https://github.com/hmdsefi/gograph/issues/185
+[#303]: https://github.com/hmdsefi/gograph/pull/303
+[#200]: https://github.com/hmdsefi/gograph/issues/200
+[#305]: https://github.com/hmdsefi/gograph/pull/305
+[#189]: https://github.com/hmdsefi/gograph/issues/189
+[#304]: https://github.com/hmdsefi/gograph/pull/304
+[#110]: https://github.com/hmdsefi/gograph/issues/110
+[#306]: https://github.com/hmdsefi/gograph/pull/306
+[#222]: https://github.com/hmdsefi/gograph/issues/222
+[#307]: https://github.com/hmdsefi/gograph/pull/307

@@ -7,6 +7,30 @@ import (
 	"github.com/hmdsefi/gograph/connectivity"
 )
 
+func ExampleBridges() {
+	g := gograph.New[string]()
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
+	_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("C"))
+	edges, _ := connectivity.Bridges(g)
+	for _, e := range edges {
+		fmt.Println(e.Source().Label(), e.Destination().Label())
+	}
+	// Output:
+	// B C
+	// A B
+}
+
+func ExampleArticulationPoints() {
+	g := gograph.New[string]()
+	_, _ = g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B"))
+	_, _ = g.AddEdge(gograph.NewVertex("B"), gograph.NewVertex("C"))
+	vertices, _ := connectivity.ArticulationPoints(g)
+	for _, v := range vertices {
+		fmt.Println(v.Label())
+	}
+	// Output: B
+}
+
 func ExampleCondense() {
 	g := gograph.New[string](gograph.Directed())
 	for _, e := range [][2]string{
