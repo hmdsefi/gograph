@@ -122,6 +122,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.agents/skills/gograph/SKILL.md` has a row for each function added in this
   release, and the `connectivity.HasCycle` row points to `FindCycle`. Eight
   rows link to the gograph.dev pages added since v0.9.0. ([#221], [#299])
+- `.agents/skills/gograph/SKILL.md` has a row for each function added for
+  v0.11.0 that had none: `UndirectedCuts`, and in `path`, `DijkstraPaths`,
+  `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
+  `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
+  `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
+  ([#222], [#307])
 
 ### Fixed
 
@@ -661,3 +667,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#304]: https://github.com/hmdsefi/gograph/pull/304
 [#110]: https://github.com/hmdsefi/gograph/issues/110
 [#306]: https://github.com/hmdsefi/gograph/pull/306
+[#222]: https://github.com/hmdsefi/gograph/issues/222
+[#307]: https://github.com/hmdsefi/gograph/pull/307
