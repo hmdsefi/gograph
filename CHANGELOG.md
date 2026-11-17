@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.0] - 2026-11-01
+## [0.11.0] - 2026-11-17
 
 ### Added
 
@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DijkstraPaths` takes 3.9 ms and 2.4 MB where `Dijkstra` takes 4.7 ms and
   2.7 MB, and 0.008 ms where the start reaches 100 of the vertices.
   `BellmanFordPaths` gives the distances and errors of `BellmanFord`, and its
-  paths never loop when rounding makes a zero cycle look negative. ([#110], [#306])
+  paths never loop when rounding makes a zero cycle look negative.
+  ([#110], [#306])
 - `path.KShortest` returns up to k cheapest simple paths from one vertex to
   another, cheapest first. It's Yen's algorithm with Lawler's change, and each
   branch search is A* guided by the exact cost to the goal, found once. It keeps
@@ -47,6 +48,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new `path.ErrUnreachable` reports a goal the start can't reach. ([#199], [#302])
 - `path.NegativeCycle` returns one cycle whose edge weights sum to less than
   zero, searching the whole graph. ([#186], [#300])
+- `connectivity.Bridges` and `connectivity.ArticulationPoints` find the edges
+  and vertices whose removal splits an undirected graph into more pieces, in
+  O(V+E). `gograph.UndirectedCuts` returns both from one search. A directed
+  graph returns the new `gograph.ErrNotUndirected`. ([#113], [#235])
+
+### Changed
+
+- `.agents/skills/gograph/SKILL.md` has a row for each function added for
+  v0.11.0 that had none: `UndirectedCuts`, and in `path`, `DijkstraPaths`,
+  `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
+  `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
+  `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
+  ([#222], [#307])
+
+## [0.10.0] - 2026-11-01
+
+### Added
+
 - `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
   For a vertex of a graph, it yields the graph's own vertices without copying
   them. ([#107], [#287])
@@ -85,10 +104,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gographtest.Equal` fails a test unless two graphs have the same vertices,
   edges, weights, edge labels and properties, and lists what differs, one
   change per line. ([#126], [#298])
-- `connectivity.Bridges` and `connectivity.ArticulationPoints` find the edges
-  and vertices whose removal splits an undirected graph into more pieces, in
-  O(V+E). A directed graph returns the new `gograph.ErrNotUndirected`.
-  ([#113], [#235])
 
 ### Changed
 
@@ -124,12 +139,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.agents/skills/gograph/SKILL.md` has a row for each function added in this
   release, and the `connectivity.HasCycle` row points to `FindCycle`. Eight
   rows link to the gograph.dev pages added since v0.9.0. ([#221], [#299])
-- `.agents/skills/gograph/SKILL.md` has a row for each function added for
-  v0.11.0 that had none: `UndirectedCuts`, and in `path`, `DijkstraPaths`,
-  `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
-  `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
-  `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
-  ([#222], [#307])
 
 ### Fixed
 
@@ -507,7 +516,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/hmdsefi/gograph/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/hmdsefi/gograph/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/hmdsefi/gograph/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
