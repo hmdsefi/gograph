@@ -202,8 +202,9 @@ func BFSPaths[T comparable](g gograph.Graph[T], start T) (*ShortestPaths[T], err
 // the distance.
 //
 // Time is O(V·E), or O(k·E) when every shortest path has at most k edges, as
-// for BellmanFord. Building the paths from the distances adds O(V+E). Extra
-// space is O(V+E).
+// for BellmanFord. Building the paths from the distances adds O(V+E), or
+// O((V+E) log V) when rounding leaves a vertex that no edge reaches exactly.
+// Extra space is O(V+E).
 func BellmanFordPaths[T comparable](g gograph.Graph[T], start T) (*ShortestPaths[T], error) {
 	b, err := bellmanFordDistances(g, start)
 	if err != nil {
