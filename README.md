@@ -430,6 +430,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
 | `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
+| `IDAStar` | The same path, keeping only the current path in memory; repeats work, so `AStar` is faster when its frontier fits | Exponential in the path length in the worst case; O(L·d) space for a path of L vertices and out-degree d | |
 | `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |
 | `KShortest` | The k cheapest simple paths between two vertices, cheapest first | O(k·V·(V+E) log V) | |
 | `Beam` | A path between two vertices that keeps only the best few partial paths at each step; may miss the cheapest | O(L·w·(L + d log w)) for L steps, width w, out-degree d | |
