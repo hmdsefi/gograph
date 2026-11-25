@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `path.ErrInvalidLimit`. A vertex that can't reach the goal around the
   current path is blocked, as in Johnson's algorithm, so time is
   O((V+E)·(N+1)) for N paths, or O(L·(V+E)·(N+1)) with a maximum length L, and
-  extra space is O(V+E). On a 10 by 10 grid, the 621,520 paths of at most 20
+  extra space is O(V+E). On a 10 by 10 grid, the 621,452 paths of at most 20
   edges between opposite corners take 0.14 s, where a depth-first search that
   skips only the vertices that can't reach the goal takes 2.2 s. ([#119], [#312])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
