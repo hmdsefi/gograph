@@ -2,6 +2,7 @@ package path
 
 import (
 	"errors"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/hmdsefi/gograph"
@@ -164,5 +165,53 @@ func TestBellmanFord_MissingStart(t *testing.T) {
 
 	if dist != nil {
 		t.Errorf("Expected nil distances, but got %v", dist)
+	}
+}
+
+// randomWeighted returns a directed graph with n vertices and m random edges
+// with whole weights from 1 to 9.
+func randomWeighted(n, m int) gograph.Graph[int] {
+	rng := rand.New(rand.NewPCG(1, 2)) //nolint:gosec // seeded so runs are comparable
+	g := gograph.New[int](gograph.Directed(), gograph.Weighted())
+	vertices := make([]*gograph.Vertex[int], n)
+	for i := range vertices {
+		vertices[i] = g.AddVertexByLabel(i)
+	}
+	for int(g.Size()) < m {
+		from, to := vertices[rng.IntN(n)], vertices[rng.IntN(n)]
+		_, _ = g.AddEdge(from, to, gograph.WithEdgeWeight(float64(1+rng.IntN(9))))
+	}
+	return g
+}
+
+func BenchmarkBellmanFord(b *testing.B) {
+	// the vertices of the chain come in reverse, so each pass over the edges
+	// in AllEdges order moves the distances one edge further
+	const chain = 1000
+	reversed := gograph.New[int](gograph.Directed(), gograph.Weighted())
+	for i := chain - 1; i >= 0; i-- {
+		reversed.AddVertexByLabel(i)
+	}
+	for i := range chain - 1 {
+		_, _ = reversed.AddEdge(reversed.GetVertexByID(i), reversed.GetVertexByID(i+1), gograph.WithEdgeWeight(-1))
+	}
+
+	graphs := []struct {
+		name string
+		g    gograph.Graph[int]
+	}{
+		{name: "random-1000x5000", g: randomWeighted(1000, 5000)},
+		{name: "random-10000x50000", g: randomWeighted(10000, 50000)},
+		{name: "reversed-chain-1000", g: reversed},
+	}
+	for _, tt := range graphs {
+		b.Run(tt.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				if _, err := BellmanFord(tt.g, 0); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
 	}
 }

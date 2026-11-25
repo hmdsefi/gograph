@@ -9,20 +9,245 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Clone` returns a copy of a graph that can be changed without changing the
-  original. It keeps the directed, weighted and acyclic properties, the
-  weights, edge labels and metadata, and the order of vertices and edges.
-  ([#108], [#251])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
   as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
   union by rank and path compression. Groups and their members come back in
   the order the labels were first added. ([#204], [#255])
+
+## [0.11.0] - 2026-11-17
+
+### Added
+
+- `path.DijkstraPaths`, `path.BellmanFordPaths` and `path.BFSPaths` return a
+  `path.ShortestPaths` with the shortest path from one vertex to each vertex it
+  reaches. `Distance` and `PathTo` report `false` for a vertex out of reach,
+  where `Dijkstra` gives `math.MaxFloat64` and `BellmanFord` `+Inf`.
+  `DijkstraPaths` and `BFSPaths` read only what the start reaches and use O(V)
+  extra space for it. On a graph of 10,000 vertices and 50,000 edges,
+  `DijkstraPaths` takes 3.9 ms and 2.4 MB where `Dijkstra` takes 4.7 ms and
+  2.7 MB, and 0.008 ms where the start reaches 100 of the vertices.
+  `BellmanFordPaths` gives the distances and errors of `BellmanFord`, and its
+  paths never loop when rounding makes a zero cycle look negative.
+  ([#110], [#306])
+- `path.KShortest` returns up to k cheapest simple paths from one vertex to
+  another, cheapest first. It's Yen's algorithm with Lawler's change, and each
+  branch search is A* guided by the exact cost to the goal, found once. It keeps
+  at most k-1 candidate paths and skips a branch that can't beat the worst of
+  them, so extra space is O(V+E+k·V). On a 100 by 100 grid, 100 paths take
+  8 ms and 5 MB, where Dijkstra branch searches take 613 ms and an unbounded
+  candidate list 8.4 MB. ([#189], [#304])
+- `path.Beam` returns a path from one vertex to another, keeping at most
+  `width` partial paths at each step, ranked by a caller-supplied score. A small
+  width can miss the cheapest path. Extra space is O(L·width) for a path of L
+  edges: the kept paths share their common starts, and a step never holds more
+  than `width` candidates. On a graph of 30 layers of 300 vertices, width 100
+  takes 48 ms and 0.19 MB, where sorting every candidate takes 121 ms and
+  80 MB. The new `path.ErrInvalidWidth` reports a width below 1. ([#200], [#305])
+- `path.AStar` returns the cheapest path from one vertex to another and its
+  cost, stopping at the goal. The caller supplies the edge cost and a heuristic
+  for the remaining cost. Extra space is O(V). A heuristic that isn't consistent
+  still gives the cheapest path, in O(V²) expansions where plain A* can take
+  exponentially many. On a 300 by 300 grid, a Manhattan-distance heuristic takes
+  0.19 ms and 165 KB, where no heuristic takes 34 ms and 10.5 MB. ([#185], [#303])
+- `path.Bidirectional` returns the cheapest path from one vertex to another
+  and its cost, searching forward from the start and backward from the goal
+  until they meet. A caller-supplied cost replaces the edge weight, and the
+  new `path.ErrUnreachable` reports a goal the start can't reach. ([#199], [#302])
+- `path.NegativeCycle` returns one cycle whose edge weights sum to less than
+  zero, searching the whole graph. ([#186], [#300])
+- `connectivity.Bridges` and `connectivity.ArticulationPoints` find the edges
+  and vertices whose removal splits an undirected graph into more pieces, in
+  O(V+E). `gograph.UndirectedCuts` returns both from one search. A directed
+  graph returns the new `gograph.ErrNotUndirected`. ([#113], [#235])
+
+### Changed
+
+- `.agents/skills/gograph/SKILL.md` has a row for each function added for
+  v0.11.0 that had none: `UndirectedCuts`, and in `path`, `DijkstraPaths`,
+  `BFSPaths`, `BellmanFordPaths`, `NegativeCycle`, `AStar`, `Bidirectional`,
+  `KShortest` and `Beam`. The rows of `path.Dijkstra`, `path.BellmanFord`,
+  `path.DijkstraMultiSource` and `traverse.BFSWithDepth` point to them.
+  ([#222], [#307])
+
+## [0.10.0] - 2026-11-01
+
+### Added
+
+- `Vertex.AllNeighbors` returns an iterator over the neighbors of a vertex.
+  For a vertex of a graph, it yields the graph's own vertices without copying
+  them. ([#107], [#287])
+- `traverse.BFS`, `BFSWithDepth`, `DFS`, `ClosestFirst` and `Topological`
+  return traversals as sequences for a `range` loop, in the order of the
+  matching iterators. `BFSWithDepth` gives each vertex with its number of
+  edges from the start, and `ClosestFirst` with its distance. ([#115], [#289])
+- `Vertices` and `Edges` range over all the vertices and edges of a graph. For
+  a graph from `New` they allocate nothing: ranging over the edges of a graph
+  with 10,000 vertices and 50,000 edges takes 0.44 ms, where `AllEdges` takes
+  0.93 ms and 2 MiB. ([#115], [#289])
+- `traverse.DFSEvents` and `DFSEventsAll` give the steps of a depth-first
+  search as a sequence: each vertex when the search discovers and finishes
+  it, and each edge as a tree, back, forward or cross edge, with its depth.
+  They keep their own stack, so a path of 100,000 vertices is safe to search,
+  and a `range` loop can stop at any event. ([#132], [#295])
+- `connectivity.FindCycle` returns the vertices of one cycle in order, such
+  as an import cycle to show in an error. It reports a cycle exactly when
+  `HasCycle` does, in O(V+E) time. ([#132], [#295])
+- The `gographtest` package helps test code that uses gograph.
+  `IsTopologicalOrder` accepts any valid topological order of a graph, and
+  `SameGroups` compares groups of vertices, such as components or cliques, in
+  any order. `Path`, `Cycle`, `Complete`, `Grid`, `Random` and `RandomDAG`
+  build graphs with the labels 0 to n-1. `Random` and `RandomDAG` take a
+  seeded `*rand.Rand` and run in O(n + m) expected time for m edges: a random
+  directed graph with 10,000 vertices takes 9 ms, where a draw for each pair
+  takes 362 ms. ([#126], [#296])
+- `Diff` returns the vertices, edges, weights and edge labels that changed
+  between two graphs, and whether they became weighted or acyclic. It matches
+  vertices by label, so the graphs can be built in any order.
+  `GraphDiff.String` prints one change per line, the diff encodes as JSON,
+  and `Apply` makes the same changes to a copy of a graph.
+  `WithWeightTolerance` treats close weights as equal. On a graph with 10,000
+  vertices and 50,000 edges, `Diff` takes 3.2 ms and allocates only the diff
+  it returns. ([#125], [#298])
+- `gographtest.Equal` fails a test unless two graphs have the same vertices,
+  edges, weights, edge labels and properties, and lists what differs, one
+  change per line. ([#126], [#298])
+
+### Changed
+
+- Each vertex of a graph from `New` keeps the edges that end at it.
+  `InDegree` reads that list in O(1), `EdgesOf` takes O(d log d) time for a
+  vertex with d edges, and `RemoveVertices` visits only the neighbors of each
+  removed vertex. On a graph with 2,000 vertices and 10,000 edges, calling
+  `EdgesOf` on every vertex takes 0.3 ms instead of 54 ms, and removing every
+  vertex takes 0.7 ms instead of 37 ms. ([#107], [#287])
+- On a graph created with `Acyclic`, `AddEdge` keeps a topological order of
+  the vertices to check each new edge. An edge that agrees with the order, an
+  edge from a vertex with no incoming edges, and an edge to a vertex with no
+  outgoing edges go in at once. Any other edge searches around its
+  endpoints, in at most O(R log R) time for the R vertices and edges reachable
+  from its destination. Building a chain of 4,000 edges takes 1.1 ms instead
+  of 618 ms, and a random DAG with 2,000 vertices and 10,000 edges 1.8 ms
+  instead of 2.2 s. ([#107], [#124], [#287], [#288])
+- The traversal iterators, `Dijkstra`, the strongly connected component
+  functions, the dag helpers and the encoders read the stored neighbors
+  through `AllNeighbors`. The breadth-first and depth-first iterators run
+  about 60% faster on a graph of 10,000 vertices and allocate 99% less
+  often. ([#107], [#287])
+- A vertex takes 16 more bytes, and each edge one more pointer in the list of
+  its destination. An acyclic graph also keeps one int per vertex for its
+  order. Removing an edge takes time proportional to the in-degree of its
+  destination as well as the out-degree of its source. ([#287], [#288])
+- `BellmanFord` keeps its distances in slices and stops after a pass that
+  changes none of them. `FloydWarshall` keeps its distances in one flat
+  matrix and skips each row with no path to the middle vertex. On a random
+  graph with 10,000 vertices and 50,000 edges, `BellmanFord` takes 2.7 ms
+  instead of 11.9 s, and `FloydWarshall` on 300 vertices takes 9 ms instead
+  of 1.66 s. ([#294])
+- `.agents/skills/gograph/SKILL.md` has a row for each function added in this
+  release, and the `connectivity.HasCycle` row points to `FindCycle`. Eight
+  rows link to the gograph.dev pages added since v0.9.0. ([#221], [#299])
+
+### Fixed
+
+- `BellmanFord` and `FloydWarshall` give `-Inf` for a path through a `-Inf`
+  weight on a graph with no cycle, as v0.9.0 did. A cycle through a `-Inf`
+  weight, and a negative cycle that a `-Inf` weight leads into, return
+  `ErrNegativeWeightCycle`. ([#291], [#294])
+- `FloydWarshall` returns `ErrNegativeWeightCycle` only for a negative cycle.
+  A check after the main loop added the weights in another order, and its
+  rounding reported a cycle on some graphs with none, such as the path
+  1 -> 3 -> 2 -> 0 with weights 3.3, 3.3 and 1.1. ([#294])
+
+## [0.9.1] - 2026-10-26
+
+### Added
+
+- `Clone` returns a copy of a graph that can be changed without changing the
+  original. It keeps the directed, weighted and acyclic properties, the
+  weights, edge labels and metadata, and the order of vertices and edges.
+  ([#108], [#251])
 
 ### Changed
 
 - On an undirected graph, `GirvanNewman` breaks ties between equally busy
   edges in `AllEdges` order. A graph with such ties can split into different,
   equally valid communities than before. ([#251])
+- The closest-first iterator can return vertices at equal distances in a
+  different order than before. ([#261], [#273])
+- `BellmanFord` and `FloydWarshall` return `ErrNegativeWeightCycle` when a
+  distance reaches `-Inf`, from a `-Inf` weight or from weights that add up
+  below the float64 range. That includes a path through a `-Inf` weight on a
+  graph with no cycle, which [#291] tracks. `DijkstraMultiSource` reports a
+  vertex behind a `+Inf` weight as unreachable, as `Dijkstra` does.
+  ([#262], [#285])
+- The docs say that an undirected edge is stored in both directions and a
+  self-loop once, how the `Weighted` option relates to the edge weights in
+  each shortest-path function, and what each one returns for a vertex it
+  can't reach. Four new examples show them. ([#103], [#248])
+- The doc comments of `DijkstraMultiSource`, `KCenter`, `dag.Descendants`,
+  `dag.Affected`, `dag.Ancestors`, `GetAllEdges` and `EdgesOf`, and the
+  traversal guide in `traverse/README.md`, describe what the code does.
+  ([#268], [#278])
+- A pull request for an issue in a later milestone goes to that milestone's
+  `release/vX.Y.Z` branch. The contributing guide and the pull request
+  template say so. ([#257])
+
+### Fixed
+
+- `ConnectedComponents` keeps `GetAllVertices` order for a directed `Graph`
+  that isn't from `New`, and reads it in O((V+E)·α(V)) instead of O(V²).
+  ([#267], [#271])
+- `InducedSubgraph` copies each edge's insertion index, so ties in
+  `DijkstraMultiSource` and other functions that use `InsertionIndex` break
+  the same way as on the original graph. ([#265], [#272])
+- `Dijkstra` no longer expands a vertex again for each outdated queue entry,
+  and the closest-first iterator keeps at most one queue entry per vertex. On
+  a hub graph with 1,000 branches, `Dijkstra` takes 0.7 ms instead of 63 ms.
+  ([#261], [#273])
+- `RemoveVertices` clears the neighbors and in-degree of a removed vertex, so
+  its `Neighbors`, `OutDegree`, `InDegree` and `HasNeighbor` no longer report
+  edges the graph doesn't have. A directed self-loop no longer leaves its
+  in-degree at -1. A vertex of another graph with the same label keeps its
+  edges. ([#266], [#275], [#290], [#292])
+- `TopologySort`, `StableTopologySort` and `traverse.NewTopologicalIterator`
+  return `ErrNotDirected` when given an undirected graph. Previously,
+  graphs with edges reported `ErrDAGHasCycle`, while edge-free graphs
+  sorted successfully. ([#264], [#281])
+- `GirvanNewman` counts each shortest path once. On an undirected graph it
+  counted each path twice at every level, so a search 1,024 levels deep
+  overflowed to `+Inf`, every betweenness value turned into NaN, and
+  `GirvanNewman` never returned. It returns an error when two vertices have
+  more shortest paths between them than a float64 can count. One betweenness
+  pass on a path of 1,025 vertices takes 0.4 s instead of 9.1 s.
+  ([#258], [#282])
+- `GirvanNewman` removes the first edge in `AllEdges()` order among the edges
+  tied for the highest betweenness, as its doc says. Values within one part in
+  a billion of the highest count as tied, since float sums added in a
+  different order can differ in the last bits. ([#259], [#283])
+- `GirvanNewman` returns directed communities for a directed graph. When the
+  graph had both `a->b` and `b->a`, the second edge was lost with its weight
+  and label. ([#260], [#284])
+- `FloydWarshall` skips an edge with a NaN weight, as `BellmanFord` and
+  `Dijkstra` do. It kept NaN as the distance even when another path existed.
+  `BellmanFord` finds a negative cycle once its distances reach `-Inf`. The
+  closest-first iterator skips a NaN weight and visits a vertex behind a
+  `+Inf` weight after every vertex at a finite distance, and
+  `util.VertexPriorityQueue` orders a NaN priority after every number.
+  ([#262], [#285])
+- The breadth-first, depth-first and closest-first iterators skip a queued
+  vertex that was removed from the graph. Breadth-first and depth-first
+  panicked in `Next`, closest-first returned the removed vertex, and `HasNext`
+  returned true in all three. After the start vertex is removed, `Reset`
+  leaves nothing to visit. ([#263], [#286])
+- Mermaid labels write `%` as `#37;` and `:` as `#58;`, since Mermaid reads
+  both inside quoted labels. The class names `default` and `node` return the
+  invalid class name error, since Mermaid applies them to every node.
+  ([#269], [#279])
+- `encoding/dot` writes text that Graphviz reads back as given. A value is
+  written as is only when Graphviz reads all of it as one HTML-like string.
+  Quoted strings write `&` as `&amp;` and NUL as U+FFFD, and IDs such as the
+  graph name escape only `"`. A name or attribute name with a backslash at the
+  end, or before a `"` or a line break, returns an error. ([#270], [#280])
 
 ## [0.9.0] - 2026-10-16
 
@@ -298,7 +523,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core graph data structures.
 - Basic traversal iterators.
 
-[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/hmdsefi/gograph/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/hmdsefi/gograph/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/hmdsefi/gograph/compare/v0.9.1...v0.10.0
+[0.9.1]: https://github.com/hmdsefi/gograph/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/hmdsefi/gograph/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/hmdsefi/gograph/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/hmdsefi/gograph/compare/v0.8.0...v0.8.1
@@ -370,6 +598,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#179]: https://github.com/hmdsefi/gograph/pull/179
 [#180]: https://github.com/hmdsefi/gograph/pull/180
 [#184]: https://github.com/hmdsefi/gograph/pull/184
+[#186]: https://github.com/hmdsefi/gograph/issues/186
 [#191]: https://github.com/hmdsefi/gograph/issues/191
 [#197]: https://github.com/hmdsefi/gograph/pull/197
 [#217]: https://github.com/hmdsefi/gograph/pull/217
@@ -398,5 +627,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#250]: https://github.com/hmdsefi/gograph/pull/250
 [#108]: https://github.com/hmdsefi/gograph/issues/108
 [#251]: https://github.com/hmdsefi/gograph/pull/251
+[#113]: https://github.com/hmdsefi/gograph/issues/113
+[#235]: https://github.com/hmdsefi/gograph/pull/235
+[#261]: https://github.com/hmdsefi/gograph/issues/261
+[#264]: https://github.com/hmdsefi/gograph/issues/264
+[#265]: https://github.com/hmdsefi/gograph/issues/265
+[#266]: https://github.com/hmdsefi/gograph/issues/266
+[#267]: https://github.com/hmdsefi/gograph/issues/267
+[#271]: https://github.com/hmdsefi/gograph/pull/271
+[#272]: https://github.com/hmdsefi/gograph/pull/272
+[#273]: https://github.com/hmdsefi/gograph/pull/273
+[#275]: https://github.com/hmdsefi/gograph/pull/275
+[#281]: https://github.com/hmdsefi/gograph/pull/281
+[#103]: https://github.com/hmdsefi/gograph/issues/103
+[#258]: https://github.com/hmdsefi/gograph/issues/258
+[#259]: https://github.com/hmdsefi/gograph/issues/259
+[#260]: https://github.com/hmdsefi/gograph/issues/260
+[#262]: https://github.com/hmdsefi/gograph/issues/262
+[#263]: https://github.com/hmdsefi/gograph/issues/263
+[#268]: https://github.com/hmdsefi/gograph/issues/268
+[#269]: https://github.com/hmdsefi/gograph/issues/269
+[#270]: https://github.com/hmdsefi/gograph/issues/270
+[#290]: https://github.com/hmdsefi/gograph/issues/290
+[#291]: https://github.com/hmdsefi/gograph/issues/291
+[#248]: https://github.com/hmdsefi/gograph/pull/248
+[#257]: https://github.com/hmdsefi/gograph/pull/257
+[#278]: https://github.com/hmdsefi/gograph/pull/278
+[#279]: https://github.com/hmdsefi/gograph/pull/279
+[#280]: https://github.com/hmdsefi/gograph/pull/280
+[#282]: https://github.com/hmdsefi/gograph/pull/282
+[#283]: https://github.com/hmdsefi/gograph/pull/283
+[#284]: https://github.com/hmdsefi/gograph/pull/284
+[#285]: https://github.com/hmdsefi/gograph/pull/285
+[#286]: https://github.com/hmdsefi/gograph/pull/286
+[#292]: https://github.com/hmdsefi/gograph/pull/292
+[#107]: https://github.com/hmdsefi/gograph/issues/107
+[#287]: https://github.com/hmdsefi/gograph/pull/287
+[#124]: https://github.com/hmdsefi/gograph/issues/124
+[#288]: https://github.com/hmdsefi/gograph/pull/288
+[#115]: https://github.com/hmdsefi/gograph/issues/115
+[#289]: https://github.com/hmdsefi/gograph/pull/289
+[#294]: https://github.com/hmdsefi/gograph/pull/294
+[#221]: https://github.com/hmdsefi/gograph/issues/221
+[#299]: https://github.com/hmdsefi/gograph/pull/299
+[#132]: https://github.com/hmdsefi/gograph/issues/132
+[#295]: https://github.com/hmdsefi/gograph/pull/295
+[#126]: https://github.com/hmdsefi/gograph/issues/126
+[#296]: https://github.com/hmdsefi/gograph/pull/296
+[#300]: https://github.com/hmdsefi/gograph/pull/300
+[#125]: https://github.com/hmdsefi/gograph/issues/125
+[#298]: https://github.com/hmdsefi/gograph/pull/298
+[#199]: https://github.com/hmdsefi/gograph/issues/199
+[#302]: https://github.com/hmdsefi/gograph/pull/302
+[#185]: https://github.com/hmdsefi/gograph/issues/185
+[#303]: https://github.com/hmdsefi/gograph/pull/303
+[#200]: https://github.com/hmdsefi/gograph/issues/200
+[#305]: https://github.com/hmdsefi/gograph/pull/305
+[#189]: https://github.com/hmdsefi/gograph/issues/189
+[#304]: https://github.com/hmdsefi/gograph/pull/304
+[#110]: https://github.com/hmdsefi/gograph/issues/110
+[#306]: https://github.com/hmdsefi/gograph/pull/306
+[#222]: https://github.com/hmdsefi/gograph/issues/222
+[#307]: https://github.com/hmdsefi/gograph/pull/307
 [#204]: https://github.com/hmdsefi/gograph/issues/204
 [#255]: https://github.com/hmdsefi/gograph/pull/255

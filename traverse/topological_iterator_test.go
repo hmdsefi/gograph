@@ -115,3 +115,31 @@ func TestTopologyOrderIterator_NotAcyclic(t *testing.T) {
 	_, _ = g2.AddEdge(gograph.NewVertex(1), gograph.NewVertex(2))
 	_, _ = g2.AddEdge(gograph.NewVertex(2), gograph.NewVertex(3))
 }
+
+func TestTopologyOrderIterator_Undirected(t *testing.T) {
+	t.Run("with edge", func(t *testing.T) {
+		g := gograph.New[string]()
+		if _, err := g.AddEdge(gograph.NewVertex("A"), gograph.NewVertex("B")); err != nil {
+			t.Fatalf("AddEdge: %v", err)
+		}
+		if _, err := NewTopologicalIterator(g); !errors.Is(err, gograph.ErrNotDirected) {
+			t.Fatalf("NewTopologicalIterator(undirected with edge) err = %v, want %v", err, gograph.ErrNotDirected)
+		}
+	})
+
+	t.Run("without edges", func(t *testing.T) {
+		g := gograph.New[string]()
+		g.AddVertexByLabel("A")
+		g.AddVertexByLabel("B")
+		if _, err := NewTopologicalIterator(g); !errors.Is(err, gograph.ErrNotDirected) {
+			t.Fatalf("NewTopologicalIterator(undirected without edges) err = %v, want %v", err, gograph.ErrNotDirected)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		g := gograph.New[string]()
+		if _, err := NewTopologicalIterator(g); !errors.Is(err, gograph.ErrNotDirected) {
+			t.Fatalf("NewTopologicalIterator(empty undirected) err = %v, want %v", err, gograph.ErrNotDirected)
+		}
+	})
+}

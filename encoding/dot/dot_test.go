@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -149,6 +150,73 @@ func TestMarshal_HTMLLabels(t *testing.T) {
 		}),
 	)
 	assertGolden(t, "html_labels", out)
+}
+
+// Graphviz ends an HTML-like string at the > that balances the first <, so
+// only a value that closes there at its last character is written as is. It
+// can't read a NUL byte in one either, and older versions reject one with
+// nothing but spaces in it.
+func TestMarshal_UnbalancedHTMLLabels(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	for _, label := range []string{"<b>bold</b>", "<<b>bold</b>>", "<a><b>", "<<a>", "<a>>", "<>", "< >", "<a\x00b>"} {
+		g.AddVertexByLabel(label)
+	}
+
+	out := mustMarshal(t, g, WithVertexAttributes(func(v *gograph.Vertex[string]) map[string]string {
+		return map[string]string{"label": v.Label()}
+	}))
+	assertGolden(t, "unbalanced_html_labels", out)
+}
+
+// Graphviz decodes entities in quoted strings and can't read a NUL byte in
+// one, so the labels have to come out as they were set.
+func TestMarshal_EntitiesAndNUL(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	addEdges(t, g, [2]string{"AT&amp;T", "&lt;b&gt;"}, [2]string{"&lt;b&gt;", "a\x00b"})
+
+	out := mustMarshal(t, g,
+		WithName[string]("a\x00b"),
+		WithEdgeAttributes(func(*gograph.Edge[string]) map[string]string {
+			return map[string]string{"label": "a & b"}
+		}),
+	)
+	assertGolden(t, "entities_and_nul", out)
+}
+
+// Graphviz doesn't unescape a graph name, so its backslashes are written as
+// they are.
+func TestMarshal_BackslashInName(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	g.AddVertexByLabel("A")
+
+	assertGolden(t, "backslash_name", mustMarshal(t, g, WithName[string](`C:\graphs\\new`)))
+}
+
+func TestMarshal_InvalidIDs(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	addEdges(t, g, [2]string{"A", "B"})
+
+	for _, bad := range []string{`C:\graphs\`, `a\"b`, "a\\\nb", "a\\\r\nb"} {
+		attrs := func(any) map[string]string { return map[string]string{bad: "x"} }
+		tests := map[string]Option[string]{
+			"name":             WithName[string](bad),
+			"graph attribute":  WithGraphAttributes[string](map[string]string{bad: "x"}),
+			"vertex attribute": WithVertexAttributes(func(v *gograph.Vertex[string]) map[string]string { return attrs(v) }),
+			"edge attribute":   WithEdgeAttributes(func(e *gograph.Edge[string]) map[string]string { return attrs(e) }),
+		}
+		for name, opt := range tests {
+			t.Run(fmt.Sprintf("%s %q", name, bad), func(t *testing.T) {
+				if out, err := Marshal(g, opt); err == nil || out != nil {
+					t.Fatalf("Marshal: expected an error and no output, got %q, %v", out, err)
+				}
+			})
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := Write(&buf, g, WithName[string](`a\`)); err == nil || buf.Len() != 0 {
+		t.Fatalf("Write with an invalid name: got %q, %v", buf.String(), err)
+	}
 }
 
 func TestMarshal_GraphAttributes(t *testing.T) {

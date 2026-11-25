@@ -96,7 +96,7 @@ func NewTracker[T comparable](g gograph.Graph[T]) (*Tracker[T], error) {
 	}
 	for _, v := range vertices {
 		from := t.vertices[v.Label()]
-		for _, n := range v.Neighbors() {
+		for n := range v.AllNeighbors() {
 			to := t.vertices[n.Label()]
 			from.dependents = append(from.dependents, to)
 			to.waiting++

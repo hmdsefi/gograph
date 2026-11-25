@@ -17,9 +17,9 @@ import (
 // moves to it, and the process is repeated until a stopping condition
 // is met.
 //
-// In an unweighted graph, each neighboring node has an equal chance of
-// being chosen as the next node to visit during the traversal. However,
-// in a weighted graph, the probability of choosing a particular neighbor
+// Without gograph.Weighted(), each neighboring node has an equal chance of
+// being chosen, regardless of stored edge weights. With gograph.Weighted(),
+// the probability of choosing a particular neighbor
 // as the next node to visit is proportional to the weight of the edge
 // connecting the current node and the neighbor. This means that nodes
 // connected by heavier edges are more likely to be visited during the
@@ -41,7 +41,8 @@ type randomWalkIterator[T comparable] struct {
 // maximum number of vertices returned, including the start vertex, so a
 // walk with five steps moves at most four times.
 //
-// In a weighted graph, each step picks a neighbor with a probability
+// Without gograph.Weighted(), each neighbor has an equal chance of being picked.
+// With gograph.Weighted(), each step picks a neighbor with a probability
 // proportional to the weight of the edge to it. Edges with a weight of
 // zero or less are never picked, unless none of the edges of the current
 // vertex has a positive weight. Then each of them has an equal chance. An
@@ -85,15 +86,19 @@ func (r *randomWalkIterator[T]) Next() *gograph.Vertex[T] {
 	}
 
 	r.currentStep++
-	neighbors := r.current.Neighbors()
-
 	if r.graph.IsWeighted() {
 		r.current = r.randomVertex(r.current)
 		return r.current
 	}
 
-	i, _ := rand.Int(rand.Reader, big.NewInt(int64(len(neighbors))))
-	r.current = r.graph.GetVertexByID(neighbors[i.Int64()].Label())
+	i := randomIndex(r.current.OutDegree())
+	for neighbor := range r.current.AllNeighbors() {
+		if i == 0 {
+			r.current = neighbor
+			break
+		}
+		i--
+	}
 
 	return r.current
 }
@@ -123,10 +128,8 @@ func (r *randomWalkIterator[T]) randomVertex(v *gograph.Vertex[T]) *gograph.Vert
 	}
 
 	var maxWeight float64
-	var edges []*gograph.Edge[T]
-	neighbors := v.Neighbors()
-
-	for _, neighbor := range neighbors {
+	edges := make([]*gograph.Edge[T], 0, v.OutDegree())
+	for neighbor := range v.AllNeighbors() {
 		if edge := r.graph.GetEdge(v, neighbor); edge != nil {
 			edges = append(edges, edge)
 			if edge.Weight() > maxWeight {

@@ -49,6 +49,50 @@ func TestInducedSubgraphKeepsInsideEdges(t *testing.T) {
 	}
 }
 
+// Preserving source edge indexes, including gaps, and advancing the next
+// index past the largest copied edge fails this.
+func TestInducedSubgraphPreservesEdgeInsertionIndexes(t *testing.T) {
+	g := New[string](Directed())
+	a := g.AddVertexByLabel("A")
+	b := g.AddVertexByLabel("B")
+	c := g.AddVertexByLabel("C")
+	d := g.AddVertexByLabel("D")
+
+	first, err := g.AddEdge(a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := g.AddEdge(c, d); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := g.AddEdge(a, c); err != nil {
+		t.Fatal(err)
+	}
+	fourth, err := g.AddEdge(b, d)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sub, err := InducedSubgraph(g, "A", "B", "D")
+	if err != nil {
+		t.Fatalf("InducedSubgraph: %v", err)
+	}
+	sa, sb, sd := sub.GetVertexByID("A"), sub.GetVertexByID("B"), sub.GetVertexByID("D")
+	if got := sub.GetEdge(sa, sb).InsertionIndex(); got != first.InsertionIndex() {
+		t.Fatalf("A→B insertion index: got %d, want %d", got, first.InsertionIndex())
+	}
+	if got := sub.GetEdge(sb, sd).InsertionIndex(); got != fourth.InsertionIndex() {
+		t.Fatalf("B→D insertion index: got %d, want %d", got, fourth.InsertionIndex())
+	}
+	added, err := sub.AddEdge(sa, sd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if added.InsertionIndex() <= fourth.InsertionIndex() {
+		t.Fatalf("new edge insertion index: got %d, want greater than %d", added.InsertionIndex(), fourth.InsertionIndex())
+	}
+}
+
 // Copying an undirected edge twice fails this. AddEdge already stores both directions.
 func TestInducedSubgraphUndirectedCopiesOnce(t *testing.T) {
 	g := New[string](Weighted())

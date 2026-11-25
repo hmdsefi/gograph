@@ -149,6 +149,41 @@ func TestKCenterCoversEveryVertexWhenKIsLarge(t *testing.T) {
 	if got := labelsOf(centers); len(got) != 3 {
 		t.Fatalf("centers %v, want all 3 vertices", got)
 	}
+
+	centers, _, err = KCenter(g, 3)
+	if err != nil {
+		t.Fatalf("KCenter: %v", err)
+	}
+	if len(centers) != 3 {
+		t.Fatalf("k = V returned %d centers, want 3", len(centers))
+	}
+}
+
+// Two fixed centers on one side leave the other side 100 away, while a1 and
+// b1 give radius 1, so the factor of two only holds against centers that
+// include the fixed ones.
+func TestKCenterBadlyPlacedFixedCenters(t *testing.T) {
+	g := gograph.New[string](gograph.Weighted())
+	a1 := g.AddVertexByLabel("a1")
+	a2 := g.AddVertexByLabel("a2")
+	b1 := g.AddVertexByLabel("b1")
+	b2 := g.AddVertexByLabel("b2")
+	for _, e := range []struct {
+		from, to *gograph.Vertex[string]
+		w        float64
+	}{{a1, a2, 1}, {b1, b2, 1}, {a2, b1, 100}} {
+		if _, err := g.AddEdge(e.from, e.to, gograph.WithEdgeWeight(e.w)); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	_, radius, err := KCenter(g, 2, "a1", "a2")
+	if err != nil {
+		t.Fatalf("KCenter: %v", err)
+	}
+	if radius != 101 {
+		t.Fatalf("radius %v, want 101", radius)
+	}
 }
 
 func TestKCenterEmpty(t *testing.T) {

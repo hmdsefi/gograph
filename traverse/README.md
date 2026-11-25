@@ -52,12 +52,79 @@ type Iterator[T comparable] interface {
 }
 ```
 
+### Range over a traversal
+
+Every traversal except the random walk also comes as a sequence for a `range`
+loop, and the standard helpers such as `slices.Collect` accept the sequences.
+`BFS`, `BFSWithDepth`, `DFS` and `ClosestFirst` do their work as the loop asks
+for the next vertex, so `break` ends the traversal there. `Topological` sorts
+the graph when it is called.
+
+```go
+for v := range traverse.BFS(g, "A") {
+	if v.Label() == target {
+		break
+	}
+}
+```
+
+| Function | Yields |
+|---|---|
+| `BFS(g, start)` | The vertices in the order of `NewBreadthFirstIterator` |
+| `BFSWithDepth(g, start)` | The same vertices, each with its number of edges from `start` |
+| `DFS(g, start)` | The vertices in the order of `NewDepthFirstIterator` |
+| `ClosestFirst(g, start)` | The vertices in the order of `NewClosestFirstIterator`, each with its distance from `start` |
+| `Topological(g)` | The vertices in topological order, with an error up front for a cycle or an undirected graph |
+
+A sequence from a start vertex yields nothing when `start` isn't in the graph.
+To get an error instead, check `g.GetVertexByID(start)` first, or use the
+iterator constructors, which return `ErrVertexDoesNotExist`. Each vertex is the
+graph's own vertex, and ranging over a sequence from a start vertex again runs
+the traversal again. Like the iterators, a sequence skips a vertex removed from
+the graph after it was queued. In the root package, `gograph.Vertices(g)` and
+`gograph.Edges(g)` range over all the vertices and edges of a graph without
+allocating.
+
+### Depth-first search events
+
+`DFSEvents(g, start)` and `DFSEventsAll(g)` yield each step of a depth-first
+search as a `DFSEvent`, so an algorithm built on depth-first search is a loop
+over the events. `DFSEventsAll` starts a new search from each vertex not
+discovered yet, in the order of `GetAllVertices`.
+
+| Kind | When |
+|---|---|
+| `DiscoverVertex` | The search enters a vertex for the first time |
+| `FinishVertex` | Every vertex reachable from the vertex has been handled |
+| `TreeEdge` | An edge to an undiscovered vertex, which becomes its child |
+| `BackEdge` | An edge to a vertex still on the current path, which closes a cycle |
+| `ForwardEdge` | An edge to a finished descendant, in a directed graph |
+| `CrossEdge` | An edge to a finished vertex that isn't a descendant, in a directed graph |
+
+```go
+var order []string
+for e := range traverse.DFSEventsAll(g) {
+	if e.Kind == traverse.FinishVertex {
+		order = append(order, e.Vertex.Label())
+	}
+}
+slices.Reverse(order) // a topological order when g has no cycle
+```
+
+The neighbors of each vertex are explored in the order of `Neighbors`, and the
+events of each vertex nest inside those of its parent. In an undirected graph,
+each edge comes once, as a tree edge or as a back edge from the deeper vertex,
+so only those two kinds occur. A self-loop is a back edge. The search keeps
+its own stack, so the goroutine stack stays small on a path of 100,000 vertices.
+`connectivity.FindCycle` uses the first back edge to return the vertices of a
+cycle.
+
 ## BFS
 
 BFS iterator is a technique used to implement the Breadth-First Search (BFS)
 algorithm for traversing a graph or tree in a systematic way. The BFS iterator
-iteratively visits all the vertices of the graph, starting from a given source
-vertex and moving outwards in levels. The iterator maintains a queue of vertices
+iteratively visits the vertices reachable from a given source vertex, moving
+outwards in levels. The iterator maintains a queue of vertices
 to be visited, and it visits each vertex only once.
 
 One of the most common usages of BFS iterator is to find the shortest path between
@@ -101,9 +168,8 @@ and the visited vertices at each step.
 
 DFS iterator is a technique used to implement the Depth-First Search (DFS)
 algorithm for traversing a graph or tree in a systematic way. The DFS iterator
-recursively visits all the vertices of the graph, starting from a given
-source vertex and exploring as far as possible along each branch before
-backtracking. The iterator maintains a stack of vertices to be visited,
+visits the vertices reachable from a given source vertex, exploring as far
+as possible along each branch before backtracking. The iterator maintains a stack of vertices to be visited,
 and it visits each vertex only once.
 
 One of the most common usages of DFS iterator is to find connected components
@@ -178,7 +244,7 @@ Closest-first traversal, also known as the Best-First search or Greedy Best-Firs
 search, is a technique used to traverse a graph or a tree based on the distance
 between vertices and a given source vertex. The algorithm iteratively visits the
 vertex closest to the source vertex first and then expands its neighbors, repeating
-this process until all vertices have been visited. The distance can be defined in
+this process until every vertex reachable from the source has been visited. The distance can be defined in
 various ways, such as the number of edges, the weight of the edges, or any other
 distance metric.
 

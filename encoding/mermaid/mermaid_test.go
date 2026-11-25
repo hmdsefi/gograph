@@ -128,6 +128,25 @@ func TestMarshal_SpecialLabels(t *testing.T) {
 	assertGolden(t, "special_labels", mustMarshal(t, g, WithEdgeLabel(edgeLabel)))
 }
 
+// Mermaid reads %%{ as a directive anywhere in the text, and rewrites a line
+// that has style or classDef, then a colon and a #, before it parses quotes.
+func TestMarshal_PreprocessedLabels(t *testing.T) {
+	g := gograph.New[string](gograph.Directed())
+	addEdges(t, g,
+		[2]string{"100%%{done}", "100%%{init: {}}%% x"},
+		[2]string{"100%%{init: {}}%% x", "Fix style issue:#42"},
+		[2]string{"Fix style issue:#42", "style:#fff;"},
+	)
+
+	edgeLabel := func(e *gograph.Edge[string]) string {
+		if e.Source().Label() == "100%%{done}" {
+			return "classDef x:#1;"
+		}
+		return ""
+	}
+	assertGolden(t, "preprocessed_labels", mustMarshal(t, g, WithEdgeLabel(edgeLabel)))
+}
+
 func TestMarshal_Keywords(t *testing.T) {
 	g := gograph.New[string](gograph.Directed())
 	addEdges(t, g, [2]string{"graph", "end"}, [2]string{"end", "subgraph"}, [2]string{"subgraph", "class"})
@@ -254,7 +273,7 @@ func TestMarshal_InvalidOptions(t *testing.T) {
 		"hyphen in name":   {WithClassDef[string]("is-hot", "fill:#f96")},
 		"digit first":      {WithClassDef[string]("1hot", "fill:#f96")},
 	}
-	for _, keyword := range []string{"end", "graph", "class", "classDef", "style", "subgraph", "_self"} {
+	for _, keyword := range []string{"end", "graph", "class", "classDef", "style", "subgraph", "_self", "default", "node"} {
 		tests["keyword "+keyword+" as class def"] = []Option[string]{WithClassDef[string](keyword, "fill:#f96")}
 		tests["keyword "+keyword+" as vertex class"] = []Option[string]{
 			WithVertexClass(func(*gograph.Vertex[string]) string { return keyword }),

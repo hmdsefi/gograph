@@ -1,6 +1,7 @@
 package gograph
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -72,4 +73,32 @@ func TestTopologySort(t *testing.T) {
 	if !reflect.DeepEqual(sortedVertices, expectedOrder) {
 		t.Errorf("unexpected sort order. Got %v, expected %v", sortedVertices, expectedOrder)
 	}
+}
+
+func TestTopologySort_Undirected(t *testing.T) {
+	t.Run("with edge", func(t *testing.T) {
+		g := New[string]()
+		if _, err := g.AddEdge(NewVertex("A"), NewVertex("B")); err != nil {
+			t.Fatalf("AddEdge: %v", err)
+		}
+		if _, err := TopologySort(g); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("TopologySort(undirected with edge) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
+
+	t.Run("without edges", func(t *testing.T) {
+		g := New[string]()
+		g.AddVertexByLabel("A")
+		g.AddVertexByLabel("B")
+		if _, err := TopologySort(g); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("TopologySort(undirected without edges) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		g := New[string]()
+		if _, err := TopologySort(g); !errors.Is(err, ErrNotDirected) {
+			t.Fatalf("TopologySort(empty undirected) err = %v, want %v", err, ErrNotDirected)
+		}
+	})
 }

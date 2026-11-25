@@ -32,3 +32,15 @@ type Iterator[T comparable] interface {
 	// sequence to be iterated over again from the beginning.
 	Reset()
 }
+
+// hasEdges reports whether v has an edge. A removed vertex reports no
+// neighbors and an in-degree of 0 from then on, so a vertex with an edge is
+// still in its graph.
+func hasEdges[T comparable](v *gograph.Vertex[T]) bool {
+	return v.InDegree() > 0 || v.OutDegree() > 0
+}
+
+// stored reports whether v is still the graph's vertex for its label.
+func stored[T comparable](g gograph.Graph[T], v *gograph.Vertex[T]) bool {
+	return g.GetVertexByID(v.Label()) == v
+}

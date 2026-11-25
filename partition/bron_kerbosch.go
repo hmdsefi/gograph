@@ -25,7 +25,7 @@ import (
 // Parameters:
 //   - g: a gograph.Graph[T] representing the graph. T must be a comparable type.
 //     Each vertex in the graph can be accessed via g.GetAllVertices() and
-//     neighbors via Vertex.Neighbors().
+//     neighbors via Vertex.AllNeighbors().
 //
 // Returns:
 //   - [][]*gograph.Vertex[T]: a slice of maximal cliques. Each clique is a slice
@@ -104,7 +104,7 @@ func MaximalCliques[T comparable](g gograph.Graph[T]) [][]*gograph.Vertex[T] {
 	}
 
 	for i, v := range vertices {
-		for _, nb := range v.Neighbors() {
+		for nb := range v.AllNeighbors() {
 			if j, ok := indexOf[nb.Label()]; ok && j != i {
 				link(i, j)
 				link(j, i)

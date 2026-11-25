@@ -33,12 +33,11 @@ func Levels[T comparable](g gograph.Graph[T]) ([][]*gograph.Vertex[T], error) {
 		}
 	}
 
-	next := outgoing(g)
 	level := make(map[T]int, len(vertices))
 	deepest := 0
 	for i := 0; i < len(queue); i++ {
 		from := queue[i].Label()
-		for _, v := range next(queue[i]) {
+		for v := range queue[i].AllNeighbors() {
 			to := v.Label()
 			level[to] = max(level[to], level[from]+1)
 			waiting[to]--
