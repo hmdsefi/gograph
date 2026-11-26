@@ -433,6 +433,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
 | `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |
 | `KShortest` | The k cheapest simple paths between two vertices, cheapest first | O(k·V·(V+E) log V) | |
+| `AllSimplePaths` | Every path between two vertices that doesn't repeat a vertex, up to a length or a count; `AllSimplePathsSeq` yields them lazily | O((V+E)·(N+1)) for N paths; O(L²·(V+E)·(N+1)) with a maximum length L | |
 | `Beam` | A path between two vertices that keeps only the best few partial paths at each step; may miss the cheapest | O(L·w·(L + d log w)) for L steps, width w, out-degree d | |
 | `KCenter` | k centers that keep every vertex close to one, within twice the best radius on undirected graphs | O(k (V+E) log V) | |
 | [`TransitiveReduction`](path/transitive-reduction.md) | The fewest edges that keep every path | O(V·(V+E)) | [watch](https://gograph.dev/algorithms/transitive-reduction/build-pipeline) |
