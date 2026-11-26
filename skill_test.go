@@ -120,6 +120,7 @@ var skillCalls = []string{
 	"connectivity.Bridges",
 	"connectivity.ArticulationPoints",
 	"UndirectedCuts",
+	"unionfind.New",
 	"partition.MaximalCliques",
 	"partition.GirvanNewman",
 	"partition.RandomizedKCut",
