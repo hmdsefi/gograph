@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cycle in 3 minutes. A chain of 16,000 vertices with a self-loop each takes
   1.2 ms, where finding the components again from each start takes 1.1 s. The
   new `path.ErrInvalidLimit` reports a limit below 1. ([#195], [#311])
+- New `tree` package. `tree.Kruskal` and `tree.Prim` return a minimum
+  spanning forest of an undirected graph: the edges of a minimum spanning tree
+  of each connected component, and their total weight. Each undirected edge
+  counts once, and both functions return the same edges in the same order,
+  with ties broken by vertex order. `Kruskal` takes O(V + E log E) time and
+  O(V+E) extra space. `Prim` keeps the vertices outside the tree in an indexed
+  d-ary heap with d = max(2, E/V), for O(E log_d V + V log V) time and O(V)
+  extra space. On a complete graph of 1,000 vertices, `Prim` takes 42 ms and
+  0.11 MB, where a heap with an entry for each edge takes 557 ms and 136 MB.
+  ([#112], [#310])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
   as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
   union by rank and path compression. Groups and their members come back in
@@ -702,5 +712,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#307]: https://github.com/hmdsefi/gograph/pull/307
 [#204]: https://github.com/hmdsefi/gograph/issues/204
 [#255]: https://github.com/hmdsefi/gograph/pull/255
+[#112]: https://github.com/hmdsefi/gograph/issues/112
+[#310]: https://github.com/hmdsefi/gograph/pull/310
 [#195]: https://github.com/hmdsefi/gograph/issues/195
 [#311]: https://github.com/hmdsefi/gograph/pull/311
