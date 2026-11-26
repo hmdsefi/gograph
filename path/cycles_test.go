@@ -216,7 +216,7 @@ func bruteForceCycles(g gograph.Graph[int]) [][]int {
 func TestCycles_MatchesBruteForce(t *testing.T) {
 	rng := rand.New(rand.NewPCG(19, 5)) //nolint:gosec // seeded so failures are reproducible
 	for i := range 1500 {
-		n := 1 + rng.IntN(8)
+		n := 1 + rng.IntN(9)
 		g := gograph.New[int](gograph.Directed())
 		vertices := make([]*gograph.Vertex[int], n)
 		for j, label := range rng.Perm(n) {
@@ -239,6 +239,74 @@ func TestCycles_MatchesBruteForce(t *testing.T) {
 			if got, _ := Cycles(g, limit); !reflect.DeepEqual(cycleLabels(got), want[:limit]) {
 				t.Fatalf("graph %d, limit %d: Cycles = %v, want %v", i, limit, cycleLabels(got), want[:limit])
 			}
+		}
+	}
+}
+
+func TestCycles_ManySmallComponents(t *testing.T) {
+	// A chain of vertices, each with a self-loop. A search that recomputed
+	// the components of every later vertex for each start would take
+	// quadratic time, and its visit counter would pass 2^31.
+	const n = 70_000
+	g := gograph.New[int](gograph.Directed())
+	vertices := make([]*gograph.Vertex[int], n)
+	var prev *gograph.Vertex[int]
+	for i := range vertices {
+		v := g.AddVertexByLabel(i)
+		vertices[i] = v
+		_, _ = g.AddEdge(v, v)
+		if prev != nil {
+			_, _ = g.AddEdge(prev, v)
+		}
+		prev = v
+	}
+
+	cycles, err := Cycles(g, n+1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cycles) != n {
+		t.Fatalf("got %d cycles, want %d", len(cycles), n)
+	}
+	for i, c := range cycles {
+		if len(c) != 1 || c[0] != vertices[i] {
+			t.Fatalf("cycle %d = %v, want the self-loop of %d", i, cycleLabels(cycles[i:i+1]), i)
+		}
+	}
+}
+
+// cycleWrapper is a graph type other than the one from gograph.New.
+type cycleWrapper struct {
+	gograph.Graph[int]
+}
+
+func TestCycles_OtherGraphTypesAndRemovedVertices(t *testing.T) {
+	rng := rand.New(rand.NewPCG(31, 2)) //nolint:gosec // seeded so failures are reproducible
+	for i := range 2000 {
+		n := 2 + rng.IntN(9)
+		g := gograph.New[int](gograph.Directed())
+		vertices := make([]*gograph.Vertex[int], n)
+		for j, label := range rng.Perm(n) {
+			vertices[j] = g.AddVertexByLabel(label)
+		}
+		for range rng.IntN(n*n + 1) {
+			_, _ = g.AddEdge(vertices[rng.IntN(n)], vertices[rng.IntN(n)])
+		}
+		if rng.IntN(2) == 0 {
+			g.RemoveVertices(vertices[rng.IntN(n)])
+		}
+		graph := g
+		if rng.IntN(2) == 0 {
+			graph = cycleWrapper{g}
+		}
+
+		want := bruteForceCycles(g)
+		got, err := Cycles(graph, 1<<30)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(cycleLabels(got), want) {
+			t.Fatalf("graph %d: Cycles = %v, want %v", i, cycleLabels(got), want)
 		}
 	}
 }
@@ -284,7 +352,7 @@ func cycleRandom(n, m int) gograph.Graph[int] {
 func BenchmarkCycles(b *testing.B) {
 	g := cycleRandom(1000, 3000)
 	for _, limit := range []int{1, 100, 10_000} {
-		b.Run("limit="+strconv.Itoa(limit), func(b *testing.B) {
+		b.Run("random/limit="+strconv.Itoa(limit), func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
 				if _, err := Cycles(g, limit); err != nil {
@@ -293,4 +361,23 @@ func BenchmarkCycles(b *testing.B) {
 			}
 		})
 	}
+
+	b.Run("self-loop chain", func(b *testing.B) {
+		const n = 16_000
+		g := gograph.New[int](gograph.Directed())
+		prev := g.AddVertexByLabel(0)
+		_, _ = g.AddEdge(prev, prev)
+		for i := 1; i < n; i++ {
+			v := g.AddVertexByLabel(i)
+			_, _ = g.AddEdge(v, v)
+			_, _ = g.AddEdge(prev, v)
+			prev = v
+		}
+		b.ReportAllocs()
+		for b.Loop() {
+			if _, err := Cycles(g, n); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }

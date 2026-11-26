@@ -13,10 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   limit, with Johnson's algorithm. Each cycle starts at its earliest vertex in
   `GetAllVertices` order, and the same graph and limit give the same cycles in
   the same order. Time is O((V+E)·(c+1)) for the c cycles returned, and extra
-  space is O(V+E). On a random graph of 1,000 vertices and 3,000 edges, the
-  first cycle takes 0.08 ms and 10,000 cycles take 10 ms, where a depth-first
-  search without Johnson's blocking found no cycle in 3 minutes. The new
-  `path.ErrInvalidLimit` reports a limit below 1. ([#195], [#311])
+  space is O(V+E). The strongly connected components are found once, and only
+  the component of the last start is split again. On a random graph of 1,000
+  vertices and 3,000 edges, the first cycle takes 0.07 ms and 10,000 cycles
+  take 9.6 ms, where a depth-first search without Johnson's blocking found no
+  cycle in 3 minutes. A chain of 16,000 vertices with a self-loop each takes
+  1.2 ms, where finding the components again from each start takes 1.3 s. The
+  new `path.ErrInvalidLimit` reports a limit below 1. ([#195], [#311])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
   as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
   union by rank and path compression. Groups and their members come back in

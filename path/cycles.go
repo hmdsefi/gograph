@@ -28,7 +28,10 @@ import "github.com/hmdsefi/gograph"
 // the number returned, so limit is how the caller bounds it. Time is
 // O((V+E)·(c+1)) for the c cycles returned: Johnson's algorithm blocks each
 // vertex that can't lead back to the start, so the search does O(V+E) work
-// between two cycles. Extra space is O(V+E), plus the cycles returned.
+// between two cycles. The strongly connected components are found once, and
+// after the cycles through a start are listed, only the component of that
+// start is split again, without it. Extra space is O(V+E), plus the cycles
+// returned.
 func Cycles[T comparable](g gograph.Graph[T], limit int) ([][]*gograph.Vertex[T], error) {
 	if limit < 1 {
 		return nil, ErrInvalidLimit
@@ -41,12 +44,22 @@ func Cycles[T comparable](g gograph.Graph[T], limit int) ([][]*gograph.Vertex[T]
 	}
 
 	s := newCycleSearch(g, limit)
-	for start := int32(0); start < int32(len(s.vertices)) && len(s.cycles) < limit; start++ { //nolint:gosec // a vertex number fits in int32
-		start = s.nextComponent(start)
-		if start < 0 {
+	s.split(0, int32(len(s.vertices)), allVertices, -1) //nolint:gosec // a vertex number fits in int32
+	for start := range s.vertices {
+		v := int32(start) //nolint:gosec // a vertex number fits in int32
+		// The vertices before v are gone, so the component of v is its
+		// strongly connected component among the vertices from v on. It
+		// starts at v when v is its smallest vertex.
+		if s.comp[v] != v || !s.cyclic[v] {
+			continue
+		}
+		lo, hi := s.rangeStart[v], s.rangeEnd[v]
+		s.circuits(v, s.members[lo:hi])
+		if len(s.cycles) == limit {
 			break
 		}
-		s.circuits(start)
+		s.comp[v] = removed
+		s.split(lo, hi, v, v)
 	}
 	return s.cycles, nil
 }
@@ -63,18 +76,27 @@ type cycleSearch[T comparable] struct {
 	limit    int
 	cycles   [][]*gograph.Vertex[T]
 
-	// The strongly connected component that the current start belongs to,
-	// in the subgraph of the vertices numbered start or above. comp[v] is
-	// the component of v in the last pass of strongComponents, and a number
-	// is never reused, so nothing is cleared between passes.
-	comp     []int32
-	current  int32
-	members  []int32
+	// Strongly connected components of what is left of the graph. A
+	// component is named by its smallest vertex, and comp[v] is the name of
+	// the component of v, or removed. The members of component c are
+	// members[rangeStart[c]:rangeEnd[c]], and cyclic[c] says whether it has a
+	// cycle: more than one vertex, or a self-loop. current is the component
+	// whose cycles are being listed.
+	comp       []int32
+	members    []int32
+	rangeStart []int32
+	rangeEnd   []int32
+	cyclic     []bool
+	current    int32
+
+	// Tarjan's algorithm. visit[v] is 0 until split reaches v, and is reset
+	// for the vertices of each component it splits, so it never exceeds the
+	// size of one component.
 	visit    []int32
 	low      []int32
-	visits   int32
 	onStack  []bool
 	sccStack []int32
+	found    []int32
 	frames   []cycleFrame
 
 	// Johnson's blocked vertices. The vertices that wait for v to be
@@ -126,6 +148,10 @@ func newCycleSearch[T comparable](g gograph.Graph[T], limit int) *cycleSearch[T]
 
 	m := len(s.arcTo)
 	s.comp = make([]int32, n)
+	s.members = make([]int32, n)
+	s.rangeStart = make([]int32, n)
+	s.rangeEnd = make([]int32, n)
+	s.cyclic = make([]bool, n)
 	s.visit = make([]int32, n)
 	s.low = make([]int32, n)
 	s.onStack = make([]bool, n)
@@ -134,109 +160,104 @@ func newCycleSearch[T comparable](g gograph.Graph[T], limit int) *cycleSearch[T]
 	s.nextBlocked = make([]int32, m)
 	s.inList = make([]bool, m)
 	for i := range s.comp {
-		s.comp[i] = -1
+		s.comp[i] = allVertices
+		s.members[i] = int32(i) //nolint:gosec // a vertex number fits in int32
 		s.blockedBy[i] = -1
 	}
 	return s
 }
 
-// nextComponent finds the strongly connected components of the subgraph of
-// the vertices numbered from or above, and among those with a cycle, picks the
-// one with the smallest vertex. It returns that vertex, and -1 when no
-// component has a cycle. members holds the vertices of the component, and
-// current its number.
-func (s *cycleSearch[T]) nextComponent(from int32) int32 {
-	base := s.visits
-	best := int32(-1)
-	for v := from; v < int32(len(s.vertices)); v++ { //nolint:gosec // a vertex number fits in int32
-		if s.visit[v] > base {
+// Component names that aren't vertices.
+const (
+	allVertices int32 = -2 // the whole graph, before the first split
+	removed     int32 = -1 // a start whose cycles are listed
+)
+
+// split finds the strongly connected components of the vertices of component
+// old in members[lo:hi], leaving out skip, with Tarjan's algorithm and its own
+// stack. It writes the members of each component back into that range and
+// names it by its smallest vertex. It takes time linear in the vertices of the
+// range and the arcs that leave them.
+func (s *cycleSearch[T]) split(lo, hi, old, skip int32) {
+	part := s.members[lo:hi]
+	for _, v := range part {
+		s.visit[v] = 0
+	}
+	s.found = s.found[:0]
+	visits := int32(0)
+	enter := func(v int32) {
+		visits++
+		s.visit[v] = visits
+		s.low[v] = visits
+		s.onStack[v] = true
+		s.sccStack = append(s.sccStack, v)
+		s.frames = append(s.frames, cycleFrame{vertex: v, arc: s.head[v]})
+	}
+
+	for _, root := range part {
+		if root == skip || s.visit[root] != 0 || s.comp[root] != old {
 			continue
 		}
-		if smallest := s.strongComponents(v, from, base); smallest >= 0 && (best < 0 || smallest < best) {
-			best = smallest
-		}
-	}
-	if best < 0 {
-		return -1
-	}
-
-	s.current = s.comp[best]
-	s.members = s.members[:0]
-	for v := best; v < int32(len(s.vertices)); v++ { //nolint:gosec // a vertex number fits in int32
-		if s.comp[v] == s.current {
-			s.members = append(s.members, v)
-		}
-	}
-	return best
-}
-
-// strongComponents runs Tarjan's algorithm from root over the vertices
-// numbered from or above, without recursion. A vertex was visited in this pass
-// when visit[v] > base. It returns the smallest vertex of a component with a
-// cycle among those it finds, or -1.
-func (s *cycleSearch[T]) strongComponents(root, from, base int32) int32 {
-	best := int32(-1)
-	s.enterComponent(root)
-	for len(s.frames) > 0 {
-		f := &s.frames[len(s.frames)-1]
-		v := f.vertex
-		if f.arc < s.head[v+1] {
-			w := s.arcTo[f.arc]
-			f.arc++
-			switch {
-			case w < from:
-			case s.visit[w] <= base:
-				s.enterComponent(w)
-			case s.onStack[w]:
-				s.low[v] = min(s.low[v], s.visit[w])
+		enter(root)
+		for len(s.frames) > 0 {
+			f := &s.frames[len(s.frames)-1]
+			v := f.vertex
+			if f.arc < s.head[v+1] {
+				w := s.arcTo[f.arc]
+				f.arc++
+				switch {
+				case w == skip || (s.comp[w] != old && !s.onStack[w]):
+				case s.visit[w] == 0:
+					enter(w)
+				case s.onStack[w]:
+					s.low[v] = min(s.low[v], s.visit[w])
+				}
+				continue
 			}
-			continue
-		}
 
-		s.frames = s.frames[:len(s.frames)-1]
-		if len(s.frames) > 0 {
-			parent := s.frames[len(s.frames)-1].vertex
-			s.low[parent] = min(s.low[parent], s.low[v])
-		}
-		if s.low[v] != s.visit[v] {
-			continue
-		}
-
-		// v is the first vertex of a component. Pop it, and note its
-		// smallest vertex if it has a cycle.
-		id := v
-		smallest, size := v, 0
-		for {
-			w := s.sccStack[len(s.sccStack)-1]
-			s.sccStack = s.sccStack[:len(s.sccStack)-1]
-			s.onStack[w] = false
-			s.comp[w] = s.visit[id]
-			smallest = min(smallest, w)
-			size++
-			if w == v {
-				break
+			s.frames = s.frames[:len(s.frames)-1]
+			if len(s.frames) > 0 {
+				parent := s.frames[len(s.frames)-1].vertex
+				s.low[parent] = min(s.low[parent], s.low[v])
+			}
+			if s.low[v] == s.visit[v] {
+				s.popComponent(v, lo)
 			}
 		}
-		if (size > 1 || s.selfLoop[v]) && (best < 0 || smallest < best) {
-			best = smallest
+	}
+	copy(part, s.found)
+}
+
+// popComponent pops the component whose first vertex is v off Tarjan's stack,
+// appends its members to found, and names it. lo is where found starts in
+// members.
+func (s *cycleSearch[T]) popComponent(v, lo int32) {
+	first := len(s.found)
+	smallest := v
+	for {
+		w := s.sccStack[len(s.sccStack)-1]
+		s.sccStack = s.sccStack[:len(s.sccStack)-1]
+		s.onStack[w] = false
+		s.found = append(s.found, w)
+		smallest = min(smallest, w)
+		if w == v {
+			break
 		}
 	}
-	return best
+	for _, w := range s.found[first:] {
+		s.comp[w] = smallest
+	}
+	s.rangeStart[smallest] = lo + int32(first)      //nolint:gosec // a vertex number fits in int32
+	s.rangeEnd[smallest] = lo + int32(len(s.found)) //nolint:gosec // a vertex number fits in int32
+	s.cyclic[smallest] = len(s.found)-first > 1 || s.selfLoop[v]
 }
 
-func (s *cycleSearch[T]) enterComponent(v int32) {
-	s.visits++
-	s.visit[v] = s.visits
-	s.low[v] = s.visits
-	s.onStack[v] = true
-	s.sccStack = append(s.sccStack, v)
-	s.frames = append(s.frames, cycleFrame{vertex: v, arc: s.head[v]})
-}
-
-// circuits finds the cycles through start in its component, Johnson's CIRCUIT
-// procedure without recursion, and stops at the limit.
-func (s *cycleSearch[T]) circuits(start int32) {
-	for _, v := range s.members {
+// circuits finds the cycles through start in its component, whose vertices
+// are members, with Johnson's CIRCUIT procedure without recursion, and stops
+// at the limit.
+func (s *cycleSearch[T]) circuits(start int32, members []int32) {
+	s.current = start
+	for _, v := range members {
 		s.blocked[v] = false
 		for a := s.blockedBy[v]; a >= 0; a = s.nextBlocked[a] {
 			s.inList[a] = false
