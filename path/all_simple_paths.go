@@ -52,8 +52,8 @@ func WithLimit(n int) AllPathsOption {
 // WithMaxLength below 1 returns ErrInvalidLimit.
 //
 // The number of simple paths can grow exponentially with the size of the
-// graph: a 10 by 10 grid has millions of them between opposite corners. There
-// is no default limit. WithLimit stops after n paths, WithMaxLength skips
+// graph: between opposite corners, a 6 by 6 grid has 1,262,816 of them and a
+// 10 by 10 grid about 4·10^19. There is no default limit. WithLimit stops after n paths, WithMaxLength skips
 // paths of more than n edges, and AllSimplePathsSeq lets the caller stop at
 // any point.
 //
@@ -62,10 +62,11 @@ func WithLimit(n int) AllPathsOption {
 // it once a path through one of its neighbors turns up. It does O(V+E) work
 // between two paths, so time is O((V+E)·(N+1)) for the N paths returned. With
 // WithMaxLength(L), a vertex that finds no path is only blocked at the depth
-// it was tried at and below, since it can still reach to from closer to from.
-// It can then be tried at up to L depths between two paths, so time is
-// O(L·(V+E)·(N+1)). Extra space is O(V+E), plus the paths returned. V and E
-// count only what from reaches.
+// it was tried at and deeper, since it can still reach to from closer to from.
+// Between two paths, each of the up to L vertices on the last path unblocks
+// the vertices that wait for it, and a vertex can then be tried at up to L
+// depths before the next unblocking, so time is O(L²·(V+E)·(N+1)). Extra space
+// is O(V+E), plus the paths returned. V and E count only what from reaches.
 func AllSimplePaths[T comparable](
 	g gograph.Graph[T],
 	from, to T,
@@ -85,8 +86,10 @@ func AllSimplePaths[T comparable](
 
 // AllSimplePathsSeq yields the same paths as AllSimplePaths, in the same
 // order, lazily, so callers can stop early. The errors are returned before
-// the search starts. The search runs each time the sequence is ranged over,
-// and it reads the graph as it is then. Stopping the loop stops the search.
+// the search starts, and from and to are looked up then. The search runs each
+// time the sequence is ranged over, and it reads the edges as they are then,
+// starting from the vertices looked up at the call. Stopping the loop stops
+// the search.
 func AllSimplePathsSeq[T comparable](
 	g gograph.Graph[T],
 	from, to T,

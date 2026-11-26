@@ -403,3 +403,82 @@ func BenchmarkAllSimplePaths(b *testing.B) {
 		})
 	}
 }
+
+// simplePathRetries returns a graph with a single path from 0 to the goal,
+// the last vertex, that is the slowest case known for WithMaxLength: when the
+// search backs out of the spine, each spine vertex unblocks the vertices that
+// wait for it, and they are tried again at every depth. The spine a0 ... ak
+// z1 ... zr goal has r = k+m. Each ai also leads through a chain of k padding
+// vertices into a chain d1 ... dm with shortcuts d1 -> dj, and dm leads back
+// to every ai. It returns the graph, the goal and the maximum length that
+// keeps the spine path, k+r+1.
+func simplePathRetries(k, m int) (gograph.Graph[int], int, int) {
+	g := gograph.New[int](gograph.Directed())
+	next := 0
+	add := func() *gograph.Vertex[int] {
+		v := g.AddVertexByLabel(next)
+		next++
+		return v
+	}
+	edge := func(a, b *gograph.Vertex[int]) { _, _ = g.AddEdge(a, b) }
+
+	r := k + m
+	spine := make([]*gograph.Vertex[int], k+1)
+	for i := range spine {
+		spine[i] = add()
+	}
+	tail := make([]*gograph.Vertex[int], r)
+	for i := range tail {
+		tail[i] = add()
+	}
+	pad := make([]*gograph.Vertex[int], k)
+	for i := range pad {
+		pad[i] = add()
+	}
+	d := make([]*gograph.Vertex[int], m)
+	for i := range d {
+		d[i] = add()
+	}
+	goal := add()
+
+	for i := 0; i < k; i++ {
+		edge(spine[i], spine[i+1])
+	}
+	edge(spine[k], tail[0])
+	for i := 0; i+1 < r; i++ {
+		edge(tail[i], tail[i+1])
+	}
+	edge(tail[r-1], goal)
+	for _, a := range spine {
+		edge(a, pad[0])
+	}
+	for i := 0; i+1 < k; i++ {
+		edge(pad[i], pad[i+1])
+	}
+	edge(pad[k-1], d[0])
+	for i := 0; i+1 < m; i++ {
+		edge(d[i], d[i+1])
+	}
+	for j := 2; j < m; j++ {
+		edge(d[0], d[j])
+	}
+	for _, a := range spine {
+		edge(d[m-1], a)
+	}
+	return g, goal.Label(), k + r + 1
+}
+
+func BenchmarkAllSimplePathsRetries(b *testing.B) {
+	for _, k := range []int{25, 50, 100} {
+		g, goal, maxLength := simplePathRetries(k, k)
+		b.Run("k="+strconv.Itoa(k), func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				paths, err := AllSimplePaths(g, 0, goal, WithMaxLength(maxLength))
+				if err != nil || len(paths) != 1 {
+					b.Fatal(len(paths), err)
+				}
+			}
+		})
+	}
+}
