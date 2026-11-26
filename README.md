@@ -427,6 +427,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `BellmanFordPaths` | The same paths, negative weights allowed | O(V·E) | |
 | `BFSPaths` | The path with the fewest edges from one vertex to each vertex it reaches | O(V+E) over what the start reaches | |
 | `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
+| `Cycles` | The elementary cycles of a directed graph, up to a limit (Johnson's algorithm) | O((V+E)·(c+1)) for c cycles | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
 | `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
