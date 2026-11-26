@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `path.IDAStar` returns the cheapest path from one vertex to another and its
+  cost, with the cost and heuristic contract of `path.AStar`. It repeats a
+  depth-first search with a rising limit on the estimated total and keeps only
+  the current path, so extra space is O(L·d) for a search path of up to L
+  vertices with at most d neighbors each: it grows with how deep the search
+  goes, not with how many vertices it reaches. It repeats work, and `AStar` is
+  faster when its frontier fits in memory. On a tree of 87,381 vertices,
+  finding the cheapest leaf takes 3.5 ms and 2.4 KB, where `AStar` takes 6.7 ms
+  and 6.7 MB. On a 7 by 7 grid with no heuristic it takes 4.8 ms, where `AStar`
+  takes 0.008 ms. ([#201], [#313])
 - `path.AllSimplePaths` returns every path from one vertex to another that
   doesn't repeat a vertex, in depth-first order, and `path.AllSimplePathsSeq`
   yields them lazily. `WithMaxLength` limits the number of edges and
@@ -729,3 +739,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#311]: https://github.com/hmdsefi/gograph/pull/311
 [#119]: https://github.com/hmdsefi/gograph/issues/119
 [#312]: https://github.com/hmdsefi/gograph/pull/312
+[#201]: https://github.com/hmdsefi/gograph/issues/201
+[#313]: https://github.com/hmdsefi/gograph/pull/313
