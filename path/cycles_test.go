@@ -166,14 +166,15 @@ func TestCycles_StopsAtTheLimitAndRunsAgree(t *testing.T) {
 }
 
 func TestCycles_BlockedVertexIsUnblockedLater(t *testing.T) {
-	// From A, the search reaches D through B first, while C is on the path,
-	// so D fails and is blocked. The cycle through C unblocks it again.
-	g := cycleGraph("AB", "BC", "CD", "DC", "CA", "BD", "DA")
+	// From A, the search reaches D through C, and D's only way on is back to
+	// C, which is on the path, so D fails and waits for C. The cycle A B C
+	// then unblocks C, and with it D, so A B D C is found next.
+	g := cycleGraph("AB", "BC", "CD", "DC", "CA", "BD")
 	cycles, err := Cycles(g, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := [][]string{{"A", "B", "C", "D"}, {"A", "B", "C"}, {"A", "B", "D", "C"}, {"A", "B", "D"}, {"C", "D"}}
+	want := [][]string{{"A", "B", "C"}, {"A", "B", "D", "C"}, {"C", "D"}}
 	if got := cycleLabels(cycles); !reflect.DeepEqual(got, want) {
 		t.Fatalf("Cycles = %v, want %v", got, want)
 	}
