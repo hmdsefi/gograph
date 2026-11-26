@@ -454,7 +454,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 
 | Function | Answers | Time | Demo |
 |---|---|---|---|
-| `Kruskal` | The cheapest edges that connect each piece of an undirected graph (a minimum spanning forest) | O(E log E) | |
+| `Kruskal` | The cheapest edges that connect each piece of an undirected graph (a minimum spanning forest) | O(V + E log E) | |
 | `Prim` | The same edges, in O(V) extra space | O(E log_d V + V log V), d = max(2, E/V) | |
 
 **Partitioning** (`partition` package)

@@ -543,3 +543,67 @@ func TestSpanning_InfiniteWeights(t *testing.T) {
 		})
 	}
 }
+
+// noEdgeFrom returns no edge from one vertex to another, and answers every
+// other GetEdge.
+type noEdgeFrom struct {
+	gograph.Graph[string]
+	from, to string
+}
+
+func (n noEdgeFrom) GetEdge(from, to *gograph.Vertex[string]) *gograph.Edge[string] {
+	if from.Label() == n.from && to.Label() == n.to {
+		return nil
+	}
+	return n.Graph.GetEdge(from, to)
+}
+
+func TestPrim_KeepsTheEdgeItReadWhenTheOtherDirectionIsMissing(t *testing.T) {
+	g := noEdgeFrom{weightedGraph(t, "A-C:1", "B-C:2"), "B", "C"}
+
+	edges, total, err := Prim[string](g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Vertices are added in the order A, C, B, so C is the earlier endpoint
+	// of C-B and GetEdge(C, B) answers.
+	if want := []string{"A-C:1", "C-B:2"}; !reflect.DeepEqual(edgeNames(edges), want) || total != 3 {
+		t.Errorf("Prim = %v, %v; want %v, 3", edgeNames(edges), total, want)
+	}
+
+	// With B added before C, the earlier endpoint is B, and GetEdge(B, C)
+	// returns nil, so Prim keeps C-B, the edge it read from C.
+	h := gograph.New[string](gograph.Weighted())
+	a, b, c := h.AddVertexByLabel("A"), h.AddVertexByLabel("B"), h.AddVertexByLabel("C")
+	_, _ = h.AddEdge(a, c, gograph.WithEdgeWeight(1))
+	_, _ = h.AddEdge(b, c, gograph.WithEdgeWeight(2))
+	edges, total, err = Prim[string](noEdgeFrom{h, "B", "C"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"A-C:1", "C-B:2"}; !reflect.DeepEqual(edgeNames(edges), want) || total != 3 {
+		t.Errorf("Prim = %v, %v; want %v, 3", edgeNames(edges), total, want)
+	}
+}
+
+func TestSpanning_OverflowingTotal(t *testing.T) {
+	g := weightedGraph(t, "A-B:1", "B-C:1")
+	a, b, c := g.GetVertexByID("A"), g.GetVertexByID("B"), g.GetVertexByID("C")
+	g.RemoveEdges(g.GetEdge(a, b), g.GetEdge(b, c))
+	_, _ = g.AddEdge(a, b, gograph.WithEdgeWeight(-math.MaxFloat64))
+	_, _ = g.AddEdge(b, c, gograph.WithEdgeWeight(-math.MaxFloat64))
+	d := g.AddVertexByLabel("D")
+	_, _ = g.AddEdge(c, d, gograph.WithEdgeWeight(math.Inf(1)))
+
+	for _, f := range spanningFuncs {
+		t.Run(f.name, func(t *testing.T) {
+			edges, total, err := f.fn(g)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(edges) != 3 || !math.IsNaN(total) {
+				t.Errorf("got %d edges and total %v; want 3 edges and NaN, since the finite weights overflow to -Inf", len(edges), total)
+			}
+		})
+	}
+}

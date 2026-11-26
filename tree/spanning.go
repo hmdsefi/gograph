@@ -24,8 +24,9 @@ import (
 // graph's own edges, each one in the direction that starts at the endpoint
 // added to the graph first. An unweighted graph has weight 0 on every edge, so
 // any spanning forest is a minimum one. An edge whose weight is NaN is left
-// out. Infinite weights are kept, so the total is +Inf or -Inf when the forest
-// has such an edge, and NaN when it has both.
+// out. The total is the float64 sum of the weights of the forest, so an
+// infinite weight, or finite weights whose sum overflows, makes it +Inf or
+// -Inf, and it's NaN when both signs meet.
 //
 // The edges come sorted by weight. Edges of equal weight are compared by their
 // endpoints in GetAllVertices order: first the endpoint added earlier, then the
@@ -37,16 +38,18 @@ import (
 // vertex, and GetEdge. A neighbor that isn't in GetAllVertices, or one for
 // which GetEdge returns nil, is left out. Kruskal reads each edge from the
 // endpoint added first. Prim reads it from the vertex that just joined its
-// tree, and returns the edge from the endpoint added first. The two agree on
+// tree, and returns the edge from the endpoint added first, or the edge it
+// read when GetEdge in that direction returns nil. The two agree on
 // any graph that lists an undirected edge from both of its vertices, with the
 // same weight in both directions, as the graphs from gograph.New do.
 //
 // A directed graph returns gograph.ErrNotUndirected.
 //
 // It sorts the edges and joins trees with a union-find over vertex numbers,
-// with union by size and path halving. Time is O(E log E) and extra space is
-// O(V+E), for the sorted copy of the edges. Prim needs only O(V) extra space
-// and is faster on dense graphs.
+// with union by size and path halving. Time is O(V + E log E), since every
+// vertex is read even when it has no edges, and extra space is O(V+E), for the
+// sorted copy of the edges. Prim needs only O(V) extra space and is faster on
+// dense graphs.
 func Kruskal[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, error) {
 	if g.IsDirected() {
 		return nil, 0, gograph.ErrNotUndirected
