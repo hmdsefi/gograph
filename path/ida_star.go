@@ -20,8 +20,10 @@ import (
 // a path through a +Inf cost is as long as no path. heuristic estimates the
 // remaining cost from a vertex to goal, and a nil heuristic means 0. It's never
 // called for goal, whose remaining cost is known to be 0. A NaN estimate counts
-// as 0, and a vertex with a +Inf estimate is searched only after every other
-// vertex, in one last search without a limit.
+// as 0. A vertex with a +Inf estimate, or one whose estimate makes the total
+// +Inf, is searched only when no path avoids it: the searches then start over
+// with those estimates counted as 0, so the path is still the cheapest one
+// through such vertices.
 //
 // The path is a cheapest one when the heuristic is admissible: it never
 // exceeds the true remaining cost. The heuristic isn't checked, and with one
@@ -35,17 +37,23 @@ import (
 // returns to a vertex on the current path, and stops at the first path to
 // goal within the limit. Ties break by the order of vertices and edges: the
 // search tries the neighbors of a vertex in the order of Neighbors, so the
-// same graph and the same functions give the same path on every run.
+// same graph and the same functions give the same path on every run. AStar
+// takes the larger cost so far first on equal totals, so when several paths
+// are cheapest the two can return different ones, and each can read a
+// negative cost the other never reaches.
 //
-// Extra space is O(L·d) for a path of up to L vertices whose vertices have at
-// most d neighbors: the path, and the neighbors still to try at each vertex on
-// it. It doesn't grow with the size of the graph. The time is the price: each
-// search follows every path whose estimated total is within the limit, so a
-// vertex is searched again for each such path to it, and the searches repeat
-// for each new limit. With costs that differ by small amounts there can be one
-// search for each different estimated total below the answer. AStar is the
-// better choice when its frontier fits in memory, because it settles each
-// vertex once.
+// Extra space is O(L·d), where L is the number of vertices on the deepest
+// path the search follows, at most V, and d is the most neighbors a vertex on
+// it has: the path, and the neighbors still to try at each vertex on it. It
+// grows with how deep the search goes, not with how many vertices it reaches.
+// The time is the price: each search follows every path whose estimated total
+// is within the limit, so a vertex is searched again for each such path to it,
+// and the searches repeat for each new limit. With costs that differ by small
+// amounts there can be one search for each different estimated total below
+// the answer. Where costs are 0, or goal can't be reached, a search can follow
+// every simple path from start, which is exponential in the size of the
+// graph. AStar is the better choice when its frontier fits in memory, because
+// it settles each vertex once.
 func IDAStar[T comparable](
 	g gograph.Graph[T],
 	start, goal T,
@@ -70,7 +78,7 @@ func IDAStar[T comparable](
 		heuristic: heuristic,
 		onPath:    map[*gograph.Vertex[T]]struct{}{},
 	}
-	limit := s.estimate(from)
+	limit := s.firstLimit(from)
 	for {
 		found, err := s.search(from, limit)
 		if err != nil {
@@ -79,11 +87,28 @@ func IDAStar[T comparable](
 		if found {
 			return s.path(), s.goalCost, nil
 		}
-		if math.IsInf(s.next, 1) && (!s.prunedInf || math.IsInf(limit, 1)) {
+		if !math.IsInf(s.next, 1) {
+			limit = s.next
+			continue
+		}
+		if !s.prunedInf || s.infAsZero {
 			return nil, 0, ErrUnreachable
 		}
-		limit = s.next
+		// Every path left goes through a vertex whose estimated total is
+		// +Inf. Start over with those estimates counted as 0.
+		s.infAsZero = true
+		limit = s.firstLimit(from)
 	}
+}
+
+// firstLimit returns the limit of the first search. The estimate of start is
+// never compared with a limit, so a +Inf one gives -Inf: the first search then
+// only sets the limit to the smallest estimated total of the neighbors.
+func (s *idaSearch[T]) firstLimit(start *gograph.Vertex[T]) float64 {
+	if h := s.estimate(start); !math.IsInf(h, 1) {
+		return h
+	}
+	return math.Inf(-1)
 }
 
 // idaSearch is the state of one IDAStar call. frames is the current path, and
@@ -100,8 +125,11 @@ type idaSearch[T comparable] struct {
 
 	// next is the smallest estimated total beyond the limit of the last
 	// search, and prunedInf whether a vertex was left out for a +Inf one.
+	// infAsZero is set once the searches start over with +Inf estimates
+	// counted as 0.
 	next      float64
 	prunedInf bool
+	infAsZero bool
 	goalCost  float64
 }
 
@@ -137,18 +165,17 @@ func (s *idaSearch[T]) search(start *gograph.Vertex[T], limit float64) (bool, er
 
 		w := s.pending[f.next]
 		f.next++
-		if _, ok := s.onPath[w]; ok {
-			continue
-		}
 		e := s.g.GetEdge(f.vertex, w)
 		if e == nil {
 			continue
 		}
+		// The cost is read before the path check, so a negative cost on an
+		// edge back into the path is reported, as AStar does.
 		c := s.cost(e)
 		if c < 0 {
 			return false, ErrNegativeWeight
 		}
-		if math.IsNaN(c) {
+		if _, ok := s.onPath[w]; ok || math.IsNaN(c) {
 			continue
 		}
 		d := f.cost + c
@@ -156,7 +183,11 @@ func (s *idaSearch[T]) search(start *gograph.Vertex[T], limit float64) (bool, er
 			continue
 		}
 
-		if total := d + s.estimate(w); total > limit {
+		total := d + s.estimate(w)
+		if math.IsInf(total, 1) && s.infAsZero {
+			total = d
+		}
+		if total > limit {
 			s.next = min(s.next, total)
 			s.prunedInf = s.prunedInf || math.IsInf(total, 1)
 			continue
@@ -186,7 +217,7 @@ func (s *idaSearch[T]) estimate(v *gograph.Vertex[T]) float64 {
 		return 0
 	}
 	h := s.heuristic(v.Label())
-	if math.IsNaN(h) {
+	if math.IsNaN(h) || (s.infAsZero && math.IsInf(h, 1)) {
 		return 0
 	}
 	return h

@@ -152,6 +152,81 @@ func TestIDAStar_NonFiniteCostsAndEstimates(t *testing.T) {
 	}
 }
 
+func TestIDAStar_InfiniteEstimatesStillGiveTheCheapestPath(t *testing.T) {
+	inf := math.Inf(1)
+	tests := []struct {
+		name     string
+		edges    []weightedEdge
+		estimate map[string]float64
+		want     []string
+		cost     float64
+	}{
+		{
+			// The estimate of start is never compared with a limit.
+			name: "start",
+			edges: []weightedEdge{
+				{"S", "A", 1}, {"S", "B", 1}, {"A", "G", 10}, {"B", "G", 1},
+			},
+			estimate: map[string]float64{"S": inf},
+			want:     []string{"S", "B", "G"},
+			cost:     2,
+		},
+		{
+			// Every path goes through X, so the searches start over with its
+			// estimate counted as 0, and still pick the cheaper branch.
+			name: "every path",
+			edges: []weightedEdge{
+				{"S", "X", 1}, {"X", "A", 10}, {"X", "B", 1}, {"A", "G", 1}, {"B", "G", 1},
+			},
+			estimate: map[string]float64{"X": inf},
+			want:     []string{"S", "X", "B", "G"},
+			cost:     3,
+		},
+		{
+			// A total that overflows to +Inf counts the same way.
+			name: "overflowing total",
+			edges: []weightedEdge{
+				{"S", "A", math.MaxFloat64 / 2}, {"A", "G", 1},
+			},
+			estimate: map[string]float64{"A": math.MaxFloat64},
+			want:     []string{"S", "A", "G"},
+			cost:     math.MaxFloat64/2 + 1,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			g := directedWeighted(tc.edges...)
+			h := func(label string) float64 { return tc.estimate[label] }
+			p, cost, err := IDAStar(g, "S", "G", nil, h)
+			if err != nil || !reflect.DeepEqual(pathLabels(p), tc.want) || cost != tc.cost {
+				t.Errorf("got %v, %v, %v; want %v, %v", pathLabels(p), cost, err, tc.want, tc.cost)
+			}
+			if _, want, _ := AStar(g, "S", "G", nil, h); cost != want {
+				t.Errorf("cost = %v, AStar gives %v", cost, want)
+			}
+		})
+	}
+}
+
+func TestIDAStar_NegativeCostBackIntoThePathIsReported(t *testing.T) {
+	directed := directedWeighted(weightedEdge{"S", "A", 1}, weightedEdge{"A", "S", -1}, weightedEdge{"A", "G", 1})
+	undirected := gograph.New[string](gograph.Weighted())
+	s, g := undirected.AddVertexByLabel("S"), undirected.AddVertexByLabel("G")
+	_, _ = undirected.AddEdge(s, s, gograph.WithEdgeWeight(-1))
+	_, _ = undirected.AddEdge(s, g, gograph.WithEdgeWeight(1))
+
+	for name, graph := range map[string]gograph.Graph[string]{"edge back to start": directed, "self-loop": undirected} {
+		t.Run(name, func(t *testing.T) {
+			if _, _, err := IDAStar(graph, "S", "G", nil, nil); !errors.Is(err, ErrNegativeWeight) {
+				t.Errorf("error = %v, want %v", err, ErrNegativeWeight)
+			}
+			if _, _, err := AStar(graph, "S", "G", nil, nil); !errors.Is(err, ErrNegativeWeight) {
+				t.Errorf("AStar error = %v, want %v", err, ErrNegativeWeight)
+			}
+		})
+	}
+}
+
 func TestIDAStar_HeuristicIsNeverCalledForTheGoal(t *testing.T) {
 	g := directedWeighted(weightedEdge{"A", "B", 1}, weightedEdge{"B", "G", 1})
 	_, _, err := IDAStar(g, "A", "G", nil, func(label string) float64 {
@@ -289,6 +364,18 @@ func BenchmarkIDAStar(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
 			if _, _, err := IDAStar(g, 0, goal, nil, astarManhattan(n)); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	// A small grid without a heuristic is the bad case: every path within
+	// each limit is followed again for each new limit.
+	small := astarGrid(7)
+	b.Run("grid 7x7 zero", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			if _, _, err := IDAStar(small, 0, 48, nil, nil); err != nil {
 				b.Fatal(err)
 			}
 		}
