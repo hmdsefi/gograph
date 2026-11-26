@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   vertices and 3,000 edges, the first cycle takes 0.07 ms and 10,000 cycles
   take 9.6 ms, where a depth-first search without Johnson's blocking found no
   cycle in 3 minutes. A chain of 16,000 vertices with a self-loop each takes
-  1.2 ms, where finding the components again from each start takes 1.3 s. The
+  1.2 ms, where finding the components again from each start takes 1.1 s. The
   new `path.ErrInvalidLimit` reports a limit below 1. ([#195], [#311])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups
   as pairs arrive, with `Add`, `Union`, `Find`, `Connected` and `Groups`, using
