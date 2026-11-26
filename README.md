@@ -427,6 +427,7 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `BellmanFordPaths` | The same paths, negative weights allowed | O(V·E) | |
 | `BFSPaths` | The path with the fewest edges from one vertex to each vertex it reaches | O(V+E) over what the start reaches | |
 | `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
+| `Cycles` | The elementary cycles of a directed graph, up to a limit (Johnson's algorithm) | O((V+E)·(c+1)) for c cycles | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
 | `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
@@ -450,6 +451,13 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | [`Condense`](connectivity#condensation) | The DAG of components, one vertex per component | O(V+E) | |
 | [`Bridges`](connectivity#bridges-and-articulation-points) | The edges whose removal disconnects an undirected graph | O(V+E) | |
 | [`ArticulationPoints`](connectivity#bridges-and-articulation-points) | The vertices whose removal disconnects an undirected graph | O(V+E) | |
+
+**Spanning trees** (`tree` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `Kruskal` | The cheapest edges that connect each piece of an undirected graph (a minimum spanning forest) | O(V + E log E) | |
+| `Prim` | The same edges, in O(V) extra space | O(E log_d V + V log V), d = max(2, E/V) | |
 
 **Partitioning** (`partition` package)
 
