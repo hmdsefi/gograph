@@ -81,6 +81,24 @@ func TestPathCompressionKeepsConnected(t *testing.T) {
 	}
 }
 
+func TestFindCompressesADeepPath(t *testing.T) {
+	s := New[string]()
+	s.Union("a", "b") // b under a
+	s.Union("c", "d") // d under c
+	s.Union("a", "c") // equal ranks, so c goes under a and d is two levels down
+
+	a, c, d := s.index["a"], s.index["c"], s.index["d"]
+	if s.parent[d] != c {
+		t.Fatalf("before Find, d is under %q, want c", s.labels[s.parent[d]])
+	}
+	if r, _ := s.Find("d"); r != "a" {
+		t.Fatalf("Find(d) = %q, want a", r)
+	}
+	if s.parent[d] != a {
+		t.Fatalf("after Find, d is under %q, want the representative a", s.labels[s.parent[d]])
+	}
+}
+
 func TestFindUnknown(t *testing.T) {
 	s := twoGroups()
 	if r, ok := s.Find("z"); ok || r != "" {

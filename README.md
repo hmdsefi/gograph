@@ -427,12 +427,14 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | `BellmanFordPaths` | The same paths, negative weights allowed | O(V·E) | |
 | `BFSPaths` | The path with the fewest edges from one vertex to each vertex it reaches | O(V+E) over what the start reaches | |
 | `NegativeCycle` | One cycle whose weights sum to less than zero, anywhere in the graph | O(V·E) | |
+| `Cycles` | The elementary cycles of a directed graph, up to a limit (Johnson's algorithm) | O((V+E)·(c+1)) for c cycles | |
 | [`FloydWarshall`](path/floyd-warshall.md) | Distances between every pair of vertices | O(V³) | [watch](https://gograph.dev/algorithms/floyd-warshall/fx-majors) |
 | `DijkstraMultiSource` | Each vertex's nearest source, in one search | O((V+E) log V) | |
 | `AStar` | The cheapest path between two vertices, guided by a heuristic you supply | O((V+E) log V) with a consistent heuristic | |
 | `IDAStar` | The same path, keeping only the current path in memory; repeats work, so `AStar` is faster when its frontier fits | Exponential in the size of the graph in the worst case; O(L·d) space for a search path of up to L vertices and out-degree d | |
 | `Bidirectional` | The cheapest path between two vertices, searching from both ends | O((V+E) log V) | |
 | `KShortest` | The k cheapest simple paths between two vertices, cheapest first | O(k·V·(V+E) log V) | |
+| `AllSimplePaths` | Every path between two vertices that doesn't repeat a vertex, up to a length or a count; `AllSimplePathsSeq` yields them lazily | O((V+E)·(N+1)) for N paths; O(L²·(V+E)·(N+1)) with a maximum length L | |
 | `Beam` | A path between two vertices that keeps only the best few partial paths at each step; may miss the cheapest | O(L·w·(L + d log w)) for L steps, width w, out-degree d | |
 | `KCenter` | k centers that keep every vertex close to one, within twice the best radius on undirected graphs | O(k (V+E) log V) | |
 | [`TransitiveReduction`](path/transitive-reduction.md) | The fewest edges that keep every path | O(V·(V+E)) | [watch](https://gograph.dev/algorithms/transitive-reduction/build-pipeline) |
@@ -450,6 +452,13 @@ runs the algorithm step by step on example graphs at [gograph.dev](https://gogra
 | [`Condense`](connectivity#condensation) | The DAG of components, one vertex per component | O(V+E) | |
 | [`Bridges`](connectivity#bridges-and-articulation-points) | The edges whose removal disconnects an undirected graph | O(V+E) | |
 | [`ArticulationPoints`](connectivity#bridges-and-articulation-points) | The vertices whose removal disconnects an undirected graph | O(V+E) | |
+
+**Spanning trees** (`tree` package)
+
+| Function | Answers | Time | Demo |
+|---|---|---|---|
+| `Kruskal` | The cheapest edges that connect each piece of an undirected graph (a minimum spanning forest) | O(V + E log E) | |
+| `Prim` | The same edges, in O(V) extra space | O(E log_d V + V log V), d = max(2, E/V) | |
 
 **Partitioning** (`partition` package)
 
