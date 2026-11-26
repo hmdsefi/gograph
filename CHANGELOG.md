@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with ties broken by vertex order. `Kruskal` takes O(E log E) time and
   O(V+E) extra space. `Prim` keeps the vertices outside the tree in an indexed
   d-ary heap with d = max(2, E/V), for O(E log_d V + V log V) time and O(V)
-  extra space. On a complete graph of 1,000 vertices, `Prim` takes 48 ms and
+  extra space. On a complete graph of 1,000 vertices, `Prim` takes 42 ms and
   0.11 MB, where a heap with an entry for each edge takes 550 ms and 136 MB.
   ([#112], [#310])
 - New `unionfind` package. `unionfind.Sets` merges labels into disjoint groups

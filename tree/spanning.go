@@ -23,13 +23,23 @@ import (
 // directions, and self-loops are never part of a tree. The edges are the
 // graph's own edges, each one in the direction that starts at the endpoint
 // added to the graph first. An unweighted graph has weight 0 on every edge, so
-// any spanning forest is a minimum one. An edge whose weight is NaN is left out.
+// any spanning forest is a minimum one. An edge whose weight is NaN is left
+// out. Infinite weights are kept, so the total is +Inf or -Inf when the forest
+// has such an edge, and NaN when it has both.
 //
 // The edges come sorted by weight. Edges of equal weight are compared by their
 // endpoints in GetAllVertices order: first the endpoint added earlier, then the
 // other one. That makes the minimum spanning forest unique, so the same graph
 // gives the same edges on every run, and Prim returns the same edges in the
 // same order.
+//
+// Both functions read the graph through GetAllVertices, the neighbors of each
+// vertex, and GetEdge. A neighbor that isn't in GetAllVertices, or one for
+// which GetEdge returns nil, is left out. Kruskal reads each edge from the
+// endpoint added first. Prim reads it from the vertex that just joined its
+// tree, and returns the edge from the endpoint added first. The two agree on
+// any graph that lists an undirected edge from both of its vertices, with the
+// same weight in both directions, as the graphs from gograph.New do.
 //
 // A directed graph returns gograph.ErrNotUndirected.
 //
@@ -42,25 +52,27 @@ func Kruskal[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, err
 		return nil, 0, gograph.ErrNotUndirected
 	}
 
-	index := vertexIndex(g)
+	vertices, index := vertexIndex(g)
 	candidates := make([]weightedEdge[T], 0, g.Size()/2)
-	for e := range gograph.Edges(g) {
-		u, v := index[e.Source()], index[e.Destination()]
-		w := e.Weight()
-		if u >= v || math.IsNaN(w) {
-			// u == v is a self-loop. u > v is the second direction of an edge
-			// already listed from u.
-			continue
+	for i, v := range vertices {
+		low := int32(i) //nolint:gosec // a vertex number fits in int32
+		for neighbor := range v.AllNeighbors() {
+			// Each edge is read from its endpoint added first, so the second
+			// direction and self-loops are skipped.
+			if high, ok := index[neighbor]; ok && high > low {
+				if c, ok := candidate(g, vertices, low, high); ok {
+					candidates = append(candidates, c)
+				}
+			}
 		}
-		candidates = append(candidates, weightedEdge[T]{edge: e, weight: w, low: u, high: v})
 	}
 	slices.SortFunc(candidates, compareEdges[T])
 
-	sets := newDisjointSets(len(index))
-	forest := make([]*gograph.Edge[T], 0, min(len(candidates), max(len(index)-1, 0)))
+	sets := newDisjointSets(len(vertices))
+	forest := make([]*gograph.Edge[T], 0, min(len(candidates), max(len(vertices)-1, 0)))
 	total := 0.0
 	for _, c := range candidates {
-		if len(forest) == len(index)-1 {
+		if len(forest) == len(vertices)-1 {
 			break // one tree already spans every vertex
 		}
 		if sets.union(c.low, c.high) {
@@ -74,7 +86,7 @@ func Kruskal[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, err
 
 // Prim returns the same minimum spanning forest as Kruskal, with the same
 // edges in the same order and the same total weight. See Kruskal for the
-// result, the order of the edges and the errors.
+// result, the order of the edges, how the graph is read, and the errors.
 //
 // It grows one tree at a time from the first vertex, in GetAllVertices order,
 // that no tree reaches yet. The vertices outside the tree wait in an indexed
@@ -89,17 +101,15 @@ func Prim[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, error)
 		return nil, 0, gograph.ErrNotUndirected
 	}
 
-	index := vertexIndex(g)
-	n := len(index)
-	vertices := make([]*gograph.Vertex[T], n)
-	for v, i := range index {
-		vertices[i] = v
-	}
+	vertices, index := vertexIndex(g)
+	n := len(vertices)
+	// Size counts each edge between two vertices once in each direction.
+	edges := int(g.Size()) / 2
 
 	p := prim[T]{
 		best:   make([]weightedEdge[T], n),
 		state:  make([]uint8, n),
-		heap:   newIndexedHeap(n, int(g.Size())/max(n, 1)),
+		heap:   newIndexedHeap(n, edges/max(n, 1)),
 		forest: make([]weightedEdge[T], 0, max(n-1, 0)),
 	}
 	p.heap.less = func(a, b int32) bool { return compareEdges(p.best[a], p.best[b]) < 0 }
@@ -111,7 +121,7 @@ func Prim[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, error)
 		p.state[root] = inTree
 		next := int32(root) //nolint:gosec // a vertex number fits in int32
 		for next >= 0 {
-			p.grow(g, index, vertices[next], next)
+			p.grow(g, vertices, index, next)
 			next = -1
 			if p.heap.len() > 0 {
 				next = p.heap.pop()
@@ -126,9 +136,7 @@ func Prim[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, error)
 	total := 0.0
 	for i, c := range p.forest {
 		forest[i] = c.edge
-		// The heap kept the edge in the direction it was found. The result
-		// uses the one that starts at the endpoint added first.
-		if index[c.edge.Source()] != c.low {
+		if c.edge.Source() != vertices[c.low] {
 			if e := g.GetEdge(vertices[c.low], vertices[c.high]); e != nil {
 				forest[i] = e
 			}
@@ -137,6 +145,21 @@ func Prim[T comparable](g gograph.Graph[T]) ([]*gograph.Edge[T], float64, error)
 	}
 
 	return forest, total, nil
+}
+
+// candidate returns the edge between the vertices numbered low and high, read
+// with GetEdge from low to high, and false when there is none or its weight is
+// NaN.
+func candidate[T comparable](g gograph.Graph[T], vertices []*gograph.Vertex[T], low, high int32) (weightedEdge[T], bool) {
+	e := g.GetEdge(vertices[low], vertices[high])
+	if e == nil {
+		return weightedEdge[T]{}, false
+	}
+	w := e.Weight()
+	if math.IsNaN(w) {
+		return weightedEdge[T]{}, false
+	}
+	return weightedEdge[T]{edge: e, weight: w, low: low, high: high}, true
 }
 
 // Vertex states in Prim.
@@ -155,15 +178,23 @@ type prim[T comparable] struct {
 	forest []weightedEdge[T]
 }
 
-// grow adds the edges of v, which just joined the tree, as candidates for its
-// neighbors outside the tree.
-func (p *prim[T]) grow(g gograph.Graph[T], index map[*gograph.Vertex[T]]int32, v *gograph.Vertex[T], i int32) {
-	for neighbor := range v.AllNeighbors() {
+// grow adds the edges of vertex i, which just joined the tree, as candidates
+// for its neighbors outside the tree.
+func (p *prim[T]) grow(
+	g gograph.Graph[T],
+	vertices []*gograph.Vertex[T],
+	index map[*gograph.Vertex[T]]int32,
+	i int32,
+) {
+	for neighbor := range vertices[i].AllNeighbors() {
 		j, ok := index[neighbor]
 		if !ok || p.state[j] == inTree {
-			continue // a self-loop, or an edge back into the tree
+			continue // not in the graph, a self-loop, or an edge back into the tree
 		}
-		e := g.GetEdge(v, neighbor)
+		// Read the edge from the vertex that just joined, which keeps the
+		// lookups in one row of the graph. The result switches to the edge
+		// from the endpoint added first.
+		e := g.GetEdge(vertices[i], neighbor)
 		if e == nil {
 			continue
 		}
@@ -171,8 +202,8 @@ func (p *prim[T]) grow(g gograph.Graph[T], index map[*gograph.Vertex[T]]int32, v
 		if math.IsNaN(w) {
 			continue
 		}
-
 		c := weightedEdge[T]{edge: e, weight: w, low: min(i, j), high: max(i, j)}
+
 		switch {
 		case p.state[j] == waiting:
 			p.state[j] = queued
@@ -209,13 +240,16 @@ func compareEdges[T comparable](a, b weightedEdge[T]) int {
 	}
 }
 
-// vertexIndex numbers the vertices of g in GetAllVertices order.
-func vertexIndex[T comparable](g gograph.Graph[T]) map[*gograph.Vertex[T]]int32 {
+// vertexIndex returns the vertices of g in GetAllVertices order, and the
+// number of each one.
+func vertexIndex[T comparable](g gograph.Graph[T]) ([]*gograph.Vertex[T], map[*gograph.Vertex[T]]int32) {
+	vertices := make([]*gograph.Vertex[T], 0, g.Order())
 	index := make(map[*gograph.Vertex[T]]int32, g.Order())
 	for v := range gograph.Vertices(g) {
-		index[v] = int32(len(index)) //nolint:gosec // a vertex number fits in int32
+		index[v] = int32(len(vertices)) //nolint:gosec // a vertex number fits in int32
+		vertices = append(vertices, v)
 	}
-	return index
+	return vertices, index
 }
 
 // disjointSets is a union-find over the numbers 0 to n-1.

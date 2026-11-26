@@ -441,3 +441,105 @@ func BenchmarkSpanning(b *testing.B) {
 		}
 	}
 }
+
+// noEdges lists neighbors but has no edge for any of them.
+type noEdges struct{ gograph.Graph[string] }
+
+func (noEdges) GetEdge(_, _ *gograph.Vertex[string]) *gograph.Edge[string] { return nil }
+
+// hiddenVertex leaves one vertex out of GetAllVertices.
+type hiddenVertex struct {
+	gograph.Graph[string]
+	hidden string
+}
+
+func (h hiddenVertex) GetAllVertices() []*gograph.Vertex[string] {
+	var out []*gograph.Vertex[string]
+	for _, v := range h.Graph.GetAllVertices() {
+		if v.Label() != h.hidden {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// oneWay answers GetEdge only from the later vertex to the earlier one, and
+// lists fewer edges in AllEdges than GetEdge finds.
+type oneWay struct {
+	gograph.Graph[string]
+	order map[string]int
+}
+
+func (o oneWay) GetEdge(from, to *gograph.Vertex[string]) *gograph.Edge[string] {
+	if o.order[from.Label()] < o.order[to.Label()] {
+		return nil
+	}
+	return o.Graph.GetEdge(from, to)
+}
+
+func (oneWay) AllEdges() []*gograph.Edge[string] { return nil }
+
+func TestSpanning_OtherGraphTypesGiveTheSameResultFromBoth(t *testing.T) {
+	base := weightedGraph(t, "A-B:5", "B-C:5", "C-D:1", "A-C:9", "B-D:2")
+	order := map[string]int{"A": 0, "B": 1, "C": 2, "D": 3}
+	graphs := []struct {
+		name string
+		g    gograph.Graph[string]
+		want []string
+	}{
+		{"no edges", noEdges{base}, []string{}},
+		{"hidden vertex", hiddenVertex{base, "D"}, []string{"A-B:5", "B-C:5"}},
+		{"one-way GetEdge", oneWay{base, order}, []string{}},
+	}
+	for _, tc := range graphs {
+		t.Run(tc.name, func(t *testing.T) {
+			kEdges, kTotal, err := Kruskal(tc.g)
+			if err != nil {
+				t.Fatal(err)
+			}
+			pEdges, pTotal, err := Prim(tc.g)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := edgeNames(kEdges); !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("Kruskal edges = %v, want %v", got, tc.want)
+			}
+			if !reflect.DeepEqual(kEdges, pEdges) || kTotal != pTotal {
+				t.Errorf("Kruskal %v (%v) and Prim %v (%v) differ", edgeNames(kEdges), kTotal, edgeNames(pEdges), pTotal)
+			}
+		})
+	}
+}
+
+func TestSpanning_InfiniteWeights(t *testing.T) {
+	g := weightedGraph(t, "A-B:1", "B-C:2")
+	a, c := g.GetVertexByID("A"), g.GetVertexByID("C")
+	d, e := g.AddVertexByLabel("D"), g.AddVertexByLabel("E")
+	_, _ = g.AddEdge(a, d, gograph.WithEdgeWeight(math.Inf(-1)))
+	_, _ = g.AddEdge(c, d, gograph.WithEdgeWeight(math.Inf(-1)))
+
+	for _, f := range spanningFuncs {
+		t.Run(f.name, func(t *testing.T) {
+			edges, total, err := f.fn(g)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := []string{"A-D:-Inf", "C-D:-Inf", "A-B:1"}; !reflect.DeepEqual(edgeNames(edges), want) {
+				t.Errorf("edges = %v, want %v", edgeNames(edges), want)
+			}
+			if !math.IsInf(total, -1) {
+				t.Errorf("total = %v, want -Inf", total)
+			}
+		})
+	}
+
+	_, _ = g.AddEdge(a, e, gograph.WithEdgeWeight(math.Inf(1)))
+	for _, f := range spanningFuncs {
+		t.Run(f.name+" with +Inf", func(t *testing.T) {
+			_, total, _ := f.fn(g)
+			if !math.IsNaN(total) {
+				t.Errorf("total = %v, want NaN for a forest with -Inf and +Inf edges", total)
+			}
+		})
+	}
+}
